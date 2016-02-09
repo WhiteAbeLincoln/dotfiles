@@ -1,0 +1,25 @@
+# Created by newuser for 5.1.1
+# The following lines were added by compinstall
+
+zstyle ':completion:*' auto-description 'specify: %d'
+zstyle ':completion:*' completer _expand _complete _ignored _approximate _prefix
+zstyle ':completion:*' completions 1
+zstyle ':completion:*' expand prefix
+zstyle ':completion:*' file-sort name
+zstyle ':completion:*' format 'Completing: %d'
+zstyle ':completion:*' group-name ''
+zstyle ':completion:*' ignore-parents parent pwd directory
+zstyle ':completion:*' insert-unambiguous true
+zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+zstyle ':completion:*' list-prompt %SAt %p: Hit TAB for more, or the character to insert%s
+zstyle ':completion:*' matcher-list '' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*' 'm:{[:lower:]}={[:upper:]}'
+zstyle ':completion:*' max-errors 3
+zstyle ':completion:*' original false
+zstyle ':completion:*' preserve-prefix '//[^/]##/'
+zstyle ':completion:*' prompt 'Errors: %e'
+zstyle ':completion:*' substitute 1
+zstyle :compinstall filename '/home/abe/.zshrc'
+
+autoload -Uz compinit
+compinit
+# End of lines added by compinstall

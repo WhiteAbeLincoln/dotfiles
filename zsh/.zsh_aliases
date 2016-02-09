@@ -1,0 +1,9 @@
+alias sleepy='sudo rtcwake -m mem -u -t $(date +%s -d "tomorrow 06:30")'
+
+function volup {
+pactl set-sink-volume "@DEFAULT_SINK@" +8%
+}
+
+function voldown {
+pactl set-sink-volume "@DEFAULT_SINK@" -8%
+}
