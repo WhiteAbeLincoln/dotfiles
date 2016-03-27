@@ -36,6 +36,8 @@ set foldmethod=indent    " fold based on indent level
 " inoremap jk <esc>
 " }}}
 """ Remaps {{{
+" creates a new java project
+nnoremap <leader>j :ProjectCreate . -n java<CR>
 " }}}
 """ Vundle {{{
 set nocompatible
@@ -49,6 +51,11 @@ Plugin 'VundleVim/Vundle.vim'
 """ Plugins {{{
 Plugin 'scrooloose/syntastic'
 Plugin 'Valloric/YouCompleteMe'
+Plugin 'skammer/vim-css-color'
+Plugin 'digitaltoad/vim-pug'
+Plugin 'whatyouhide/vim-gotham'
+Plugin 'vim-airline/vim-airline'
+Plugin 'vim-airline/vim-airline-themes'
 
 call vundle#end()
 filetype plugin indent on
@@ -69,6 +76,12 @@ let g:ycm_global_ycm_extra_conf = '~/.ycm_extra_conf.py'
 let g:ycm_confirm_extra_conf = 0
 let g:ycm_autoclose_preview_window_after_insertion = 1
 let g:EclimCompletionMethod = 'omnifunc'
+" }}}
+""" Airline {{{
+let g:airline_powerline_fonts = 1
+let g:airline_theme='luna'
+set laststatus=2
+let g:airline#extensions#tabline#enabled = 1
 " }}}
 
 " vim:foldmethod=marker:foldlevel=0

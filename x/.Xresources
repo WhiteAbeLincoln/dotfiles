@@ -7,7 +7,8 @@ URxvt*depth: 32
 ! Create the window with the specified X window geometry [default 80x24]; option -geometry.
 ! URxvt*geometry: geom
 
-! theme: base16/railscasts.dark
+
+!!!COLORS
 ! special
 URxvt*foreground:   #aaaaaa
 URxvt*background:   #2b2b2b
@@ -44,6 +45,7 @@ URxvt*cursorColor:  #aaaaaa
 ! white
 *.color7:       #e6e1dc
 *.color15:      #f9f7f3
+!!!ENDCOLORS 
 
 dzen2.font: "xft:Source Code Pro:size=9:bold:antialias=true"
 ! URxvt*colorBD: colour

@@ -36,6 +36,9 @@ setopt appendhistory extendedglob
 setopt PROMPT_SUBST
 autoload -U colors && colors
 
+# swap caps and escape
+setxkbmap -option caps:swapescape
+
 THEME='bash'
 
 source ~/.zsh/prompts/$THEME.zsh
@@ -45,6 +48,7 @@ alias ls='ls --color=auto'
 alias ll='ls -laF'
 alias la='ls -A'
 alias l='ls -CF'
+alias grep='grep --color=always'
 
 [[ -f ~/.zsh_aliases ]] && . ~/.zsh_aliases
 
@@ -60,7 +64,8 @@ export PATH=$PATH:$GOBIN
 export NVM_DIR="/home/abe/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
 
-source /usr/share/zsh/plugins/zsh-autosuggestions/autosuggestions.zsh
+source /usr/share/doc/pkgfile/command-not-found.zsh
+source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
 source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
 source /usr/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh
@@ -78,7 +83,10 @@ bindkey -M vicmd 'j' history-substring-search-down
 ZSH_AUTOSUGGEST_CLEAR_WIDGETS=("${(@)ZSH_AUTOSUGGEST_CLEAR_WIDGETS:#(up|down)-line-or-history}")
 # Add history-substring-search-* widgets to list of widgets that clear the autosuggestion
 ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(history-substring-search-up history-substring-search-down)
-autosuggest_start
+
+# if [[ -r /usr/lib/python3.5/site-packages/powerline/bindings/zsh/powerline.zsh ]]; then
+#     source /usr/lib/python3.5/site-packages/powerline/bindings/zsh/powerline.zsh
+# fi
 
 
 [[ -z $DISPLAY && $XDG_VTNR -eq 1 ]] && exec startx
