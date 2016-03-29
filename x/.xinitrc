@@ -58,7 +58,7 @@ fi
 setxkbmap -option caps:swapescape
 xsetroot -cursor_name left_ptr &
 
-# Window manager specific programs 
+# Window manager specific programs
 
 # homepage server
 $HOME/Documents/Projects/homepage/server/server.py &
@@ -77,6 +77,9 @@ function xmonad_programs {
 
     # start the notification daemon
     dunst &
+
+    # start lemonbar
+    ~/bin/barrun
 }
 
 session=${1:-xmonad}

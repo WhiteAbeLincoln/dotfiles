@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+
+
+function workspaces {
+    temp=$(wmctrl -d | awk '{ cols=$1","$2","; if (NF==10) print cols $10; else print cols $9 }')
+    i=0
+    for elem in $temp; do
+        WORKSPACES[$i]=$elem;
+        re=',\*,'
+        if [[ $elem =~ $re ]]; then
+            CURRENT_WS=$elem
+        fi
+        (( i+=1 ))
+    done
+
+    temp=$(wmctrl -l | awk '{ s=""; for (i=4; i<=NF; i++) s=s $i " "; print $2 "," s }' )
+    IFS=$'\n'
+    i=0
+    for elem in $temp; do
+        WINDOWS[$i]=$elem;
+        IFS=',' read -ra idx <<< "$elem"
+        IFS=',' read -ra space <<< "${WORKSPACES[${idx[0]}]}"
+        ACTIVE_WORKSPACES[${idx[0]}]=${space[2]}
+        (( i+=1 ))
+        unset space
+    done
+
+    IFS=',' read -ra idx <<< "$CURRENT_WS"
+    colorized="%{F$COLORS_color2}${idx[2]}%{F$COLORS_foreground}"
+    if [[ ${ACTIVE_WORKSPACES[${idx[0]}]} ]]; then
+        ACTIVE_WORKSPACES=("${ACTIVE_WORKSPACES[@]/"${idx[2]}"/"$colorized"}")
+    else
+        ACTIVE_WORKSPACES[${idx[0]}]=$colorized
+    fi
+
+    ACTIVE_WINDOW=$(xdotool getwindowfocus getwindowname)
+
+    unset i
+    unset re
+    unset idx
+    unset temp
+    unset IFS
+    unset colorized
+}
+
+function get_workspaces {
+    workspaces
+    echo -n %{F$COLORS_foreground}"${ACTIVE_WORKSPACES[@]}" : %{F$COLORS_color1}$ACTIVE_WINDOW%{F$COLORS_foreground}
+}
+
+function clock {
+    DATE=$(date "+%a %b %d")
+    TIME=$(date "+%H:%M")
+}
+
+function get_clock {
+    clock
+    echo -n "%{F$COLORS_color2}$DATE $TIME%{F$COLORS_foreground}"
+}
+
+function music {
+    CURRENT_SONG=$(mpc | head -1)
+    SONGTIME=$(mpc -f %time% | grep "\[" | awk '{print $3}')
+    STATUS=$(mpc -f %time% | grep -oe "\[.*\]")
+
+    if [[ "$STATUS" == "[playing]" ]]; then
+        STATUS=""
+    fi
+
+    if [[ "$(mpc | head -1 | awk -F: '{print $1}')" == "volume" ]]; then
+        CURRENT_SONG="[NONE]"
+    fi
+}
+
+function get_music {
+    music
+    string="%{A:mpc toggle:}$STATUS $CURRENT_SONG%{A}"
+    if [[ -z "$STATUS" ]]; then
+        echo -n "%{F$COLORS_color12}$string%{F$COLORS_foreground}"
+    else
+        echo -n "%{F$COLORS_color9}$string%{F$COLORS_foreground}"
+    fi
+}
+
+while true; do
+    source ~/.barrc
+    echo "%{B$COLORS_background}%{l}$(get_workspaces) %{c}$(get_clock) %{r}$(get_music)%{F-}%{B-}"
+    sleep .20;
+done
+
+# vim:syn=sh
