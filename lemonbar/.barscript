@@ -20,7 +20,7 @@ function workspaces {
         WINDOWS[$i]=$elem;
         IFS=',' read -ra idx <<< "$elem"
         IFS=',' read -ra space <<< "${WORKSPACES[${idx[0]}]}"
-        ACTIVE_WORKSPACES[${idx[0]}]=${space[2]}
+        ACTIVE_WORKSPACES[${idx[0]}]="%{A:wmctrl -s ${idx[0]}:}${space[2]}%{A}"
         (( i+=1 ))
         unset space
     done
@@ -30,7 +30,7 @@ function workspaces {
     if [[ ${ACTIVE_WORKSPACES[${idx[0]}]} ]]; then
         ACTIVE_WORKSPACES=("${ACTIVE_WORKSPACES[@]/"${idx[2]}"/"$colorized"}")
     else
-        ACTIVE_WORKSPACES[${idx[0]}]=$colorized
+        ACTIVE_WORKSPACES[${idx[0]}]="%{A:wmctrl -s ${idx[0]}:}$colorized%{A}"
     fi
 
     ACTIVE_WINDOW=$(xdotool getwindowfocus getwindowname)
@@ -45,7 +45,20 @@ function workspaces {
 
 function get_workspaces {
     workspaces
-    echo -n %{F$COLORS_foreground}"${ACTIVE_WORKSPACES[@]}" : %{F$COLORS_color1}$ACTIVE_WINDOW%{F$COLORS_foreground}
+    IFS=',' read -ra idx <<< "$CURRENT_WS"
+    x=${idx[0]}
+    y=$(( (x+1) % 9))
+    (( x-=1 ))
+
+    if (( x < 0 )); then
+        (( x = 8 ))
+    fi
+
+    if [[ ${#ACTIVE_WINDOW} -gt 50 ]]; then
+        ACTIVE_WINDOW="${ACTIVE_WINDOW:0:49}..."
+    fi
+
+    echo -n %{F$COLORS_foreground}%{A4:wmctrl -s $y:}%{A5:wmctrl -s $x:}"${ACTIVE_WORKSPACES[@]}"%{A}%{A} : %{F$COLORS_color1}$ACTIVE_WINDOW%{F$COLORS_foreground}
 }
 
 function clock {
@@ -74,7 +87,7 @@ function music {
 
 function get_music {
     music
-    string="%{A:mpc toggle:}$STATUS $CURRENT_SONG%{A}"
+    string="%{A:mpc toggle:}%{A4:mpc next:}%{A5:mpc prev:}${STATUS}$CURRENT_SONG%{A}%{A}%{A}"
     if [[ -z "$STATUS" ]]; then
         echo -n "%{F$COLORS_color12}$string%{F$COLORS_foreground}"
     else
@@ -82,9 +95,49 @@ function get_music {
     fi
 }
 
+function weather {
+    date=$(date "+%H_%M")
+    if [[ -f "$HOME/.weather$date" ]]; then
+        WEATHER=$(cat "$HOME/.weather$date")
+    else
+        rm "$HOME"/.weather*
+        WEATHER=$(wget -q -O- http://www.accuweather.com/en/us/logan-ut/84321/weather-forecast/331213 | awk -F[\"\'] '/acm_RecentLocationsCarousel\.push/{print $2": "$16", "$12"°" }' | head -1)
+        echo $WEATHER > "$HOME/.weather$date"
+    fi
+}
+
+function get_weather {
+    weather
+    echo -n "%{F$COLORS_color14}$WEATHER%{F$COLORS_foreground}"
+}
+
+function volume {
+    VOLUME=$(ponymix get-volume)
+    $(ponymix is-muted)
+    STATUS=$?
+}
+
+function get_volume {
+    volume
+    scroll="%{A:ponymix toggle:}"
+    end_scroll="%{A}"
+    if [[ ! "$STATUS" == "0" ]]; then
+        echo -n "%{F$COLORS_color10}${scroll}$VOLUME%${end_scroll}%{F$COLORS_foreground}"
+    else
+        echo -n "%{F$COLORS_color9}${scroll}$VOLUME%${end_scroll}%{F$COLORS_foreground}"
+    fi
+}
+
 while true; do
     source ~/.barrc
-    echo "%{B$COLORS_background}%{l}$(get_workspaces) %{c}$(get_clock) %{r}$(get_music)%{F-}%{B-}"
+    buff=""
+    buff="${buff}%{B$COLORS_background}"
+    buff="${buff}%{l}$(get_workspaces) "
+    buff="${buff}%{c}$(get_clock) "
+    buff="${buff}%{r}$(get_volume) $(get_music) || $(get_weather)"
+    buff="${buff}%{F-}%{B-}"
+
+    echo $buff
     sleep .20;
 done
 

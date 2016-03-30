@@ -103,9 +103,12 @@ main = do
         -- fix for double tap avoid struts key
         , handleEventHook    = docksEventHook <+> fullscreenEventHook <+> handleEventHook defaultConfig
         } `additionalKeys`
-        [ ((0 , xF86XK_AudioLowerVolume    ),  spawn "pulseaudio-ctl down")
-        , ((0 , xF86XK_AudioRaiseVolume    ),  spawn "pulseaudio-ctl up")
-        , ((0 , xF86XK_AudioMute           ),  spawn "pulseaudio-ctl mute")
+        [ ((0 , xF86XK_AudioLowerVolume    ),  spawn "ponymix -N decrease 2")
+        , ((0 , xF86XK_AudioRaiseVolume    ),  spawn "ponymix -N increase 2")
+        , ((0 , xF86XK_AudioMute           ),  spawn "ponymix -N toggle")
+        , ((0 , xF86XK_AudioPlay           ),  spawn "mpc toggle")
+        , ((0 , xF86XK_Forward             ),  spawn "mpc next")
+        , ((0 , xF86XK_Back                ),  spawn "mpc prev")
         , ((mod4Mask .|. controlMask, xK_l ), spawn myScreensaver)
         , ((mod4Mask,                 xK_p ), spawn "rofi -show run")
         , ((mod4Mask .|. shiftMask,   xK_p ), spawn "j4-dmenu-desktop --dmenu='rofi -dmenu'")
