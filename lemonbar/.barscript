@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-
 function workspaces {
     temp=$(wmctrl -d | awk '{ cols=$1","$2","; if (NF==10) print cols $10; else print cols $9 }')
     i=0
@@ -87,11 +86,11 @@ function music {
 
 function get_music {
     music
-    string="%{A:mpc toggle:}%{A4:mpc next:}%{A5:mpc prev:}${STATUS}$CURRENT_SONG%{A}%{A}%{A}"
+    string="%{A:mpc toggle:}%{A4:mpc next:}%{A5:mpc prev:}$CURRENT_SONG%{A}%{A}%{A}"
     if [[ -z "$STATUS" ]]; then
-        echo -n "%{F$COLORS_color12}$string%{F$COLORS_foreground}"
+        echo -en "%{F$COLORS_color12}\uf04b ${string}%{F$COLORS_foreground}"
     else
-        echo -n "%{F$COLORS_color9}$string%{F$COLORS_foreground}"
+        echo -en "%{F$COLORS_color9}\uf04c ${string}%{F$COLORS_foreground}"
     fi
 }
 
@@ -108,7 +107,7 @@ function weather {
 
 function get_weather {
     weather
-    echo -n "%{F$COLORS_color14}$WEATHER%{F$COLORS_foreground}"
+    echo -en "%{F$COLORS_color14}$WEATHER%{F$COLORS_foreground}"
 }
 
 function volume {
@@ -122,20 +121,25 @@ function get_volume {
     scroll="%{A:ponymix toggle:}"
     end_scroll="%{A}"
     if [[ ! "$STATUS" == "0" ]]; then
-        echo -n "%{F$COLORS_color10}${scroll}$VOLUME%${end_scroll}%{F$COLORS_foreground}"
+        echo -en "%{F$COLORS_color10}${scroll}\uf028 $VOLUME%${end_scroll}%{F$COLORS_foreground}"
     else
-        echo -n "%{F$COLORS_color9}${scroll}$VOLUME%${end_scroll}%{F$COLORS_foreground}"
+        echo -en "%{F$COLORS_color9}${scroll}\uf026 $VOLUME%${end_scroll}%{F$COLORS_foreground}"
     fi
+}
+
+function get_power {
+    echo -en "%{F$COLORS_color1}%{A:systemctl suspend:}\uf011%{A}%{F$COLORS_foreground}"
 }
 
 while true; do
     source ~/.barrc
     buff=""
     buff="${buff}%{B$COLORS_background}"
-    buff="${buff}%{l}$(get_workspaces) "
+    buff="${buff}%{l} $(get_workspaces) "
     buff="${buff}%{c}$(get_clock) "
-    buff="${buff}%{r}$(get_volume) $(get_music) || $(get_weather)"
-    buff="${buff}%{F-}%{B-}"
+    buff="${buff}%{r}$(get_volume) ║ $(get_music) ║ $(get_weather) ║ "
+    buff="${buff}$(get_power)"
+    buff="${buff} %{F-}%{B-}"
 
     echo $buff
     sleep .20;

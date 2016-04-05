@@ -31,7 +31,8 @@ myTerminal = "termite"
 ------------------------------------------------------------------------------
 -- Workspaces
 --
-myWorkspaces = ["1:term","2:web","3:editor","4:games","5:media"] ++ map show [6..9]
+myWorkspaces = ["\xf120","\xf269","\xf121","\xf1b6","\xf04b"] ++ map show [6..9]
+--             ["1:term","2:web","3:editor","4:games","5:media"]
 
 ------------------------------------------------------------------------------
 -- Window Rules
@@ -41,14 +42,14 @@ myDoFullFloat :: ManageHook
 myDoFullFloat = doF W.focusDown <+> doFullFloat
 
 myManageHook = composeAll
-    [ className =? "URxvt"          --> doShift "1:term"
-    , className =? "Firefox"        --> doShift "2:web"
-    , className =? "google-chrome"  --> doShift "2:web"
-    , className =? "Gedit"          --> doShift "3:editor"
-    , className =? "MultiMC5"       --> doShift "4:games"
-    , className =? "Steam"          --> doShift "4:games"
-    , className =? "Spotify"        --> doShift "5:media"
-    --, name      =? "Netflix"        --> doShift "5:media"
+    [ className =? "termite"        --> doShift "\xf120"
+    , className =? "Firefox"        --> doShift "\xf269"
+    , className =? "google-chrome"  --> doShift "\xf269"
+    , className =? "GVim"           --> doShift "\xf121"
+    , className =? "MultiMC5"       --> doShift "\xf1b6"
+    , className =? "Steam"          --> doShift "\xf1b6"
+    , className =? "Spotify"        --> doShift "\xf04b"
+    --, name      =? "Netflix"        --> doShift "\xf04b"
     , isFullscreen                  --> myDoFullFloat
     , manageDocks
     ]
@@ -69,10 +70,8 @@ myModMask = mod4Mask -- changes mod key to super
 ------------------------------------------------------------------------------
 -- Layouts
 --
-myLayout = named "S_BSP" myBSP ||| emptyBSP ||| named "S_Tall" spaced ||| tall ||| named "Mirror S_Tall" (Mirror spaced) ||| Mirror tall ||| Full
+myLayout =  named "S_Tall" spaced ||| tall ||| named "Mirror S_Tall" (Mirror spaced) ||| Mirror tall ||| Full
     where
-        myBSP = smartSpacing 10 $ emptyBSP
-
         -- default tiling algorithm partitions the screen into 2 panes
         spaced = smartSpacing 10 $ Tall nmaster delta ratio
         tall = Tall nmaster delta ratio
@@ -90,7 +89,7 @@ ctrlMask = controlMask
 altMask = mod1Mask
 
 main = do
-    lemonbar <- spawn "barrun"
+    spawn "barrun"
     xmonad $ ewmh defaultConfig
         { terminal           = myTerminal
         , modMask            = myModMask

@@ -79,7 +79,7 @@ function xmonad_programs {
     dunst &
 
     # start lemonbar
-    ~/bin/barrun
+#    ~/bin/barrun &
 }
 
 session=${1:-xmonad}

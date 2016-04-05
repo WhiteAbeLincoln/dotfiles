@@ -53,9 +53,11 @@ Plugin 'scrooloose/syntastic'
 Plugin 'Valloric/YouCompleteMe'
 Plugin 'skammer/vim-css-color'
 Plugin 'digitaltoad/vim-pug'
-Plugin 'whatyouhide/vim-gotham'
+" Plugin 'whatyouhide/vim-gotham'
 Plugin 'vim-airline/vim-airline'
 Plugin 'vim-airline/vim-airline-themes'
+Plugin 'Raimondi/delimitMate'
+Plugin 'scrooloose/nerdtree'
 
 call vundle#end()
 filetype plugin indent on
@@ -81,7 +83,17 @@ let g:EclimCompletionMethod = 'omnifunc'
 let g:airline_powerline_fonts = 1
 let g:airline_theme='luna'
 set laststatus=2
+let g:airline_exclude_preview = 1
 let g:airline#extensions#tabline#enabled = 1
+" }}}
+""" NERDTree {{{
+map <C-n> :NERDTreeToggle<CR>
+autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
+" }}}
+""" delimitMate {{{
+let delimitMate_expand_cr = 1
+let delimitMate_expand_space = 1
+let delimitMate_quotes = "\" '"
 " }}}
 
 " vim:foldmethod=marker:foldlevel=0

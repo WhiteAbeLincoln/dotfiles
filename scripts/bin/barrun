@@ -1,2 +1,2 @@
-source ~/.bash_colors
-~/.barscript | lemonbar -bp -B $COLORS_background -f "DejaVu Sans Mono-9" | bash -s > /dev/null 2>&1 ~/.lemonbar_err
+source ~/.barrc
+~/.barscript | lemonbar -p -B $COLORS_background -f "DejaVu Sans Mono-10" -f "FontAwesome-9" | bash -s > /dev/null 2>&1 ~/.lemonbar_err
