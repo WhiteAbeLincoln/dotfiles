@@ -1,2 +1,4 @@
 vim/.vim/bundle/*
 *.swp
+xmonad/.xmonad/*
+!xmonad/.xmonad/xmonad.hs
