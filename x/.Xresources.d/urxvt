@@ -1,0 +1,17 @@
+URxvt*depth: 32
+URxvt*scrollColor: #666666
+URxvt*urgentOnBell: true
+URxvt*scrollstyle: rxvt
+URxvt*scrollBar: false
+URxvt*scrollBar_floating: true
+URxvt*scrollTtyOutput: false
+URxvt*scrollWithBuffer: true
+URxvt*scrollTtyKeypress: true
+URxvt*internalBorder: 5
+URxvt*perl-ext-common: default,matcher,tabbed
+URxvt.matcher.button: 1
+URxvt.matcher.rend.0: Uline Bold fg5
+URxvt*url-launcher: /usr/bin/firefox
+
+! vim:filetype=xdefaults
+
