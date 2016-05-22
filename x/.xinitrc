@@ -82,6 +82,16 @@ function xmonad_programs {
 #    ~/bin/barrun &
 }
 
+function pantheon_programs {
+    gsettings-data-convert &
+    xdg-user-dirs-gtk-update &
+    /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 &
+    /usr/lib/gnome-settings-daemon/gnome-settings-daemon &
+    /usr/lib/gnome-user-share/gnome-user-share &
+    eval $(gnome-keyring-daemon --start --components=pkcs11,secrets,ssh,gpg)
+    export GNOME_KEYRING_CONTROL GNOME_KEYRING_PID GPG_AGENT_INFO SSH_AUTH_SOCK
+}
+
 session=${1:-xmonad}
 
 case $session in
@@ -105,6 +115,7 @@ case $session in
     openbox           ) exec openbox-session;;
     unity             ) exec unity;;
     xfce|xfce4        ) exec startxfce4;;
+    pantheon|elementary) pantheon_programs; exec cerbere;;
     xmonad            ) xmonad_programs; exec xmonad;;
     # No known session, try to run it as command
     *) exec $1;;

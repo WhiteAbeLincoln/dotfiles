@@ -13,5 +13,4 @@ URxvt.matcher.button: 1
 URxvt.matcher.rend.0: Uline Bold fg5
 URxvt*url-launcher: /usr/bin/firefox
 
-! vim:filetype=xdefaults
-
+!! vim:filetype=xdefaults

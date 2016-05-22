@@ -20,6 +20,7 @@ def main(argv=None):
     write_xresources(colors)
     write_bash(colors)
     write_termite(colors)
+    write_rofi(colors)
     write_wallpaper(directory)
 
     return 0
@@ -80,6 +81,29 @@ def write_wallpaper(directory):
     wallpaper = directory + "/wallpaper"
     if os.path.isfile(wallpaper):
         subprocess.run(["feh", "--bg-fill", wallpaper])
+
+def write_rofi(colors):
+    with open(os.getenv("HOME") + "/.Xresources.d/rofi_colors", "w") as f:
+        f.write("rofi.color-normal: {},{},{},{},{}\n"
+                .format(
+                    colors["background"], colors["foreground"], colors["background"], colors["color"][12], colors["background"]
+                ))
+        f.write("rofi.color-urgent: {},{},{},{},{}\n"
+                .format(
+                    colors["background"], colors["color"][1], colors["background"], colors["color"][9], colors["background"]
+                ))
+        f.write("rofi.color-active: {},{},{},{},{}\n"
+                .format(
+                    colors["background"], colors["color"][6], colors["background"], colors["color"][14], colors["background"]
+                ))
+        f.write("rofi.color-window: {},{},{}\n"
+                .format(
+                    colors["background"], colors["color"][8], colors["background"]
+                ))
+        f.write("rofi.separator-style: none")
+
+    subprocess.run(["xrdb", os.getenv("HOME") + "/.Xresources"])
+
 
 if __name__ == "__main__":
     sys.exit(main())

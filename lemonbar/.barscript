@@ -19,7 +19,7 @@ function workspaces {
         WINDOWS[$i]=$elem;
         IFS=',' read -ra idx <<< "$elem"
         IFS=',' read -ra space <<< "${WORKSPACES[${idx[0]}]}"
-        ACTIVE_WORKSPACES[${idx[0]}]="%{A:wmctrl -s ${idx[0]}:}${space[2]}%{A}"
+        ACTIVE_WORKSPACES[${idx[0]}]="${space[2]}"
         (( i+=1 ))
         unset space
     done
@@ -29,7 +29,7 @@ function workspaces {
     if [[ ${ACTIVE_WORKSPACES[${idx[0]}]} ]]; then
         ACTIVE_WORKSPACES=("${ACTIVE_WORKSPACES[@]/"${idx[2]}"/"$colorized"}")
     else
-        ACTIVE_WORKSPACES[${idx[0]}]="%{A:wmctrl -s ${idx[0]}:}$colorized%{A}"
+        ACTIVE_WORKSPACES[${idx[0]}]="$colorized"
     fi
 
     ACTIVE_WINDOW=$(xdotool getwindowfocus getwindowname)
@@ -96,13 +96,15 @@ function get_music {
 
 function weather {
     date=$(date "+%H_%M")
-    if [[ -f "$HOME/.weather$date" ]]; then
-        WEATHER=$(cat "$HOME/.weather$date")
-    else
-        rm "$HOME"/.weather*
-        WEATHER=$(wget -q -O- http://www.accuweather.com/en/us/logan-ut/84321/weather-forecast/331213 | awk -F[\"\'] '/acm_RecentLocationsCarousel\.push/{print $2": "$16", "$12"°" }' | head -1)
-        echo $WEATHER > "$HOME/.weather$date"
-    fi
+        if [[ -f "$HOME/.weather$date" ]]; then
+            WEATHER=$(cat "$HOME/.weather$date")
+        else
+            if [[ -f "$HOME"/.weather* ]]; then 
+                rm "$HOME"/.weather*
+            fi
+            WEATHER=$(wget -q -O- http://www.accuweather.com/en/us/logan-ut/84321/weather-forecast/331213 | awk -F[\"\'] '/acm_RecentLocationsCarousel\.push/{print $2": "$16", "$12"°" }' | head -1)
+            echo $WEATHER > "$HOME/.weather$date"
+        fi
 }
 
 function get_weather {
@@ -137,7 +139,7 @@ while true; do
     buff="${buff}%{B$COLORS_background}"
     buff="${buff}%{l} $(get_workspaces) "
     buff="${buff}%{c}$(get_clock) "
-    buff="${buff}%{r}$(get_volume) ║ $(get_music) ║ $(get_weather) ║ "
+    buff="${buff}%{r}$(get_volume) ║ $(get_music) ║"
     buff="${buff}$(get_power)"
     buff="${buff} %{F-}%{B-}"
 

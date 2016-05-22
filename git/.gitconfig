@@ -1,0 +1,22 @@
+[user]
+    email = abe@abrahamwhite.com
+    name = Abraham White
+[push]
+    default = simple
+[filter "lfs"]
+    required = true
+    clean = git-lfs clean %f
+    smudge = git-lfs smudge %f
+[core]
+    excludesfile = /home/abe/.gitignore_global
+    editor = vim
+[alias]
+    branches = branch -a
+    tags = tag
+    stashes = stash list
+    remotes = remote -v
+    unmerged = diff --name-only --diff-filter=U
+    unstage = reset -q HEAD --
+    discard = checkout --
+    uncommit = reset --mixed HEAD~
+    amend = commit --amend

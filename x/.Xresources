@@ -1,6 +1,7 @@
 #include ".Xresources.d/urxvt"
 #include ".Xresources.d/colors"
 #include ".Xresources.d/rofi"
+#include ".Xresources.d/rofi_colors"
 
 
 *font: xft:Deja Vu Sans:style=Regular:size=9
