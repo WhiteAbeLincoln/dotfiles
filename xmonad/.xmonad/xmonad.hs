@@ -91,10 +91,10 @@ altMask = mod1Mask
 
 startup :: X()
 startup = do
-    spawn "bash /home/abe/bin/xmonad-autostart"
     spawnOn "\xf120" "termite"
     spawnOn "\xf269" "firefox"
     spawnOn "\xf1b6" "steam"
+    spawn "/home/abe/bin/xmonad-autorun"
 
 main = do
     xmonad $ ewmh defaultConfig
