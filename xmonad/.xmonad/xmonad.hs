@@ -6,6 +6,7 @@ import XMonad.Layout.Tabbed
 import XMonad.Layout.NoBorders
 import XMonad.Layout.Renamed
 import XMonad.Layout.Named
+import XMonad.Actions.SpawnOn
 import XMonad.Actions.GridSelect
 import XMonad.Actions.Navigation2D
 import XMonad.Hooks.ManageDocks
@@ -88,8 +89,14 @@ myLayout =  named "S_Tall" spaced ||| tall ||| named "Mirror S_Tall" (Mirror spa
 ctrlMask = controlMask
 altMask = mod1Mask
 
+startup :: X()
+startup = do
+    spawn "bash /home/abe/bin/xmonad-autostart"
+    spawnOn "\xf120" "termite"
+    spawnOn "\xf269" "firefox"
+    spawnOn "\xf1b6" "steam"
+
 main = do
-    spawn "barrun"
     xmonad $ ewmh defaultConfig
         { terminal           = myTerminal
         , modMask            = myModMask
@@ -99,6 +106,7 @@ main = do
         , borderWidth        = myBorderWidth
         , manageHook         = myManageHook
         , layoutHook         = avoidStruts $ smartBorders $ myLayout
+        , startupHook        = startup
         -- fix for double tap avoid struts key
         , handleEventHook    = docksEventHook <+> fullscreenEventHook <+> handleEventHook defaultConfig
         } `additionalKeys`

@@ -1,5 +1,26 @@
 """ Colors {{{
 syntax enable    " enable syntax processing
+""COLORS""
+let g:terminal_color_foreground = "#aaaaaa"
+let g:terminal_color_background = "#2b2b2b"
+let g:terminal_color_cursor= "#aaaaaa"
+let g:terminal_color_0 = "#2b2b2b"
+let g:terminal_color_1 = "#eb9e8c"
+let g:terminal_color_2 = "#cff797"
+let g:terminal_color_3 = "#e1cb69"
+let g:terminal_color_4 = "#a5afca"
+let g:terminal_color_5 = "#e597f7"
+let g:terminal_color_6 = "#79ebc2"
+let g:terminal_color_7 = "#f9f7f3"
+let g:terminal_color_8 = "#505d7e"
+let g:terminal_color_9 = "#c8593d"
+let g:terminal_color_10 = "#8fab69"
+let g:terminal_color_11 = "#caae68"
+let g:terminal_color_12 = "#7c92ca"
+let g:terminal_color_13 = "#9e69ab"
+let g:terminal_color_14 = "#519e83"
+let g:terminal_color_15 = "#e6e1dc"
+""ENDCOLORS""
 " }}}
 """ Spaces & Tabs {{{
 set expandtab        " tabs are spaces
@@ -39,6 +60,12 @@ set foldmethod=indent    " fold based on indent level
 " creates a new java project
 nnoremap <leader>j :ProjectCreate . -n java<CR>
 " }}}
+""" NeoVim {{{
+if has("nvim")
+    " set termguicolors
+    let $NVIM_TUI_ENABLE_TRUE_COLOR=1
+endif
+" }}}
 """ Vundle {{{
 set nocompatible
 filetype off
@@ -50,14 +77,15 @@ Plugin 'VundleVim/Vundle.vim'
 " }}}
 """ Plugins {{{
 Plugin 'scrooloose/syntastic'
-Plugin 'Valloric/YouCompleteMe'
+" Plugin 'Valloric/YouCompleteMe'
 Plugin 'skammer/vim-css-color'
 Plugin 'digitaltoad/vim-pug'
-" Plugin 'whatyouhide/vim-gotham'
+Plugin 'whatyouhide/vim-gotham'
 Plugin 'vim-airline/vim-airline'
 Plugin 'vim-airline/vim-airline-themes'
 Plugin 'Raimondi/delimitMate'
 Plugin 'scrooloose/nerdtree'
+Plugin 'chriskempson/base16-vim'
 
 call vundle#end()
 filetype plugin indent on
