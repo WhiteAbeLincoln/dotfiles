@@ -8,15 +8,7 @@ sysmodmap=/etc/X11/xinit/.Xmodmap
 # merge in defaults and keymaps
 
 if [ -f $sysresources ]; then
-
-
-
-
-
-
-
     xrdb -merge $sysresources
-
 fi
 
 if [ -f $sysmodmap ]; then
@@ -24,15 +16,7 @@ if [ -f $sysmodmap ]; then
 fi
 
 if [ -f "$userresources" ]; then
-
-
-
-
-
-
-
     xrdb -merge -I=$HOME "$userresources"
-
 fi
 
 if [ -f "$usermodmap" ]; then
@@ -48,20 +32,16 @@ if [ -d /etc/X11/xinit/xinitrc.d ] ; then
  unset f
 fi
 
+[ -f /etc/xprofile  ] && source /etc/xprofile
+[ -f ~/.xprofile  ] && source ~/.xprofile
+
 # twm &
 # xclock -geometry 50x50-1+1 &
 # xterm -geometry 80x50+494+51 &
 # xterm -geometry 80x20+494-0 &
 # exec xterm -geometry 80x66+0+0 -name login
 
-# swap caps and escape
-setxkbmap -option caps:swapescape
-xsetroot -cursor_name left_ptr &
-
 # Window manager specific programs
-
-# homepage server
-$HOME/Documents/Projects/homepage/server/server.py &
 
 function xmonad_programs {
     # start the compositor

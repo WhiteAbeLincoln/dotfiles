@@ -1,0 +1,8 @@
+# swap caps and escape
+setxkbmap -option caps:swapescape
+xsetroot -cursor_name left_ptr &
+
+# homepage server
+$HOME/Documents/Projects/homepage/server/server.py &
+
+# vim:ft=sh
