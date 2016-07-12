@@ -129,7 +129,40 @@ function get_volume {
     fi
 }
 
+function power {
+    if [[ -d "/sys/class/power_supply/BAT0" ]]; then
+        CAPACITY=$(cat /sys/class/power_supply/BAT0/capacity)
+        BAT_STATUS=$(cat /sys/class/power_supply/BAT0/status)
+    fi
+}
+
 function get_power {
+    power
+    color_red="#ff432d"
+    color_yellow="#ffc32d"
+    color_green="#43a32d"
+    color_out=$color_green
+
+    if [[ $BAT_STATUS == "Charging" ]] || [[ $BAT_STATUS == "Full" ]]; then
+        bat_symbol="\uf0e7"
+    elif [[ $BAT_STATUS == "Discharging" ]]; then
+        bat_symbol="\uf241"
+    else
+        bat_symbol="?"
+    fi
+
+    if [[ $CAPACITY -gt "66" ]]; then
+        color_out=$color_green
+    elif [[ $capacity -gt "33" ]]; then
+        color_out=$color_yellow
+    else
+        color_out=$color_red
+    fi
+
+    echo -en "%{F$color_out}$bat_symbol $CAPACITY%{F$COLORS_foreground}"
+}
+
+function set_sleep {
     echo -en "%{F$COLORS_color1}%{A:systemctl suspend:}\uf011%{A}%{F$COLORS_foreground}"
 }
 
@@ -139,8 +172,7 @@ while true; do
     buff="${buff}%{B$COLORS_background}"
     buff="${buff}%{l} $(get_workspaces) "
     buff="${buff}%{c}$(get_clock) "
-    buff="${buff}%{r}$(get_volume) ║ $(get_music) ║"
-    buff="${buff}$(get_power)"
+    buff="${buff}%{r}$(get_music) ║ $(get_volume) ║ $(get_power)"
     buff="${buff} %{F-}%{B-}"
 
     echo $buff
