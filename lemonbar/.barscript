@@ -162,6 +162,24 @@ function get_power {
     echo -en "%{F$color_out}$bat_symbol $CAPACITY%{F$COLORS_foreground}"
 }
 
+function network {
+    if [[ -e "/proc/net/wireless" ]]; then
+        WIRELESS_STATUS=$(cat /proc/net/wireless | awk '/^w/ {print $3}' | grep -Eo '[[:digit:]]+')
+        WIRELESS_STATUS=$(( WIRELESS_STATUS*100/70 ))
+    fi
+}
+
+function get_network {
+    network
+    string=""
+    i=0
+    while (( WIRELESS_STATUS > 0 )); do
+        string="$string\xe2\x80\xa2"
+        (( WIRELESS_STATUS-=25 ))
+    done
+    echo -en "%{F$COLORS_color2}$string%{F$COLORS_foreground}"
+}
+
 function set_sleep {
     echo -en "%{F$COLORS_color1}%{A:systemctl suspend:}\uf011%{A}%{F$COLORS_foreground}"
 }
@@ -172,7 +190,7 @@ while true; do
     buff="${buff}%{B$COLORS_background}"
     buff="${buff}%{l} $(get_workspaces) "
     buff="${buff}%{c}$(get_clock) "
-    buff="${buff}%{r}$(get_music) ║ $(get_volume) ║ $(get_power)"
+    buff="${buff}%{r}$(get_music) ║ $(get_volume) ║ $(get_network) ║ $(get_power)"
     buff="${buff} %{F-}%{B-}"
 
     echo $buff
