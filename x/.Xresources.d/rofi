@@ -14,7 +14,7 @@ rofi.bw:                             0
 ! Location on screen
 rofi.location:                       0
 ! Padding
-rofi.padding:                        500
+! rofi.padding:                        500
 ! Y-offset relative to location
 rofi.yoffset:                        0
 ! X-offset relative to location
