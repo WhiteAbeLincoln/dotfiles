@@ -1,0 +1,8 @@
+#! /bin/bash
+
+compton -b &
+xscreensaver &
+$HOME/.screenlayout/screen_layout.sh &
+sh $HOME/.fehbg &
+dunst &
+$HOME/bin/barrun &
