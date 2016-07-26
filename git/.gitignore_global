@@ -77,7 +77,7 @@ fabric.properties
 #################
 
 .metadata
-bin/
+# bin/
 tmp/
 *.tmp
 *.bak
