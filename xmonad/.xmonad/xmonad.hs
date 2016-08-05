@@ -27,7 +27,7 @@ import System.IO
 --
 myScreensaver = "/usr/bin/xscreensaver-command --lock"
 myBar = "xmobar"
-myTerminal = "termite"
+myTerminal = "termite -e /usr/bin/fish"
 
 ------------------------------------------------------------------------------
 -- Workspaces
@@ -43,10 +43,11 @@ myDoFullFloat :: ManageHook
 myDoFullFloat = doF W.focusDown <+> doFullFloat
 
 myManageHook = composeAll
-    [ className =? "termite"        --> doShift "\xf120"
+    [ className =? "Termite"        --> doShift "\xf120"
     , className =? "Firefox"        --> doShift "\xf269"
     , className =? "google-chrome"  --> doShift "\xf269"
     , className =? "GVim"           --> doShift "\xf121"
+    , className =? "jetbrains-idea" --> doShift "\xf121"
     , className =? "MultiMC5"       --> doShift "\xf1b6"
     , className =? "Steam"          --> doShift "\xf1b6"
     , className =? "Spotify"        --> doShift "\xf04b"
@@ -91,7 +92,7 @@ altMask = mod1Mask
 
 startup :: X()
 startup = do
-    spawnOn "\xf120" "termite"
+    spawnOn "\xf120" myTerminal
     spawnOn "\xf269" "firefox"
     spawnOn "\xf1b6" "steam"
     spawn "/home/abe/bin/xmonad-autorun"
@@ -118,9 +119,9 @@ main = do
         , ((0 , xF86XK_Back                ),  spawn "mpc prev")
         , ((mod4Mask .|. controlMask, xK_l ), spawn myScreensaver)
         , ((mod4Mask,                 xK_p ), spawn "rofi -show run")
+        , ((mod4Mask,               xK_o   ), spawn "~/bin/themer")
         , ((mod4Mask .|. shiftMask,   xK_p ), spawn "j4-dmenu-desktop --dmenu='rofi -dmenu'")
         , ((mod4Mask,               xK_Tab ), spawn "rofi -show window")
         , ((mod4Mask,               xK_s   ), spawn "rofi -show ssh")
-        , ((mod4Mask,               xK_o   ), spawn "switcher.sh")
         , ((mod4Mask, xK_g), goToSelected defaultGSConfig)
         ]

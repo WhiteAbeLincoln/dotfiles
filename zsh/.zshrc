@@ -63,6 +63,7 @@ export GEMBIN=$HOME/.gem/ruby/2.3.0/bin
 export GOBIN=$GOPATH/bin
 export PATH=$PATH:$GEMBIN
 export EDITOR=vi
+export JAVA_HOME=/usr/lib/jvm/default
 
 export NVM_DIR="/home/abe/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm

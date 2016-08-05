@@ -99,7 +99,7 @@ function weather {
         if [[ -f "$HOME/.weather$date" ]]; then
             WEATHER=$(cat "$HOME/.weather$date")
         else
-            if [[ -f "$HOME"/.weather* ]]; then 
+            if [[ -f "$HOME"/.weather* ]]; then
                 rm "$HOME"/.weather*
             fi
             WEATHER=$(wget -q -O- http://www.accuweather.com/en/us/logan-ut/84321/weather-forecast/331213 | awk -F[\"\'] '/acm_RecentLocationsCarousel\.push/{print $2": "$16", "$12"°" }' | head -1)
@@ -174,10 +174,10 @@ function get_network {
     string=""
     i=0
     while (( WIRELESS_STATUS > 0 )); do
-        string="$string\xe2\x80\xa2"
+        wifi_stat="$wifi_stat\xe2\x80\xa2"
         (( WIRELESS_STATUS-=25 ))
     done
-    echo -en "%{F$COLORS_color2}$string%{F$COLORS_foreground}"
+    echo -en "%{F$COLORS_color2}$wifi_stat%{F$COLORS_foreground}"
 }
 
 function set_sleep {
@@ -190,7 +190,10 @@ while true; do
     buff="${buff}%{B$COLORS_background}"
     buff="${buff}%{l} $(get_workspaces) "
     buff="${buff}%{c}$(get_clock) "
-    buff="${buff}%{r}$(get_music) ║ $(get_volume) ║ $(get_network) ║ $(get_power)"
+    buff="${buff}%{r}$(get_music) ║ $(get_volume) ║ $(get_network)"
+    if [[ -d "/sys/class/power_supply/BAT0" ]]; then
+        buff="${buff} ║ $(get_power)"
+    fi
     buff="${buff} %{F-}%{B-}"
 
     echo $buff
