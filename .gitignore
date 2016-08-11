@@ -4,3 +4,4 @@ xmonad/.xmonad/*
 !xmonad/.xmonad/xmonad.hs
 music/.config/mpd/*
 !music/.config/mpd/mpd.conf
+.gitattributes
