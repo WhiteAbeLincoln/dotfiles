@@ -1,1 +1,1 @@
-.muttrc filter=crypt
+.muttrc filter=crypt diff=crypt
