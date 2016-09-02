@@ -25,7 +25,7 @@ import System.IO
 -----------------------------------------------------------------------------
 -- Customized programs
 --
-myScreensaver = "/usr/bin/xscreensaver-command --lock"
+myScreensaver = "/usr/bin/xautolock -locknow"
 myBar = "xmobar"
 myTerminal = "termite -e /usr/bin/fish"
 
