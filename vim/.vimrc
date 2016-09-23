@@ -82,13 +82,11 @@ Plugin 'VundleVim/Vundle.vim'
 """ Plugins {{{
 Plugin 'scrooloose/syntastic'
 " Plugin 'Valloric/YouCompleteMe'
-Plugin 'digitaltoad/vim-pug'
+Plugin 'sheerun/vim-polyglot'
 Plugin 'vim-airline/vim-airline'
 Plugin 'vim-airline/vim-airline-themes'
 Plugin 'Raimondi/delimitMate'
-Plugin 'scrooloose/nerdtree'
 Plugin 'chriskempson/base16-vim'
-Plugin 'kballard/vim-fish'
 
 call vundle#end()
 filetype plugin indent on
