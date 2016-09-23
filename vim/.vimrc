@@ -34,6 +34,7 @@ set softtabstop=4    " number of spaces in tab when editing
 " }}}
 """ UI config {{{
 set number           " show line numbers
+set relativenumber   " relative line numbers
 set showcmd          " show command in bottom bar
 set cursorline       " highlight current line
 filetype indent on   " load filetype-specific indent files
@@ -85,7 +86,8 @@ Plugin 'scrooloose/syntastic'
 Plugin 'sheerun/vim-polyglot'
 Plugin 'vim-airline/vim-airline'
 Plugin 'vim-airline/vim-airline-themes'
-Plugin 'Raimondi/delimitMate'
+Plugin 'alvan/vim-closetag'
+Plugin 'jiangmiao/auto-pairs'
 Plugin 'chriskempson/base16-vim'
 
 call vundle#end()
