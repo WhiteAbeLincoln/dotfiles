@@ -94,3 +94,6 @@ ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(history-substring-search-up history-substring-se
 
 
 # [[ -z $DISPLAY && $XDG_VTNR -eq 1 ]] && exec startx
+
+# added by travis gem
+[ -f /home/abe/.travis/travis.sh ] && source /home/abe/.travis/travis.sh
