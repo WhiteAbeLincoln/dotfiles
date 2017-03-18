@@ -3,7 +3,7 @@ if not functions -q fundle
 end
 
 ### Plugins {{{
-fundle plugin 'edc/bass'
+fundle plugin 'tuvistavie/fish-nvm'
 fundle plugin 'tuvistavie/fish-fastdir'
 fundle plugin 'oh-my-fish/plugin-bang-bang'
 
