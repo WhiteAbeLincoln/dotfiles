@@ -16,6 +16,7 @@ import XMonad.Hooks.EwmhDesktops
 import XMonad.Util.EZConfig(additionalKeys)
 import Graphics.X11.ExtraTypes.XF86
 import System.IO
+import XMonad.Config
 
 -----------------------------------------------------------------------------
 -- Functions
@@ -27,7 +28,7 @@ import System.IO
 --
 myScreensaver = "/usr/bin/xautolock -locknow"
 myBar = "xmobar"
-myTerminal = "termite -e /usr/bin/fish"
+myTerminal = "termite -e /usr/bin/zsh"
 
 ------------------------------------------------------------------------------
 -- Workspaces
@@ -45,7 +46,7 @@ myDoFullFloat = doF W.focusDown <+> doFullFloat
 myManageHook = composeAll
     [ className =? "Termite"        --> doShift "\xf120"
     , className =? "Firefox"        --> doShift "\xf269"
-    , className =? "google-chrome"  --> doShift "\xf269"
+    , className =? "Google-chrome"  --> doShift "\xf269"
     , className =? "GVim"           --> doShift "\xf121"
     , className =? "jetbrains-idea" --> doShift "\xf121"
     , className =? "MultiMC5"       --> doShift "\xf1b6"
@@ -93,7 +94,7 @@ altMask = mod1Mask
 startup :: X()
 startup = do
     spawnOn "\xf120" myTerminal
-    spawnOn "\xf269" "firefox"
+    spawnOn "\xf269" "google-chrome-stable"
     spawnOn "\xf1b6" "steam"
     spawn "/home/abe/bin/xmonad-autorun"
 
@@ -114,9 +115,9 @@ main = do
         [ ((0 , xF86XK_AudioLowerVolume    ),  spawn "ponymix -N decrease 2")
         , ((0 , xF86XK_AudioRaiseVolume    ),  spawn "ponymix -N increase 2")
         , ((0 , xF86XK_AudioMute           ),  spawn "ponymix -N toggle")
-        , ((0 , xF86XK_AudioPlay           ),  spawn "mpc toggle")
-        , ((0 , xF86XK_Forward             ),  spawn "mpc next")
-        , ((0 , xF86XK_Back                ),  spawn "mpc prev")
+        , ((0 , xF86XK_AudioPlay           ),  spawn "playerctl play-pause")
+        , ((0 , xF86XK_Forward             ),  spawn "playerctl next")
+        , ((0 , xF86XK_Back                ),  spawn "playerctl previous")
         , ((mod4Mask .|. controlMask, xK_l ), spawn myScreensaver)
         , ((mod4Mask,                 xK_p ), spawn "rofi -show run")
         , ((mod4Mask,               xK_o   ), spawn "~/bin/themer")

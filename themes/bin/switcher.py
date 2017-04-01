@@ -78,6 +78,8 @@ def write_termite(colors):
         f.write(final_text)
         f.truncate()
 
+    subprocess.run(["killall", "-USR1", "termite"])
+
 def write_nvim(colors):
     p = re.compile(r'(?<=""COLORS"")([\s\S]+?)(?=""ENDCOLORS"")', re.IGNORECASE)
 

@@ -55,7 +55,7 @@ function get_workspaces {
     fi
 
     if [[ ${#ACTIVE_WINDOW} -gt 50 ]]; then
-        ACTIVE_WINDOW="${ACTIVE_WINDOW:0:49}..."
+        ACTIVE_WINDOW="${ACTIVE_WINDOW:0:47}..."
     fi
 
     echo -n %{F$COLORS_foreground}%{A4:wmctrl -s $y:}%{A5:wmctrl -s $x:}"${ACTIVE_WORKSPACES[@]}"%{A}%{A} : %{F$COLORS_color1}"$ACTIVE_WINDOW"%{F$COLORS_foreground}
@@ -197,7 +197,7 @@ while true; do
     fi
     buff="${buff} %{F-}%{B-}"
 
-    echo $buff
+    echo $buff | tee ~/.barscript-debug
     sleep .20;
 done
 set +f

@@ -4,16 +4,16 @@
 ERROR_FILE="/tmp/themeswitcher-error"
 OUT_FILE="/tmp/themswitcher-out"
 
-if [[ ! -d "$HOME/.themes" ]]; then
+if [[ ! -d "$HOME/.shell-themes" ]]; then
     echo "no themes directory found" >> $ERROR_FILE
     exit 72 # EX_OSFILE
 fi
 
-theme=$(ls $HOME/.themes/ | rofi -dmenu)
-input="$HOME/.themes/$theme"
+theme=$(ls $HOME/.shell-themes/ | rofi -dmenu)
+input="$HOME/.shell-themes/$theme"
 
 $HOME/bin/switcher.py $input >> $ERROR_FILE
 
 # restart lemonbar
-pkill lemonbar
+$HOME/bin/kill_bar.sh
 $HOME/bin/barrun &
