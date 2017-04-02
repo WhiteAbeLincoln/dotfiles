@@ -4,4 +4,6 @@ xmonad/.xmonad/*
 !xmonad/.xmonad/xmonad.hs
 music/.config/mpd/*
 !music/.config/mpd/mpd.conf
+neovim/.config/nvim/*
+!neovim/.config/nvim/init.vim
 .gitattributes

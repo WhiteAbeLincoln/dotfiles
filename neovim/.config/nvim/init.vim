@@ -35,12 +35,12 @@ Plug 'davidhalter/jedi-vim', { 'for': 'python' }
 Plug 'Shougo/neosnippet.vim'
 Plug 'Shougo/neosnippet-snippets'
 " Completion
-Plug 'artur-shaik/vim-javacomplete2', { 'for', 'java' }
+Plug 'artur-shaik/vim-javacomplete2', { 'for': 'java' }
 Plug 'Shougo/deoplete.nvim', {'do': ':UpdateRemotePlugins'}
 Plug 'zchee/deoplete-clang'
 Plug 'zchee/deoplete-jedi', { 'for': 'python' }
-Plug 'mhartington/nvim-typescript', { 'do', 'npm install -g typescript' }
-Plug 'wokalski/autocomplete-flow', { 'do', 'npm install -g flow-bin' }
+Plug 'mhartington/nvim-typescript', { 'do': 'npm install -g typescript' }
+Plug 'wokalski/autocomplete-flow', { 'do': 'npm install -g flow-bin' }
 Plug 'Shougo/neoinclude.vim'
 
 " latex live reload 'donRaphaco/neotex'
