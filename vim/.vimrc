@@ -4,27 +4,7 @@ if &shell =~# 'fish$'
 endif
 """ Colors {{{
 syntax enable    " enable syntax processing
-""COLORS""
-let g:terminal_color_foreground = "#aaaaaa"
-let g:terminal_color_background = "#2b2b2b"
-let g:terminal_color_cursor= "#aaaaaa"
-let g:terminal_color_0 = "#2b2b2b"
-let g:terminal_color_1 = "#eb9e8c"
-let g:terminal_color_2 = "#cff797"
-let g:terminal_color_3 = "#e1cb69"
-let g:terminal_color_4 = "#a5afca"
-let g:terminal_color_5 = "#e597f7"
-let g:terminal_color_6 = "#79ebc2"
-let g:terminal_color_7 = "#f9f7f3"
-let g:terminal_color_8 = "#505d7e"
-let g:terminal_color_9 = "#c8593d"
-let g:terminal_color_10 = "#8fab69"
-let g:terminal_color_11 = "#caae68"
-let g:terminal_color_12 = "#7c92ca"
-let g:terminal_color_13 = "#9e69ab"
-let g:terminal_color_14 = "#519e83"
-let g:terminal_color_15 = "#e6e1dc"
-""ENDCOLORS""
+source ~/.vim_colors
 " }}}
 """ Spaces & Tabs {{{
 set expandtab        " tabs are spaces

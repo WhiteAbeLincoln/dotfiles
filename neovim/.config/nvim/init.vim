@@ -20,13 +20,14 @@ call plug#begin('~/.config/nvim/plugged')
 Plug 'neomake/neomake'
 Plug 'tpope/vim-commentary'
 Plug 'tpope/vim-surround'
-" Plug 'Raimondi/delimitMate'
 Plug 'vim-airline/vim-airline'
 Plug 'vim-airline/vim-airline-themes'
 Plug 'airblade/vim-gitgutter'
 Plug 'gko/vim-coloresque'
 Plug 'kassio/neoterm'
 Plug 'critiqjo/lldb.nvim'
+Plug 'alvan/vim-closetag'
+Plug 'jiangmiao/auto-pairs'
 " Syntax
 Plug 'sheerun/vim-polyglot'
 Plug 'HerringtonDarkholme/yats.vim'
@@ -40,7 +41,8 @@ Plug 'Shougo/deoplete.nvim', {'do': ':UpdateRemotePlugins'}
 Plug 'zchee/deoplete-clang'
 Plug 'zchee/deoplete-jedi', { 'for': 'python' }
 Plug 'mhartington/nvim-typescript', { 'do': 'npm install -g typescript' }
-Plug 'wokalski/autocomplete-flow', { 'do': 'npm install -g flow-bin' }
+" Plug 'wokalski/autocomplete-flow', { 'do': 'npm install -g flow-bin' }
+Plug 'carlitux/deoplete-ternjs', { 'do': 'npm install -g tern' }
 Plug 'Shougo/neoinclude.vim'
 
 " latex live reload 'donRaphaco/neotex'
@@ -49,6 +51,7 @@ call plug#end()
 " }}}
 """ Colors {{{
 syntax enable    " enable syntax processing
+source ~/.vim_colors
 " }}}
 """ Spaces & Tabs {{{
 set expandtab        " tabs are spaces
@@ -91,7 +94,7 @@ set foldmethod=indent    " fold based on indent level
 " }}}
 """ NeoVim {{{
 if has("nvim")
-    set termguicolors
+    " set termguicolors
     " let $NVIM_TUI_ENABLE_TRUE_COLOR=1
 endif
 " }}}
@@ -101,6 +104,10 @@ let g:deoplete#enable_at_startup = 1
 """ deoplete-clang {{{
 let g:deoplete#sources#clang#libclang_path = '/usr/lib/libclang.so'
 let g:deoplete#sources#clang#clang_header = '/usr/include/c++/6.3.1'
+" }}}
+""" deoplete-ternjs {{{
+let g:tern_request_timeout = 1
+let g:tern_show_signature_in_pum = '0'  " This do disable full signature type on autocomplete
 " }}}
 """ neosnippet {{{
 let g:neosnippet#enable_completed_snippet = 1

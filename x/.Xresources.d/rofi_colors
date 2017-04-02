@@ -1,5 +1,0 @@
-rofi.color-normal: #2b2b2b,#aaaaaa,#2b2b2b,#7c92ca,#2b2b2b
-rofi.color-urgent: #2b2b2b,#eb9e8c,#2b2b2b,#c8593d,#2b2b2b
-rofi.color-active: #2b2b2b,#79ebc2,#2b2b2b,#519e83,#2b2b2b
-rofi.color-window: #2b2b2b,#505d7e,#2b2b2b
-rofi.separator-style: none

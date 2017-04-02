@@ -20,7 +20,7 @@ def main(argv=None):
     write_xresources(colors)
     write_bash(colors)
     write_termite(colors)
-    write_nvim(colors)
+    write_vim(colors)
     write_rofi(colors)
     write_wallpaper(directory)
 
@@ -80,7 +80,7 @@ def write_termite(colors):
 
     subprocess.run(["killall", "-USR1", "termite"])
 
-def write_nvim(colors):
+def write_vim(colors):
     p = re.compile(r'(?<=""COLORS"")([\s\S]+?)(?=""ENDCOLORS"")', re.IGNORECASE)
 
     text  = "let g:terminal_color_foreground = \"{}\"\n".format(colors["foreground"])
@@ -91,7 +91,7 @@ def write_nvim(colors):
     for idx, item in enumerate(colors["color"]):
         text += "let g:terminal_color_{} = \"{}\"\n".format(idx, item)
 
-    with open(os.getenv("HOME") + "/.vimrc", 'r+') as f:
+    with open(os.getenv("HOME") + "/.vim_colors", 'r+') as f:
         d = f.readlines()
         final_text = re.sub(p, "\n"+text, ''.join(d))
         f.seek(0)
