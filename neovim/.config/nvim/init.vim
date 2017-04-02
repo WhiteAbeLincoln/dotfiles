@@ -28,6 +28,7 @@ Plug 'kassio/neoterm'
 Plug 'critiqjo/lldb.nvim'
 Plug 'alvan/vim-closetag'
 Plug 'jiangmiao/auto-pairs'
+Plug 'chriskempson/base16-vim'
 " Syntax
 Plug 'sheerun/vim-polyglot'
 Plug 'HerringtonDarkholme/yats.vim'
@@ -51,7 +52,8 @@ call plug#end()
 " }}}
 """ Colors {{{
 syntax enable    " enable syntax processing
-source ~/.vim_colors
+set termguicolors
+colorscheme base16-custom
 " }}}
 """ Spaces & Tabs {{{
 set expandtab        " tabs are spaces
@@ -91,12 +93,6 @@ set foldmethod=indent    " fold based on indent level
 """ Remaps {{{
 " creates a new java project
 " nnoremap <leader>j :ProjectCreate . -n java<CR>
-" }}}
-""" NeoVim {{{
-if has("nvim")
-    " set termguicolors
-    " let $NVIM_TUI_ENABLE_TRUE_COLOR=1
-endif
 " }}}
 """ deoplete {{{
 let g:deoplete#enable_at_startup = 1

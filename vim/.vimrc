@@ -2,9 +2,37 @@
 if &shell =~# 'fish$'
         set shell=/usr/bin/bash
 endif
+""" Vundle {{{
+set nocompatible
+filetype off
+
+set rtp+=~/.vim/bundle/Vundle.vim
+call vundle#begin()
+
+Plugin 'VundleVim/Vundle.vim'
+" }}}
+""" Plugins {{{
+Plugin 'scrooloose/syntastic'
+" Plugin 'Valloric/YouCompleteMe'
+Plugin 'Shougo/neocomplete'
+"Plugin 'osyo-manga/vim-marching'
+Plugin 'tpope/vim-surround'
+Plugin 'davidhalter/jedi-vim'
+Plugin 'sheerun/vim-polyglot'
+Plugin 'vim-airline/vim-airline'
+Plugin 'vim-airline/vim-airline-themes'
+Plugin 'alvan/vim-closetag'
+Plugin 'jiangmiao/auto-pairs'
+Plugin 'chriskempson/base16-vim'
+Plugin 'w0ng/vim-hybrid'
+
+call vundle#end()
+filetype plugin indent on
+" }}}
 """ Colors {{{
 syntax enable    " enable syntax processing
-source ~/.vim_colors
+let base16colorspace=256
+colorscheme base16-custom
 " }}}
 """ Spaces & Tabs {{{
 set expandtab        " tabs are spaces
@@ -17,7 +45,6 @@ set number           " show line numbers
 set relativenumber   " relative line numbers
 set showcmd          " show command in bottom bar
 set cursorline       " highlight current line
-filetype indent on   " load filetype-specific indent files
 set wildmenu         " visual autocomplete for command menu
 set lazyredraw       " redraw only when needed
 set showmatch        " hightlight matching brackets
@@ -44,38 +71,6 @@ set foldmethod=indent    " fold based on indent level
 """ Remaps {{{
 " creates a new java project
 nnoremap <leader>j :ProjectCreate . -n java<CR>
-" }}}
-""" NeoVim {{{
-if has("nvim")
-    " set termguicolors
-    let $NVIM_TUI_ENABLE_TRUE_COLOR=1
-endif
-" }}}
-""" Vundle {{{
-set nocompatible
-filetype off
-
-set rtp+=~/.vim/bundle/Vundle.vim
-call vundle#begin()
-
-Plugin 'VundleVim/Vundle.vim'
-" }}}
-""" Plugins {{{
-Plugin 'scrooloose/syntastic'
-" Plugin 'Valloric/YouCompleteMe'
-Plugin 'Shougo/neocomplete'
-"Plugin 'osyo-manga/vim-marching'
-Plugin 'tpope/vim-surround'
-Plugin 'davidhalter/jedi-vim'
-Plugin 'sheerun/vim-polyglot'
-Plugin 'vim-airline/vim-airline'
-Plugin 'vim-airline/vim-airline-themes'
-Plugin 'alvan/vim-closetag'
-Plugin 'jiangmiao/auto-pairs'
-Plugin 'chriskempson/base16-vim'
-
-call vundle#end()
-filetype plugin indent on
 " }}}
 """ Syntastic {{{
 set statusline+=%#warningmsg#

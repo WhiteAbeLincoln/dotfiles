@@ -6,4 +6,6 @@ music/.config/mpd/*
 !music/.config/mpd/mpd.conf
 neovim/.config/nvim/*
 !neovim/.config/nvim/init.vim
+x/.Xresources.d/colors
+x/.Xresources.d/rofi_colors
 .gitattributes

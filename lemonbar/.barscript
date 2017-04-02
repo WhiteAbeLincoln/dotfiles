@@ -26,7 +26,7 @@ function workspaces {
     done
 
     IFS=',' read -ra idx <<< "$CURRENT_WS"
-    colorized="%{F$COLORS_color2}${idx[2]}%{F$COLORS_foreground}"
+    colorized="%{F$COLORS_color12}${idx[2]}%{F$COLORS_foreground}"
     if [[ ${ACTIVE_WORKSPACES[${idx[0]}]} ]]; then
         ACTIVE_WORKSPACES=("${ACTIVE_WORKSPACES[@]/"${idx[2]}"/"$colorized"}")
     else
@@ -58,7 +58,7 @@ function get_workspaces {
         ACTIVE_WINDOW="${ACTIVE_WINDOW:0:47}..."
     fi
 
-    echo -n %{F$COLORS_foreground}%{A4:wmctrl -s $y:}%{A5:wmctrl -s $x:}"${ACTIVE_WORKSPACES[@]}"%{A}%{A} : %{F$COLORS_color1}"$ACTIVE_WINDOW"%{F$COLORS_foreground}
+    echo -n %{F$COLORS_foreground}%{A4:wmctrl -s $y:}%{A5:wmctrl -s $x:}"${ACTIVE_WORKSPACES[@]}"%{A}%{A} : %{F$COLORS_color4}"$ACTIVE_WINDOW"%{F$COLORS_foreground}
 }
 
 function clock {
@@ -68,7 +68,7 @@ function clock {
 
 function get_clock {
     clock
-    echo -n "%{F$COLORS_color2}$DATE $TIME%{F$COLORS_foreground}"
+    echo -n "%{F$COLORS_color4}$DATE $TIME%{F$COLORS_foreground}"
 }
 
 function music {
@@ -89,7 +89,7 @@ function get_music {
     music
     string="%{A:mpc toggle:}%{A4:mpc next:}%{A5:mpc prev:}$CURRENT_SONG%{A}%{A}%{A}"
     if [[ -z "$STATUS" ]]; then
-        echo -en "%{F$COLORS_color12}\uf04b ${string}%{F$COLORS_foreground}"
+        echo -en "%{F$COLORS_color11}\uf04b ${string}%{F$COLORS_foreground}"
     else
         echo -en "%{F$COLORS_color9}\uf04c ${string}%{F$COLORS_foreground}"
     fi
@@ -124,7 +124,7 @@ function get_volume {
     scroll="%{A:ponymix toggle:}"
     end_scroll="%{A}"
     if [[ ! "$STATUS" == "0" ]]; then
-        echo -en "%{F$COLORS_color10}${scroll}\uf028 $VOLUME%${end_scroll}%{F$COLORS_foreground}"
+        echo -en "%{F$COLORS_color11}${scroll}\uf028 $VOLUME%${end_scroll}%{F$COLORS_foreground}"
     else
         echo -en "%{F$COLORS_color9}${scroll}\uf026 $VOLUME%${end_scroll}%{F$COLORS_foreground}"
     fi
@@ -178,11 +178,11 @@ function get_network {
         wifi_stat="$wifi_stat\xe2\x80\xa2"
         (( WIRELESS_STATUS-=25 ))
     done
-    echo -en "%{F$COLORS_color2}$wifi_stat%{F$COLORS_foreground}"
+    echo -en "%{F$COLORS_color12}$wifi_stat%{F$COLORS_foreground}"
 }
 
 function set_sleep {
-    echo -en "%{F$COLORS_color1}%{A:systemctl suspend:}\uf011%{A}%{F$COLORS_foreground}"
+    echo -en "%{F$COLORS_color5}%{A:systemctl suspend:}\uf011%{A}%{F$COLORS_foreground}"
 }
 
 while true; do
