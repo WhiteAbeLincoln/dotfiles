@@ -20,6 +20,7 @@ def main(argv=None):
     write_xresources(colors)
     write_bash(colors)
     write_termite(colors)
+    write_dunst(colors)
     write_vim(colors)
     write_rofi(colors)
     write_wallpaper(directory)
@@ -120,6 +121,39 @@ def write_termite(colors):
         f.truncate()
 
     subprocess.run(["killall", "-USR1", "termite"])
+
+def write_dunst(colors):
+    config_home = ""
+    if os.getenv("XDG_CONFIG_HOME"):
+        config_home = os.getenv("XDG_CONFIG_HOME")
+    else:
+        config_home = os.getenv("HOME") + "/.config"
+
+    p = re.compile(r'(?<=##COLORS##)([\s\S]+?)(?=##ENDCOLORS##)', re.IGNORECASE)
+
+    text = r"""
+    [base16_low]
+        msg_urgency = low
+        background = "#{}"
+        foreground = "#{}"
+
+    [base16_normal]
+        msg_urgency = normal
+        background = "#{}"
+        foreground = "#{}"
+    
+    [base16_critical]
+        msg_urgency = critical
+        background = "#{}"
+        foreground = "#{}"
+    """.format(colors[1], colors[3], colors[2], colors[5], colors[8], colors[6])
+
+    with open(config_home+"/dunst/dunstrc", 'r+') as f:
+        d = f.readlines()
+        final_text = re.sub(p, "\n"+text, ''.join(d))
+        f.seek(0)
+        f.write(final_text)
+        f.truncate()
 
 def write_vim(colors):
     p = re.compile(r'(?<=""COLORS"")([\s\S]+?)(?=""ENDCOLORS"")', re.IGNORECASE)

@@ -72,22 +72,24 @@ function get_clock {
 }
 
 function music {
-    CURRENT_SONG=$(mpc | head -1)
-    SONGTIME=$(mpc -f %time% | grep "\[" | awk '{print $3}')
-    STATUS=$(mpc -f %time% | grep -oe "\[.*\]")
+    CURRENT_SONG=$(playerctl metadata title 2> /dev/null)
+    STATUS=$(playerctl status 2> /dev/null)
+    # CURRENT_SONG=$(mpc | head -1)
+    # SONGTIME=$(mpc -f %time% | grep "\[" | awk '{print $3}')
+    # STATUS=$(mpc -f %time% | grep -oe "\[.*\]")
 
-    if [[ "$STATUS" == "[playing]" ]]; then
+    if [[ "$STATUS" == "Playing" ]]; then
         STATUS=""
     fi
 
-    if [[ "$(mpc | head -1 | awk -F: '{print $1}')" == "volume" ]]; then
+    if [[ "$?" != "0" || -z "$CURRENT_SONG" ]]; then
         CURRENT_SONG="[NONE]"
     fi
 }
 
 function get_music {
     music
-    string="%{A:mpc toggle:}%{A4:mpc next:}%{A5:mpc prev:}$CURRENT_SONG%{A}%{A}%{A}"
+    string="$CURRENT_SONG"
     if [[ -z "$STATUS" ]]; then
         echo -en "%{F$COLORS_color11}\uf04b ${string}%{F$COLORS_foreground}"
     else

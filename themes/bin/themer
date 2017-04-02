@@ -17,3 +17,6 @@ $HOME/bin/switcher.py $input >> $ERROR_FILE
 # restart lemonbar
 $HOME/bin/kill_bar.sh
 $HOME/bin/barrun &
+# restart dunst
+pkill dunst
+dunst -config ~/.config/dunst/dunstrc &
