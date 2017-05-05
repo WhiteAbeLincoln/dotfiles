@@ -70,6 +70,8 @@ filetype plugin indent on   " load filetype-specific indent files
 set wildmenu         " visual autocomplete for command menu
 set lazyredraw       " redraw only when needed
 set showmatch        " hightlight matching brackets
+set splitbelow
+set splitright
 " }}}
 """ Searching {{{
 set incsearch        " search as characters are entered
@@ -93,9 +95,31 @@ set foldmethod=indent    " fold based on indent level
 """ Remaps {{{
 " creates a new java project
 " nnoremap <leader>j :ProjectCreate . -n java<CR>
+
+" Easier split navigation
+nnoremap <C-J> <C-W><C-J>
+nnoremap <C-K> <C-W><C-K>
+nnoremap <C-L> <C-W><C-L>
+nnoremap <C-H> <C-W><C-H>
 " }}}
 """ deoplete {{{
 let g:deoplete#enable_at_startup = 1
+let g:deoplete#enable_smart_case = 1
+
+inoremap <expr><C-g> deoplete#undo_completion()
+" inoremap <expr><C-l> deoplete#complete_common_string()
+
+" deoplete tab complete
+inoremap <expr><tab> pumvisible() ? "\<c-n>" : "\<tab>"
+
+inoremap <expr><C-h> deoplete#smart_close_popup()."\<C-h>"
+inoremap <expr><BS>  deoplete#smart_close_popup()."\<C-h>"
+
+" inoremap <silent> <CR> <C-r>=<SID>my_cr_function()<CR>
+" function! s:my_cr_function()
+"     return (pumvisible() ? "\<C-y>" : "") . "\<CR>"
+" endfunction
+
 " }}}
 """ deoplete-clang {{{
 let g:deoplete#sources#clang#libclang_path = '/usr/lib/libclang.so'
@@ -105,8 +129,21 @@ let g:deoplete#sources#clang#clang_header = '/usr/include/c++/6.3.1'
 let g:tern_request_timeout = 1
 let g:tern_show_signature_in_pum = '0'  " This do disable full signature type on autocomplete
 " }}}
+""" nvim-typescript {{{
+let g:nvim_typescript#javascript_support=1
+" }}}
 """ neosnippet {{{
 let g:neosnippet#enable_completed_snippet = 1
+imap <C-k> <Plug>(neosnippet_expand_or_jump)
+smap <C-k> <Plug>(neosnippet_expand_or_jump)
+xmap <C-k> <Plug>(neosnippet_expand_target)
+
+imap <C-k> <Plug>(neosnippet_expand_or_jump)
+smap <expr><TAB> neosnippet#expandable_or_jumpable() ? "\<Plug>(neosnippet_expand_or_jump)" : "\<TAB>"
+
+if has('conceal')
+    set conceallevel=2 concealcursor=niv
+endif
 " }}}
 """ Airline {{{
 let g:airline_powerline_fonts = 1
