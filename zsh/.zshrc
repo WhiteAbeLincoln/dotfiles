@@ -50,7 +50,6 @@ alias ll='ls -laF'
 alias la='ls -A'
 alias l='ls -CF'
 alias grep='grep --color=always'
-alias vim='nvim'
 
 [[ -f ~/.zsh_aliases ]] && . ~/.zsh_aliases
 

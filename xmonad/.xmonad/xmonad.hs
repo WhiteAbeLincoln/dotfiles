@@ -28,7 +28,7 @@ import XMonad.Config
 --
 myScreensaver = "/usr/bin/xautolock -locknow"
 myBar = "xmobar"
-myTerminal = "termite -e /usr/bin/zsh"
+myTerminal = "termite -e /usr/bin/tmux"
 
 ------------------------------------------------------------------------------
 -- Workspaces

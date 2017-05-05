@@ -1,6 +1,7 @@
 alias sleepy='sudo rtcwake -m mem -u -t $(date +%s -d "tomorrow 06:30")'
 alias startXfce='startx $(which startxfce4) -- -nolisten tcp vt$XDG_VTNR'
-# alias vim="nvim"
+alias vim="nvim"
+alias pulsemixer="urxvt -e pulsemixer"
 
 function volup {
 pactl set-sink-volume "@DEFAULT_SINK@" +8%
