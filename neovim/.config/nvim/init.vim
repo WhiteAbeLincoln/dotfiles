@@ -41,9 +41,9 @@ Plug 'artur-shaik/vim-javacomplete2', { 'for': 'java' }
 Plug 'Shougo/deoplete.nvim', {'do': ':UpdateRemotePlugins'}
 Plug 'zchee/deoplete-clang'
 Plug 'zchee/deoplete-jedi', { 'for': 'python' }
-Plug 'mhartington/nvim-typescript', { 'do': 'npm install -g typescript' }
+" Plug 'mhartington/nvim-typescript', { 'do': 'npm install -g typescript' }
 " Plug 'wokalski/autocomplete-flow', { 'do': 'npm install -g flow-bin' }
-Plug 'carlitux/deoplete-ternjs', { 'do': 'npm install -g tern' }
+" Plug 'carlitux/deoplete-ternjs', { 'do': 'npm install -g tern' }
 Plug 'Shougo/neoinclude.vim'
 
 " latex live reload 'donRaphaco/neotex'

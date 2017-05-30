@@ -193,7 +193,7 @@ while true; do
     buff="${buff}%{B$COLORS_background}"
     buff="${buff}%{l} $(get_workspaces) "
     buff="${buff}%{c}$(get_clock) "
-    buff="${buff}%{r}$(get_music) ║ $(get_volume) ║ $(get_network)"
+    buff="${buff}%{r} ║ $(get_volume) ║ $(get_network)"
     if [[ -d "/sys/class/power_supply/BAT0" ]]; then
         buff="${buff} ║ $(get_power)"
     fi

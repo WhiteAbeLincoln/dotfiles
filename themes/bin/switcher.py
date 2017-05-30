@@ -6,6 +6,7 @@ import json
 import re
 import subprocess
 import os.path as path
+import shutil
 
 def main(argv=None):
     if argv is None:
@@ -24,6 +25,10 @@ def main(argv=None):
     write_vim(colors)
     write_rofi(colors)
     write_wallpaper(directory)
+    write_bar(colors)
+
+    with open(os.getenv("HOME") + "/.shell-themes/.current_theme", "w") as f:
+        f.write(directory)
 
     return 0
 
@@ -188,6 +193,7 @@ def write_vim(colors):
 def write_wallpaper(directory):
     wallpaper = directory + "/wallpaper"
     if os.path.isfile(wallpaper):
+        shutil.copyfile(directory+"/wallpaper", "/usr/share/backgrounds/theme/wallpaper")
         subprocess.run(["feh", "--bg-fill", wallpaper])
 
 def write_rofi(colors):
@@ -212,6 +218,25 @@ def write_rofi(colors):
 
     subprocess.run(["xrdb", os.getenv("HOME") + "/.Xresources"])
 
+def write_bar(colors):
+    dir = os.getenv("HOME") + "/.config/rxbarrc"
+    f = None
+    if not os.path.isfile(dir):
+        f = open(dir, "w")
+    else:
+        f = open(dir, "r+")
+
+    config = {}
+    try:
+        config = json.load(f)
+    except:
+        pass
+    config["fg"] = ["#"+colors[5].upper()]
+    config["bg"] = ["#"+colors[0].upper()]
+    f.seek(0)
+    json.dump(config, f)
+    f.truncate()
+    f.close()
 
 if __name__ == "__main__":
     sys.exit(main())

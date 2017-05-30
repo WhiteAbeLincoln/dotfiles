@@ -14,6 +14,7 @@ import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.ManageHelpers
 import XMonad.Hooks.EwmhDesktops
 import XMonad.Util.EZConfig(additionalKeys)
+import XMonad.Util.Run
 import Graphics.X11.ExtraTypes.XF86
 import System.IO
 import XMonad.Config
@@ -21,13 +22,14 @@ import XMonad.Config
 -----------------------------------------------------------------------------
 -- Functions
 --
-
+strip ys = filter $ not . (`elem` ys)
+-- src <- readFile "/home/abe/.shell-themes/.current_theme"
 
 -----------------------------------------------------------------------------
 -- Customized programs
 --
 myScreensaver = "/usr/bin/xautolock -locknow"
-myBar = "xmobar"
+toggleScreensaver = "/usr/bin/xautolock -toggle"
 myTerminal = "termite -e /usr/bin/tmux"
 
 ------------------------------------------------------------------------------
@@ -47,11 +49,13 @@ myManageHook = composeAll
     [ className =? "Termite"        --> doShift "\xf120"
     , className =? "Firefox"        --> doShift "\xf269"
     , className =? "Google-chrome"  --> doShift "\xf269"
+    , className =? "Vivaldi-stable" --> doShift "\xf269"
     , className =? "GVim"           --> doShift "\xf121"
     , className =? "jetbrains-idea" --> doShift "\xf121"
     , className =? "MultiMC5"       --> doShift "\xf1b6"
     , className =? "Steam"          --> doShift "\xf1b6"
     , className =? "Spotify"        --> doShift "\xf04b"
+    , className =? "google play music desktop player" --> doShift "\xf04b"
     --, name      =? "Netflix"        --> doShift "\xf04b"
     , isFullscreen                  --> myDoFullFloat
     , manageDocks
@@ -73,10 +77,9 @@ myModMask = mod4Mask -- changes mod key to super
 ------------------------------------------------------------------------------
 -- Layouts
 --
-myLayout =  named "S_Tall" spaced ||| tall ||| named "Mirror S_Tall" (Mirror spaced) ||| Mirror tall ||| Full
+myLayout =  tall ||| Mirror tall ||| Full
     where
         -- default tiling algorithm partitions the screen into 2 panes
-        spaced = smartSpacing 10 $ Tall nmaster delta ratio
         tall = Tall nmaster delta ratio
 
         -- default number of windows in the master pane
@@ -94,11 +97,12 @@ altMask = mod1Mask
 startup :: X()
 startup = do
     spawnOn "\xf120" myTerminal
-    spawnOn "\xf269" "google-chrome-stable"
+    spawnOn "\xf269" "vivaldi-stable"
     spawnOn "\xf1b6" "steam"
     spawn "/home/abe/bin/xmonad-autorun"
 
 main = do
+    -- h <- spawnPipe "tee /home/abe/Documents/Projects/rx_bar/input"
     xmonad $ ewmh defaultConfig
         { terminal           = myTerminal
         , modMask            = myModMask
@@ -109,6 +113,7 @@ main = do
         , manageHook         = myManageHook
         , layoutHook         = avoidStruts $ smartBorders $ myLayout
         , startupHook        = startup
+        -- , logHook            = dynamicLogWithPP $ defaultPP { ppOutput = hPutStrLn h }
         -- fix for double tap avoid struts key
         , handleEventHook    = docksEventHook <+> fullscreenEventHook <+> handleEventHook defaultConfig
         } `additionalKeys`
@@ -116,9 +121,14 @@ main = do
         , ((0 , xF86XK_AudioRaiseVolume    ),  spawn "ponymix -N increase 2")
         , ((0 , xF86XK_AudioMute           ),  spawn "ponymix -N toggle")
         , ((0 , xF86XK_AudioPlay           ),  spawn "playerctl play-pause")
+        , ((0 , xF86XK_AudioNext           ),  spawn "playerctl next")
+        , ((0 , xF86XK_AudioPrev           ),  spawn "playerctl previous")
         , ((0 , xF86XK_Forward             ),  spawn "playerctl next")
         , ((0 , xF86XK_Back                ),  spawn "playerctl previous")
+        , ((0 , xF86XK_MonBrightnessUp     ),  spawn "xbacklight -inc 10")
+        , ((0 , xF86XK_MonBrightnessDown   ),  spawn "xbacklight -dec 10")
         , ((mod4Mask .|. controlMask, xK_l ), spawn myScreensaver)
+        , ((mod4Mask .|. controlMask, xK_c ), spawn toggleScreensaver)
         , ((mod4Mask,                 xK_p ), spawn "rofi -show run")
         , ((mod4Mask,               xK_o   ), spawn "~/bin/themer")
         , ((mod4Mask .|. shiftMask,   xK_p ), spawn "j4-dmenu-desktop --dmenu='rofi -dmenu'")

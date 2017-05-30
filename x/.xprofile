@@ -4,5 +4,8 @@ xsetroot -cursor_name left_ptr &
 
 # homepage server
 $HOME/Documents/Projects/homepage/server/server.py &
+/usr/bin/light-locker &
+# /usr/bin/xautolock -time 10 -locker '/usr/bin/light-locker-command -l' -corners 0-00 &
+libinput-gestures-setup start
 
 # vim:ft=sh
