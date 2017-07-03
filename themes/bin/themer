@@ -10,6 +10,8 @@ if [[ ! -d "$HOME/.shell-themes" ]]; then
 fi
 
 theme=$(ls $HOME/.shell-themes/ | rofi -dmenu)
+old_theme=$(cat $HOME/.shell-themes/.current_theme)
+if [[ -n "$theme" &&  "$(basename "$old_theme")" != "$theme" ]]; then
 input="$HOME/.shell-themes/$theme"
 
 $HOME/bin/switcher.py $input >> $ERROR_FILE
@@ -20,3 +22,4 @@ $HOME/bin/barrun &
 # restart dunst
 pkill dunst
 dunst -config ~/.config/dunst/dunstrc &
+fi

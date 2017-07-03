@@ -193,7 +193,7 @@ def write_vim(colors):
 def write_wallpaper(directory):
     wallpaper = directory + "/wallpaper"
     if os.path.isfile(wallpaper):
-        shutil.copyfile(directory+"/wallpaper", "/usr/share/backgrounds/theme/wallpaper")
+        # shutil.copyfile(directory+"/wallpaper", "/usr/share/backgrounds/theme/wallpaper")
         subprocess.run(["feh", "--bg-fill", wallpaper])
 
 def write_rofi(colors):
