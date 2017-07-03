@@ -24,6 +24,8 @@ zstyle ':completion:*' prompt 'Errors: %e'
 zstyle ':completion:*' substitute 1
 zstyle :compinstall filename '/home/abe/.zshrc'
 
+typeset -U fpath
+fpath=(~/.zsh/completions $fpath)
 autoload -Uz compinit
 compinit
 # End of lines added by compinstall
@@ -45,27 +47,8 @@ THEME='bash'
 source ~/.zsh/prompts/$THEME.zsh
 
 #ALIASES
-alias ls='ls --color=auto'
-alias ll='ls -laF'
-alias la='ls -A'
-alias l='ls -CF'
-alias grep='grep --color=always'
-
 [[ -f ~/.zsh_aliases ]] && . ~/.zsh_aliases
 
-# Add private bin
-if [ -d "$HOME/bin" ] ; then
-     PATH="$HOME/bin:$PATH"
-fi
-
-export GOPATH=$HOME/go
-export GEMBIN=$HOME/.gem/ruby/2.3.0/bin
-export GOBIN=$GOPATH/bin
-export PATH=$PATH:$GEMBIN:$GOBIN
-export EDITOR=vim
-export JAVA_HOME=/usr/lib/jvm/default
-
-export NVM_DIR="/home/abe/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
 
 source /usr/share/doc/pkgfile/command-not-found.zsh
@@ -96,4 +79,12 @@ ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(history-substring-search-up history-substring-se
 # [[ -z $DISPLAY && $XDG_VTNR -eq 1 ]] && exec startx
 
 # added by travis gem
-[ -f /home/abe/.travis/travis.sh ] && source /home/abe/.travis/travis.sh
+[ -f "$HOME"/.travis/travis.sh ] && source "$HOME"/.travis/travis.sh
+
+# The next line updates PATH for the Google Cloud SDK.
+if [ -f "$HOME/Documents/Programs/google-cloud-sdk/path.zsh.inc" ]; then source "$HOME/Documents/Programs/google-cloud-sdk/path.zsh.inc"; fi
+
+# The next line enables shell command completion for gcloud.
+if [ -f "$HOME/Documents/Programs/google-cloud-sdk/completion.zsh.inc" ]; then source "$HOME/Documents/Programs/google-cloud-sdk/completion.zsh.inc"; fi
+
+if [ -f "$HOME/.zsh-ng-completion" ]; then source "$HOME/.zsh-ng-completion"; fi
