@@ -1,3 +1,3 @@
 #! /usr/bin/env bash
 source ~/.barrc
-~/.barscript | lemonbar -p -B $COLORS_background -f "DejaVu Sans Mono-10" -f "FontAwesome-9" | bash -s > /dev/null 2>&1 ~/.lemonbar_err
+~/.barscript | lemonbar -p -B $COLORS_background -f "DejaVu Sans Mono-10" -f "FontAwesome-9" -f "Noto Emoji-10" | bash -s > /dev/null 2>&1 ~/.lemonbar_err

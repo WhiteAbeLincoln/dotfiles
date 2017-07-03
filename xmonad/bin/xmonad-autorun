@@ -5,4 +5,7 @@ compton -b &
 # $HOME/.screenlayout/screen_layout.sh &
 sh $HOME/.fehbg &
 dunst &
+stalonetray &
+wid=$(xdotool search --class stalonetray)
+xdotool windowunmap $wid
 $HOME/bin/barrun &

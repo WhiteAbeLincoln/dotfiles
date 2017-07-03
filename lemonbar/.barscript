@@ -197,7 +197,8 @@ while true; do
     if [[ -d "/sys/class/power_supply/BAT0" ]]; then
         buff="${buff} ║ $(get_power)"
     fi
-    buff="${buff} %{F-}%{B-}"
+    buff="${buff} %{A:$HOME/bin/show-tray:}ℹ%{A}"
+    buff="${buff}%{F-}%{B-}"
 
     echo $buff | tee ~/.barscript-debug
     sleep .20;

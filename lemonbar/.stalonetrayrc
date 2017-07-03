@@ -1,0 +1,7 @@
+sticky true
+# transparent true
+window_type dock
+window_layer top
+grow_gravity NE
+# icon_size 16
+geometry 1x1+1896+24
