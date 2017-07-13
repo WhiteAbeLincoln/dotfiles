@@ -14,21 +14,20 @@ install: install-deps
 
 .PHONY: install-deps
 install-deps:
-ifdef DEPS
-	$(INSTALL) $(DEPS)
+ifdef INSTALL
+	-$(INSTALL) $(DEPS)
 endif
-ifdef AURDEPS
-	$(AURINSTALL) $(AURDEPS)
+ifdef AURINSTALL
+	-$(AURINSTALL) $(AURDEPS)
 endif
-
 
 .PHONY: uninstall-deps
 uninstall-deps:
-ifdef DEPS
-	$(UNINSTALL) $(DEPS)
+ifdef INSTALL
+	-$(UNINSTALL) $(DEPS)
 endif
-ifdef AURDEPS
-	$(UNINSTALL) $(AURDEPS)
+ifdef AURINSTALL
+	-$(UNINSTALL) $(AURDEPS)
 endif
 
 .PHONY: noop

@@ -4,12 +4,12 @@ DIRS = $(wildcard */)
 
 .PHONY: all
 all: install-deps
-	- for d in $(DIRS); do (cd $$d; CURR=$$d $(MAKE) noop); done
+	- for d in $(DIRS); do (cd $$d; CURR=$$d $(MAKE) install); done
 
-.PHONY: install-all-deps
-install-all-deps:
+.PHONY: all-install-deps
+all-install-deps:
 	- for d in $(DIRS); do (cd $$d; $(MAKE) install-deps); done
 
-.PHONY: uninstall-all-deps
-uninstall-deps:
+.PHONY: all-uninstall-deps
+all-uninstall-deps:
 	- for d in $(DIRS); do (cd $$d; $(MAKE) uninstall-deps); done
