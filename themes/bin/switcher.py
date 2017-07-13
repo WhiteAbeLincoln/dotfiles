@@ -7,6 +7,7 @@ import re
 import subprocess
 import os.path as path
 import shutil
+import glob
 
 def main(argv=None):
     if argv is None:
@@ -189,6 +190,18 @@ def write_vim(colors):
         f.seek(0)
         f.write(final_text)
         f.truncate()
+
+    neovimInstances = glob.glob('/tmp/nvim*/0')
+    for p in neovimInstances:
+        try:
+            from neovim import attach
+            nvim = attach('socket', path=p)
+            nvim.command('colorscheme base16-custom', async=True)
+            nvim.command('echo "reloaded theme"', async=True)
+            nvim.command('AirlineRefresh', async=True)
+        except:
+            pass
+
 
 def write_wallpaper(directory):
     wallpaper = directory + "/wallpaper"
