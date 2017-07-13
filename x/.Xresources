@@ -4,5 +4,5 @@
 #include ".Xresources.d/rofi_colors"
 
 
-*font: xft:Deja Vu Sans:style=Regular:size=9
+*font: "xft:Deja Vu Sans:style=Regular:size=9"
 dzen2.font: "xft:Deja Vu Sans:size=9:bold:antialias=true"
