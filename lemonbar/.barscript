@@ -200,7 +200,7 @@ while true; do
     buff="${buff} %{A:$HOME/bin/show-tray:}ℹ%{A}"
     buff="${buff}%{F-}%{B-}"
 
-    echo $buff | tee ~/.barscript-debug
+    echo $buff
     sleep .20;
 done
 set +f
