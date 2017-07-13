@@ -1,22 +1,17 @@
 import XMonad
 import qualified XMonad.StackSet as W
-import XMonad.Layout.Spacing
-import XMonad.Layout.BinarySpacePartition
-import XMonad.Layout.Tabbed
+import qualified Data.Map as M
+import Data.Map ((!), fromList, Map)
+import Data.Maybe (fromMaybe)
 import XMonad.Layout.NoBorders
-import XMonad.Layout.Renamed
-import XMonad.Layout.Named
 import XMonad.Actions.SpawnOn
 import XMonad.Actions.GridSelect
-import XMonad.Actions.Navigation2D
 import XMonad.Hooks.ManageDocks
-import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.ManageHelpers
 import XMonad.Hooks.EwmhDesktops
 import XMonad.Util.EZConfig(additionalKeys)
-import XMonad.Util.Run
 import Graphics.X11.ExtraTypes.XF86
-import System.IO
+import System.IO()
 import XMonad.Config
 
 -----------------------------------------------------------------------------
@@ -28,14 +23,21 @@ strip ys = filter $ not . (`elem` ys)
 -----------------------------------------------------------------------------
 -- Customized programs
 --
-myScreensaver = "/usr/bin/xautolock -locknow"
+-- myScreensaver = "/usr/bin/xautolock -locknow"
+myScreensaver = "light-locker-command -l"
 toggleScreensaver = "/usr/bin/xautolock -toggle"
 myTerminal = "termite -e /usr/bin/tmux"
 
 ------------------------------------------------------------------------------
 -- Workspaces
 --
-myWorkspaces = ["\xf120","\xf269","\xf121","\xf1b6","\xf04b"] ++ map show [6..9]
+workspaceMap :: Map String String
+workspaceMap = fromList [("term", "\xf120"), ("web", "\xf269"), ("editor", "\xf121"), ("games", "\xf1b6"), ("media", "\xf04b")]
+
+getWorkspace :: String -> String
+getWorkspace = fromMaybe "9" . flip M.lookup workspaceMap
+
+myWorkspaces = map (workspaceMap !) ["term", "web", "editor", "games", "media"] ++ map show [6..9]
 --             ["1:term","2:web","3:editor","4:games","5:media"]
 
 ------------------------------------------------------------------------------
@@ -46,17 +48,18 @@ myDoFullFloat :: ManageHook
 myDoFullFloat = doF W.focusDown <+> doFullFloat
 
 myManageHook = composeAll
-    [ className =? "Termite"        --> doShift "\xf120"
-    , className =? "Firefox"        --> doShift "\xf269"
-    , className =? "Google-chrome"  --> doShift "\xf269"
-    , className =? "Vivaldi-stable" --> doShift "\xf269"
-    , className =? "GVim"           --> doShift "\xf121"
-    , className =? "jetbrains-idea" --> doShift "\xf121"
-    , className =? "MultiMC5"       --> doShift "\xf1b6"
-    , className =? "Steam"          --> doShift "\xf1b6"
-    , className =? "Spotify"        --> doShift "\xf04b"
-    , className =? "google play music desktop player" --> doShift "\xf04b"
-    --, name      =? "Netflix"        --> doShift "\xf04b"
+    [ className =? "Termite"        --> doShift (getWorkspace "term")
+    , className =? "Firefox"        --> doShift (getWorkspace "web")
+    , className =? "Google-chrome"  --> doShift (getWorkspace "web")
+    , className =? "Vivaldi-stable" --> doShift (getWorkspace "web")
+    , className =? "GVim"           --> doShift (getWorkspace "editor")
+    , className =? "jetbrains-idea" --> doShift (getWorkspace "editor")
+    , className =? "Code"           --> doShift (getWorkspace "editor")
+    , className =? "MultiMC5"       --> doShift (getWorkspace "games")
+    , className =? "Steam"          --> doShift (getWorkspace "games")
+    , className =? "Spotify"        --> doShift (getWorkspace "media")
+    , className =? "Google Play Music Desktop Player" --> doShift (workspaceMap ! "media")
+    , className =? "stalonetray"    --> doFloat
     , isFullscreen                  --> myDoFullFloat
     , manageDocks
     ]
@@ -64,7 +67,10 @@ myManageHook = composeAll
 --------------------------------------------------------------------------------
 -- Colors and Borders
 --
+myNormalBorderColor :: String
 myNormalBorderColor = "#555555"
+
+myFocusedBorderColor :: String
 myFocusedBorderColor = "#dab3af"
 
 myBorderWidth = 1
@@ -91,19 +97,17 @@ myLayout =  tall ||| Mirror tall ||| Full
         -- percent of screen to increment by when resizing panes
         delta = 1/100
 
-ctrlMask = controlMask
-altMask = mod1Mask
-
 startup :: X()
 startup = do
-    spawnOn "\xf120" myTerminal
-    spawnOn "\xf269" "vivaldi-stable"
-    spawnOn "\xf1b6" "steam"
+    spawnOn (getWorkspace "term") myTerminal
+    spawnOn (getWorkspace "web") "vivaldi-stable"
+    spawnOn (getWorkspace "games") "steam"
     spawn "/home/abe/bin/xmonad-autorun"
 
+main :: IO()
 main = do
-    -- h <- spawnPipe "tee /home/abe/Documents/Projects/rx_bar/input"
-    xmonad $ ewmh defaultConfig
+    -- h <- spawnPipe "nc -l localhost 1234"
+    xmonad $ ewmh XMonad.Config.def
         { terminal           = myTerminal
         , modMask            = myModMask
         , workspaces         = myWorkspaces
@@ -111,11 +115,11 @@ main = do
         , focusedBorderColor = myFocusedBorderColor
         , borderWidth        = myBorderWidth
         , manageHook         = myManageHook
-        , layoutHook         = avoidStruts $ smartBorders $ myLayout
+        , layoutHook         = avoidStruts $ smartBorders myLayout
         , startupHook        = startup
-        -- , logHook            = dynamicLogWithPP $ defaultPP { ppOutput = hPutStrLn h }
+        -- , logHook            = dynamicLogWithPP $ XMonad.Hooks.DynamicLog.def { ppOutput = hPutStrLn h }
         -- fix for double tap avoid struts key
-        , handleEventHook    = docksEventHook <+> fullscreenEventHook <+> handleEventHook defaultConfig
+        , handleEventHook    = docksEventHook <+> fullscreenEventHook <+> handleEventHook XMonad.Config.def
         } `additionalKeys`
         [ ((0 , xF86XK_AudioLowerVolume    ),  spawn "ponymix -N decrease 2")
         , ((0 , xF86XK_AudioRaiseVolume    ),  spawn "ponymix -N increase 2")
@@ -134,5 +138,5 @@ main = do
         , ((mod4Mask .|. shiftMask,   xK_p ), spawn "j4-dmenu-desktop --dmenu='rofi -dmenu'")
         , ((mod4Mask,               xK_Tab ), spawn "rofi -show window")
         , ((mod4Mask,               xK_s   ), spawn "rofi -show ssh")
-        , ((mod4Mask, xK_g), goToSelected defaultGSConfig)
+        , ((mod4Mask, xK_g), goToSelected XMonad.Actions.GridSelect.def)
         ]
