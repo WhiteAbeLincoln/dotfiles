@@ -1,36 +1,51 @@
-" Fish compatibility fix
-if &shell =~# 'fish$'
-        set shell=/usr/bin/bash
+""" Vim-Plug Core {{{
+if has('vim_starting')
+    set nocompatible
 endif
-""" Vundle {{{
-set nocompatible
-filetype off
 
-set rtp+=~/.vim/bundle/Vundle.vim
-call vundle#begin()
+let vimplug_exists=expand('~/.config/nvim/autoload/plug.vim')
 
-Plugin 'VundleVim/Vundle.vim'
+if !filereadable(vimplug_exists)
+  echo "Installing Vim-Plug..."
+  echo ""
+  silent !\curl -fLo ~/.config/nvim/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+  let g:not_finish_vimplug = "yes"
+
+  autocmd VimEnter * PlugInstall
+endif
+
 " }}}
 """ Plugins {{{
-Plugin 'scrooloose/syntastic'
-" Plugin 'Valloric/YouCompleteMe'
-Plugin 'Shougo/neocomplete'
+call plug#begin('~/.vim/plugged')
+Plug 'neomake/neomake'
+Plug 'tpope/vim-commentary'
+Plug 'tpope/vim-surround'
+Plug 'vim-airline/vim-airline'
+Plug 'vim-airline/vim-airline-themes'
+Plug 'airblade/vim-gitgutter'
+Plug 'gko/vim-coloresque'
+Plug 'alvan/vim-closetag'
+Plug 'jiangmiao/auto-pairs'
+Plug 'chriskempson/base16-vim'
+" Syntax
+Plug 'sheerun/vim-polyglot'
+Plug 'HerringtonDarkholme/yats.vim'
+Plug 'davidhalter/jedi-vim', { 'for': 'python' }
+" Snippets
+Plug 'Shougo/neosnippet.vim'
+Plug 'Shougo/neosnippet-snippets'
+" Completion
+Plug 'artur-shaik/vim-javacomplete2', { 'for': 'java' }
+Plug 'Shougo/neocomplete.vim'
+Plug 'Quramy/tsuquyomi'
+Plug 'Shougo/neoinclude.vim'
 "Plugin 'osyo-manga/vim-marching'
-Plugin 'tpope/vim-surround'
-Plugin 'davidhalter/jedi-vim'
-Plugin 'sheerun/vim-polyglot'
-Plugin 'vim-airline/vim-airline'
-Plugin 'vim-airline/vim-airline-themes'
-Plugin 'alvan/vim-closetag'
-Plugin 'jiangmiao/auto-pairs'
-Plugin 'chriskempson/base16-vim'
-Plugin 'w0ng/vim-hybrid'
 
-call vundle#end()
-filetype plugin indent on
+call plug#end()
 " }}}
 """ Colors {{{
 syntax enable    " enable syntax processing
+filetype plugin indent on
 let base16colorspace=256
 colorscheme base16-custom
 " }}}
@@ -72,17 +87,6 @@ set foldmethod=indent    " fold based on indent level
 " creates a new java project
 nnoremap <leader>j :ProjectCreate . -n java<CR>
 " }}}
-""" Syntastic {{{
-set statusline+=%#warningmsg#
-set statusline+=%{SyntasticStatuslineFlag()}
-set statusline+=%*
-
-let g:syntastic_always_populate_loc_list = 1
-let g:syntastic_auto_loc_list = 1
-let g:syntastic_check_on_open = 1
-let g:syntastic_check_on_wq = 0
-let g:syntastic_cpp_compiler_options = ' -std=c++11'
-" }}}
 """ NeoComplete {{{
 let g:neocomplete#enable_at_startup = 1
 let g:neocomplete#enable_smart_case = 1
@@ -114,6 +118,7 @@ inoremap <expr><BS> neocomplete#smart_close_popup()."\<C-h>"
 autocmd FileType css setlocal omnifunc=csscomplete#CompleteCSS
 autocmd FileType html,markdown setlocal omnifunc=htmlcomplete#CompleteTags
 autocmd FileType javascript setlocal omnifunc=javascriptcomplete#CompleteJS
+" autocmd FileType typescript setlocal omnifunc=tsuquyomi#complete
 autocmd FileType python setlocal omnifunc=jedi#completions
 let g:jedi#completions_enabled = 0
 let g:jedi#auto_vim_configuration = 0
@@ -126,12 +131,28 @@ endif
 let g:neocomplete#sources#omni#input_patterns.python =
             \ '\%([^. \t]\.\|^\s*@\|^\s*from\s.\+import \|^\s*from \|^\s*import \)\w*'')'
 
+set completeopt+=menu
+if !exists('g:neocomplete#force_omni_input_patterns')
+    let g:neocomplete#force_omni_input_patterns = {}
+endif
+let g:neocomplete#force_omni_input_patterns.typescript = '[^. *\t]\.\w*\|\h\w*::'
+
 """ }}}
-""" YouCompleteMe {{{
-let g:ycm_global_ycm_extra_conf = '~/.ycm_extra_conf.py'
-let g:ycm_confirm_extra_conf = 0
-let g:ycm_autoclose_preview_window_after_insertion = 1
-let g:EclimCompletionMethod = 'omnifunc'
+""" neosnippet {{{
+let g:neosnippet#enable_completed_snippet = 1
+imap <C-k> <Plug>(neosnippet_expand_or_jump)
+smap <C-k> <Plug>(neosnippet_expand_or_jump)
+xmap <C-k> <Plug>(neosnippet_expand_target)
+
+imap <C-k> <Plug>(neosnippet_expand_or_jump)
+smap <expr><TAB> neosnippet#expandable_or_jumpable() ? "\<Plug>(neosnippet_expand_or_jump)" : "\<TAB>"
+
+if has('conceal')
+    set conceallevel=2 concealcursor=niv
+endif
+" }}}
+""" neomake {{{
+autocmd! BufWritePost * Neomake
 " }}}
 """ Airline {{{
 let g:airline_powerline_fonts = 1
@@ -139,15 +160,6 @@ let g:airline_theme='luna'
 set laststatus=2
 let g:airline_exclude_preview = 1
 let g:airline#extensions#tabline#enabled = 1
-" }}}
-""" NERDTree {{{
-map <C-n> :NERDTreeToggle<CR>
-autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
-" }}}
-""" delimitMate {{{
-let delimitMate_expand_cr = 1
-let delimitMate_expand_space = 1
-let delimitMate_quotes = "\" '"
 " }}}
 
 " vim:foldmethod=marker:foldlevel=0

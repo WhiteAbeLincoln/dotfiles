@@ -15,38 +15,56 @@ if !filereadable(vimplug_exists)
 endif
 
 " }}}
-""" Vim-Plug {{{
+""" Plugins {{{
 call plug#begin('~/.config/nvim/plugged')
-Plug 'neomake/neomake'
-Plug 'tpope/vim-commentary'
-Plug 'tpope/vim-surround'
+
+" Interface
 Plug 'vim-airline/vim-airline'
 Plug 'vim-airline/vim-airline-themes'
-Plug 'airblade/vim-gitgutter'
-Plug 'gko/vim-coloresque'
 Plug 'kassio/neoterm'
-Plug 'critiqjo/lldb.nvim'
+Plug 'chriskempson/base16-vim'
+Plug 'Shougo/denite.nvim'
+Plug 'Shougo/echodoc.vim'
+Plug 'gko/vim-coloresque'
+Plug 'airblade/vim-gitgutter'
+Plug 'scrooloose/nerdtree'
+Plug 'Xuyuanp/nerdtree-git-plugin'
+Plug 'easymotion/vim-easymotion'
+Plug 'nathanaelkane/vim-indent-guides'
+Plug 'ctrlpvim/ctrlp.vim'
+Plug 'jeetsukumaran/vim-buffergator'
+
+Plug 'tpope/vim-commentary'
+Plug 'tpope/vim-surround'
+Plug 'tpope/vim-fugitive'
+Plug 'dbgx/lldb.nvim', {'do': ':UpdateRemotePlugins'}
 Plug 'alvan/vim-closetag'
 Plug 'jiangmiao/auto-pairs'
-Plug 'chriskempson/base16-vim'
-" Syntax
+Plug 'terryma/vim-multiple-cursors'
+Plug 'godlygeek/tabular'
+" Syntax and linters
 Plug 'sheerun/vim-polyglot'
 Plug 'HerringtonDarkholme/yats.vim'
 Plug 'davidhalter/jedi-vim', { 'for': 'python' }
+Plug 'editorconfig/editorconfig-vim'
+Plug 'lervag/vimtex'
+Plug 'elmcast/elm-vim'
+Plug 'w0rp/ale'
 " Snippets
 Plug 'Shougo/neosnippet.vim'
 Plug 'Shougo/neosnippet-snippets'
+Plug 'mattn/emmet-vim'
 " Completion
+Plug 'autozimu/LanguageClient-neovim', {'do': ':UpdateRemotePlugins'}
 Plug 'artur-shaik/vim-javacomplete2', { 'for': 'java' }
 Plug 'Shougo/deoplete.nvim', {'do': ':UpdateRemotePlugins'}
-Plug 'zchee/deoplete-clang'
+Plug 'zchee/deoplete-clang', { 'for': ['cpp', 'c'] }
 Plug 'zchee/deoplete-jedi', { 'for': 'python' }
-" Plug 'mhartington/nvim-typescript', { 'do': 'npm install -g typescript' }
-" Plug 'wokalski/autocomplete-flow', { 'do': 'npm install -g flow-bin' }
-" Plug 'carlitux/deoplete-ternjs', { 'do': 'npm install -g tern' }
+Plug 'pbogut/deoplete-elm', { 'for': 'elm' }
+Plug 'mhartington/nvim-typescript', { 'do': ':UpdateRemotePlugins', 'for': 'typescript' }
 Plug 'Shougo/neoinclude.vim'
+Plug 'Shougo/neco-syntax'
 
-" latex live reload 'donRaphaco/neotex'
 " project live search 'enugen0329/vim-esearch'
 call plug#end()
 " }}}
@@ -72,6 +90,7 @@ set lazyredraw       " redraw only when needed
 set showmatch        " hightlight matching brackets
 set splitbelow
 set splitright
+set mouse=a
 " }}}
 """ Searching {{{
 set incsearch        " search as characters are entered
@@ -120,17 +139,34 @@ inoremap <expr><BS>  deoplete#smart_close_popup()."\<C-h>"
 "     return (pumvisible() ? "\<C-y>" : "") . "\<CR>"
 " endfunction
 
-" }}}
-""" deoplete-clang {{{
+let g:deoplete#omni#functions = {}
+let g:deoplete#omni#input_patterns = {}
+let g:deoplete#sources = {}
+
+let g:deoplete#omni#functions.elm = ['elm#Complete']
+let g:deoplete#omni#input_patterns.elm = '[^ \t]+'
+let g:deoplete#sources.elm = ['omni']
+
 let g:deoplete#sources#clang#libclang_path = '/usr/lib/libclang.so'
 let g:deoplete#sources#clang#clang_header = '/usr/include/c++/6.3.1'
 " }}}
-""" deoplete-ternjs {{{
-let g:tern_request_timeout = 1
-let g:tern_show_signature_in_pum = '0'  " This do disable full signature type on autocomplete
+""" LanguageClient-neovim {{{
+set hidden
+
+let g:LanguageClient_serverCommands = {
+    \ 'rust': ['rustup', 'run', 'nightly', 'rls'],
+    \ 'javascript': ['/opt/javascript-typescript-langserver/lib/language-server-stdio.js'],
+    \ }
+
+let g:LanguageClient_autoStart = 1
+
+nnoremap <silent> K :call LanguageClient_textDocument_hover()<CR>
+nnoremap <silent> gd :call LanguageClient_textDocument_definition()<CR>
+nnoremap <silent> <F2> :call LanguageClient_textDocument_rename()<CR>
 " }}}
 """ nvim-typescript {{{
 let g:nvim_typescript#javascript_support=1
+" nnoremap <silent> gd :TSDef<CR>
 " }}}
 """ neosnippet {{{
 let g:neosnippet#enable_completed_snippet = 1
@@ -145,6 +181,67 @@ if has('conceal')
     set conceallevel=2 concealcursor=niv
 endif
 " }}}
+""" neomake {{{
+"autocmd! BufReadPost,BufWritePost * Neomake
+" }}}
+""" ale {{{
+let g:ale_sign_error = '✖'
+let g:ale_sign_warning = '⚠'
+let g:ale_sign_info = 'ℹ'
+let g:ale_sign_style_error = '✖|'
+let g:ale_sign_style_warning = '⚠|'
+let g:airline#extensions#ale#enabled = 1
+let g:ale_echo_msg_format = '[%linter%] %s [%severity%]'
+let g:ale_linters = { 'haskell': ['ghc-mod', 'ghc', 'hdevtools', 'hlint'] }
+" }}}
+""" ctrlp.vim {{{
+set wildignore+=*/tmp/*,*.so,*.swp,*.zip     " MacOSX/Linux
+set wildignore+=*\\tmp\\*,*.swp,*.zip,*.exe  " Windows
+
+let g:ctrlp_custom_ignore = '\v[\/]\.(git|hg|svn)$'
+let g:ctrlp_custom_ignore = {
+  \ 'dir':  '\v[\/](\.(git|hg|svn)|\_site|node_modules)$',
+  \ 'file': '\v\.(exe|so|dll|class|png|jpg|jpeg)$',
+  \ 'link': 'some_bad_symbolic_links',
+  \ }
+
+let g:ctrlp_working_path_mode = 'r'
+nmap <leader>p :CtrlP<cr>
+nmap <leader>bb :CtrlPBuffer<cr>
+nmap <leader>bm :CtrlPMixed<cr>
+nmap <leader>bs :CtrlPMRU<cr>
+" }}}
+""" Buffergator {{{
+" Use the right side of the screen
+let g:buffergator_viewport_split_policy = 'R'
+
+" I want my own keymappings...
+let g:buffergator_suppress_keymaps = 1
+
+" Looper buffers
+"let g:buffergator_mru_cycle_loop = 1
+
+" Go to the previous buffer open
+nmap <leader>jj :BuffergatorMruCyclePrev<cr>
+
+" Go to the next buffer open
+nmap <leader>kk :BuffergatorMruCycleNext<cr>
+
+" View the entire list of buffers open
+nmap <leader>bl :BuffergatorOpen<cr>
+" Shared bindings from Solution #1 from earlier
+nmap <leader>T :enew<cr>
+nmap <leader>bq :bp <BAR> bd #<cr>
+" }}}
+""" NERDtree {{{
+autocmd vimenter * NERDTree
+autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
+nmap <leader>n :NERDTreeToggle<cr>
+" }}}
+""" IndentGuides {{{
+" let g:indent_guides_enable_on_vim_startup = 1
+nmap <silent> <Leader>ig <Plug>IndentGuidesToggle
+" }}}
 """ Airline {{{
 let g:airline_powerline_fonts = 1
 let g:airline_theme = 'luna'
@@ -152,4 +249,9 @@ set laststatus=2
 let g:airline_exclude_preview = 1
 let g:airline#extensions#tabline#enabled = 1
 " }}}
+""" vim-polyglot {{{
+let g:polygot_disabled = ['latex']
+let g:polyglot_disabled = ['elm']
+" }}}
+
 " vim:foldmethod=marker:foldlevel=0
