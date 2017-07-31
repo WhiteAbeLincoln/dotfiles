@@ -28,6 +28,7 @@ typeset -U fpath
 fpath=(~/.zsh/completions $fpath)
 autoload -Uz compinit
 compinit
+autoload -U +X bashcompinit && bashcompinit
 # End of lines added by compinstall
 
 # Lines configured by zsh-newuser-install
@@ -52,31 +53,7 @@ source ~/.zsh/prompts/$THEME.zsh
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
 
 source /usr/share/doc/pkgfile/command-not-found.zsh
-source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
-source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-
-source /usr/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh
-
 zmodload zsh/terminfo
-bindkey "$terminfo[kcuu1]" history-substring-search-up
-bindkey "$terminfo[kcud1]" history-substring-search-down
-bindkey '^[[A' history-substring-search-up
-bindkey '^[[B' history-substring-search-down
-bindkey -M vicmd 'k' history-substring-search-up
-bindkey -M vicmd 'j' history-substring-search-down
-
-
-# Remove *-line-or-history widgets from list of widgets that clear the autosuggestion to avoid conflict with history-substring-search-* widgets
-ZSH_AUTOSUGGEST_CLEAR_WIDGETS=("${(@)ZSH_AUTOSUGGEST_CLEAR_WIDGETS:#(up|down)-line-or-history}")
-# Add history-substring-search-* widgets to list of widgets that clear the autosuggestion
-ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(history-substring-search-up history-substring-search-down)
-
-# If not running interactively, do not do anything
-# [[ $- != *i* ]] && return
-# [[ -z "$TMUX" ]] && exec tmux
-
-
-# [[ -z $DISPLAY && $XDG_VTNR -eq 1 ]] && exec startx
 
 # added by travis gem
 [ -f "$HOME"/.travis/travis.sh ] && source "$HOME"/.travis/travis.sh
@@ -88,3 +65,24 @@ if [ -f "$HOME/Documents/Programs/google-cloud-sdk/path.zsh.inc" ]; then source 
 if [ -f "$HOME/Documents/Programs/google-cloud-sdk/completion.zsh.inc" ]; then source "$HOME/Documents/Programs/google-cloud-sdk/completion.zsh.inc"; fi
 
 if [ -f "$HOME/.zsh-ng-completion" ]; then source "$HOME/.zsh-ng-completion"; fi
+
+if command -v stack >/dev/null 2>&1; then
+    eval "$(stack --bash-completion-script stack)"
+fi
+
+# source ~/.zsh/antigen-hs/init.zsh
+# Load Plugins
+source <(antibody init)
+source ~/.zplugins
+
+bindkey "$terminfo[kcuu1]" history-substring-search-up
+bindkey "$terminfo[kcud1]" history-substring-search-down
+bindkey '^[[A' history-substring-search-up
+bindkey '^[[B' history-substring-search-down
+bindkey -M vicmd 'k' history-substring-search-up
+bindkey -M vicmd 'j' history-substring-search-down
+
+# Remove *-line-or-history widgets from list of widgets that clear the autosuggestion to avoid conflict with history-substring-search-* widgets
+ZSH_AUTOSUGGEST_CLEAR_WIDGETS=("${(@)ZSH_AUTOSUGGEST_CLEAR_WIDGETS:#(up|down)-line-or-history}")
+# Add history-substring-search-* widgets to list of widgets that clear the autosuggestion
+ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(history-substring-search-up history-substring-search-down)

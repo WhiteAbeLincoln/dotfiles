@@ -2,5 +2,5 @@ sticky true
 window_type normal
 window_strut none
 grow_gravity NE
-icon_size 16
+# icon_size 16
 geometry 1x1+1896+24

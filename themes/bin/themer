@@ -2,24 +2,28 @@
 # [ $# -ge 1 -a -d "$1" ] && input="$1" || input="-"
 
 ERROR_FILE="/tmp/themeswitcher-error"
-OUT_FILE="/tmp/themswitcher-out"
 
 if [[ ! -d "$HOME/.shell-themes" ]]; then
     echo "no themes directory found" >> $ERROR_FILE
     exit 72 # EX_OSFILE
 fi
 
-theme=$(ls $HOME/.shell-themes/ | rofi -dmenu)
-old_theme=$(cat $HOME/.shell-themes/.current_theme)
+readarray -t names <<< "$(find "$HOME"/.shell-themes/* -type d)"
+declare -A basenames
+for i in "${names[@]}"; do
+    basenames[$(basename "$i")]=$i
+done
+theme=$(printf '%s\n' "${!basenames[@]}" | rofi -dmenu)
+old_theme=$(cat "$HOME/.local/share/xthemer/current_theme")
 if [[ -n "$theme" &&  "$(basename "$old_theme")" != "$theme" ]]; then
-input="$HOME/.shell-themes/$theme"
+    input=${basenames[$theme]}
 
-$HOME/bin/switcher.py $input >> $ERROR_FILE
+    xthemer "$input" >> $ERROR_FILE
 
-# restart lemonbar
-$HOME/bin/kill_bar.sh
-$HOME/bin/barrun &
-# restart dunst
-pkill dunst
-dunst -config ~/.config/dunst/dunstrc &
+    # restart lemonbar
+    "$HOME/bin/kill_bar.sh"
+    "$HOME/bin/barrun" &
+    # restart dunst
+    pkill dunst
+    dunst -config ~/.config/dunst/dunstrc &
 fi

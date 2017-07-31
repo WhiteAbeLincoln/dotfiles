@@ -8,9 +8,18 @@ HOME = /home/abe
 
 ## Don't Touch
 
+# override these in sub makefiles
+# for more granular options
+# like installing pip packages
+# or installing with curl | bash
+POST_INSTALL = noop
+POST_DEPS = noop
+POST_UNINSTALL = noop
+
 .PHONY: install
 install: install-deps
-	stow -d $(ROOT) -t $(HOME) $(CURR)
+	stow -d $(ROOT) -t $(HOME) $$(basename $(CURDIR))
+	@$(MAKE) $(POST_INSTALL)
 
 .PHONY: install-deps
 install-deps:
@@ -20,6 +29,7 @@ endif
 ifdef AURINSTALL
 	-$(AURINSTALL) $(AURDEPS)
 endif
+	@$(MAKE) $(POST_DEPS)
 
 .PHONY: uninstall-deps
 uninstall-deps:
@@ -29,9 +39,9 @@ endif
 ifdef AURINSTALL
 	-$(UNINSTALL) $(AURDEPS)
 endif
+	@$(MAKE) $(POST_UNINSTALL)
 
 .PHONY: noop
-noop:
-	echo noop $(CURR)
+noop: ;
 
 # vim: ft=make

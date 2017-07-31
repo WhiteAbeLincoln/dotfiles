@@ -1,7 +1,5 @@
 import XMonad
 import qualified XMonad.StackSet as W
-import qualified Data.Map as M
-import Data.Map ((!), fromList, Map)
 import Data.Maybe (fromMaybe)
 import XMonad.Layout.NoBorders
 import XMonad.Actions.SpawnOn
@@ -31,14 +29,13 @@ myTerminal = "termite -e /usr/bin/tmux"
 ------------------------------------------------------------------------------
 -- Workspaces
 --
-workspaceMap :: Map String String
-workspaceMap = fromList [("term", "\xf120"), ("web", "\xf269"), ("editor", "\xf121"), ("games", "\xf1b6"), ("media", "\xf04b")]
+workspaceMap :: [(String,String)]
+workspaceMap = [("term", "\xf120"), ("web", "\xf269"), ("editor", "\xf121"), ("games", "\xf1b6"), ("media", "\xf04b")]
 
 getWorkspace :: String -> String
-getWorkspace = fromMaybe "9" . flip M.lookup workspaceMap
+getWorkspace = fromMaybe "9" . flip lookup workspaceMap
 
-myWorkspaces = map (workspaceMap !) ["term", "web", "editor", "games", "media"] ++ map show [6..9]
---             ["1:term","2:web","3:editor","4:games","5:media"]
+myWorkspaces = foldr (\x acc -> snd x:acc) [] workspaceMap ++ map show [(length workspaceMap + 1)..9]
 
 ------------------------------------------------------------------------------
 -- Window Rules
@@ -55,10 +52,11 @@ myManageHook = composeAll
     , className =? "GVim"           --> doShift (getWorkspace "editor")
     , className =? "jetbrains-idea" --> doShift (getWorkspace "editor")
     , className =? "Code"           --> doShift (getWorkspace "editor")
+    , className =? "Emacs"          --> doShift (getWorkspace "editor")
     , className =? "MultiMC5"       --> doShift (getWorkspace "games")
     , className =? "Steam"          --> doShift (getWorkspace "games")
     , className =? "Spotify"        --> doShift (getWorkspace "media")
-    , className =? "Google Play Music Desktop Player" --> doShift (workspaceMap ! "media")
+    , className =? "Google Play Music Desktop Player" --> doShift (getWorkspace "media")
     , className =? "stalonetray"    --> doFloat
     , isFullscreen                  --> myDoFullFloat
     , manageDocks
@@ -101,7 +99,7 @@ startup :: X()
 startup = do
     spawnOn (getWorkspace "term") myTerminal
     spawnOn (getWorkspace "web") "vivaldi-stable"
-    spawnOn (getWorkspace "games") "steam"
+    spawnOn (getWorkspace "media") "gpmdp"
     spawn "/home/abe/bin/xmonad-autorun"
 
 main :: IO()

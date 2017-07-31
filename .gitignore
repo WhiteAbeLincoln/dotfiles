@@ -6,8 +6,13 @@ music/.config/mpd/*
 !music/.config/mpd/mpd.conf
 neovim/.config/nvim/*
 !neovim/.config/nvim/init.vim
+tmux/.tmux/plugins/
+tmux/.tmux/resurrect
+!tmux/.tmux/plugins/.gitkeep
 vim/.vim/plugged/
 x/.Xresources.d/colors
 x/.Xresources.d/rofi_colors
 .gitattributes
 themes/.shell-themes/.current_theme
+termite/.config/termite/config
+dunst/.config/dunst/dunstrc

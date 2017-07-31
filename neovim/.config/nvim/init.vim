@@ -19,49 +19,63 @@ endif
 call plug#begin('~/.config/nvim/plugged')
 
 " Interface
-Plug 'vim-airline/vim-airline'
-Plug 'vim-airline/vim-airline-themes'
-Plug 'kassio/neoterm'
 Plug 'chriskempson/base16-vim'
+Plug 'vim-airline/vim-airline-themes'
+Plug 'vim-airline/vim-airline'
+Plug 'kassio/neoterm'
 Plug 'Shougo/denite.nvim'
 Plug 'Shougo/echodoc.vim'
-Plug 'gko/vim-coloresque'
-Plug 'airblade/vim-gitgutter'
 Plug 'scrooloose/nerdtree'
-Plug 'Xuyuanp/nerdtree-git-plugin'
-Plug 'easymotion/vim-easymotion'
 Plug 'nathanaelkane/vim-indent-guides'
 Plug 'ctrlpvim/ctrlp.vim'
 Plug 'jeetsukumaran/vim-buffergator'
+Plug 'dbgx/lldb.nvim', {'do': ':UpdateRemotePlugins'}
+Plug 'simnalamburt/vim-mundo'
+Plug 'christoomey/vim-tmux-navigator'
+Plug 'jgdavey/tslime.vim'
+Plug 'tpope/vim-obsession'
 
+" Git
+Plug 'tpope/vim-fugitive'
+Plug 'Xuyuanp/nerdtree-git-plugin'
+Plug 'airblade/vim-gitgutter'
+
+" Text manip
 Plug 'tpope/vim-commentary'
 Plug 'tpope/vim-surround'
-Plug 'tpope/vim-fugitive'
-Plug 'dbgx/lldb.nvim', {'do': ':UpdateRemotePlugins'}
 Plug 'alvan/vim-closetag'
 Plug 'jiangmiao/auto-pairs'
 Plug 'terryma/vim-multiple-cursors'
 Plug 'godlygeek/tabular'
+Plug 'easymotion/vim-easymotion'
+
+
 " Syntax and linters
 Plug 'sheerun/vim-polyglot'
-Plug 'HerringtonDarkholme/yats.vim'
+Plug 'gko/vim-coloresque', { 'for': ['css', 'html', 'sass', 'less'] }
+Plug 'HerringtonDarkholme/yats.vim', { 'for': 'typescript' }
 Plug 'davidhalter/jedi-vim', { 'for': 'python' }
+Plug 'lervag/vimtex', { 'for': 'latex' }
 Plug 'editorconfig/editorconfig-vim'
-Plug 'lervag/vimtex'
-Plug 'elmcast/elm-vim'
+Plug 'mpickering/hlint-refactor-vim', { 'for': 'haskell' }
+Plug 'neovimhaskell/haskell-vim', { 'for': 'haskell' }
+Plug 'Twinside/vim-hoogle', { 'for': 'haskell' }
 Plug 'w0rp/ale'
+
 " Snippets
 Plug 'Shougo/neosnippet.vim'
 Plug 'Shougo/neosnippet-snippets'
 Plug 'mattn/emmet-vim'
+
 " Completion
 Plug 'autozimu/LanguageClient-neovim', {'do': ':UpdateRemotePlugins'}
 Plug 'artur-shaik/vim-javacomplete2', { 'for': 'java' }
 Plug 'Shougo/deoplete.nvim', {'do': ':UpdateRemotePlugins'}
 Plug 'zchee/deoplete-clang', { 'for': ['cpp', 'c'] }
 Plug 'zchee/deoplete-jedi', { 'for': 'python' }
-Plug 'pbogut/deoplete-elm', { 'for': 'elm' }
 Plug 'mhartington/nvim-typescript', { 'do': ':UpdateRemotePlugins', 'for': 'typescript' }
+
+"" Snippets
 Plug 'Shougo/neoinclude.vim'
 Plug 'Shougo/neco-syntax'
 
@@ -114,12 +128,35 @@ set foldmethod=indent    " fold based on indent level
 """ Remaps {{{
 " creates a new java project
 " nnoremap <leader>j :ProjectCreate . -n java<CR>
+" Neovim terminal configurations
+if has('nvim')
+  " Use <Esc> to escape terminal insert mode
+  tnoremap <Esc> <C-\><C-n>
+  " Make terminal split moving behave like normal neovim
+  tnoremap <c-h> <C-\><C-n><C-w>h
+  tnoremap <c-j> <C-\><C-n><C-w>j
+  tnoremap <c-k> <C-\><C-n><C-w>k
+  tnoremap <c-l> <C-\><C-n><C-w>l
+endif
 
 " Easier split navigation
 nnoremap <C-J> <C-W><C-J>
 nnoremap <C-K> <C-W><C-K>
 nnoremap <C-L> <C-W><C-L>
 nnoremap <C-H> <C-W><C-H>
+" }}}
+""" Files, backups and undo {{{
+" Source the vimrc file after saving it
+set autoread
+augroup sourcing
+  autocmd!
+  if has('nvim')
+    autocmd bufwritepost init.vim source $MYVIMRC
+  else
+    autocmd bufwritepost .vimrc source $MYVIMRC
+  endif
+augroup END
+autocmd BufWritePost package.yaml silent !hpack --silent
 " }}}
 """ deoplete {{{
 let g:deoplete#enable_at_startup = 1
@@ -139,13 +176,13 @@ inoremap <expr><BS>  deoplete#smart_close_popup()."\<C-h>"
 "     return (pumvisible() ? "\<C-y>" : "") . "\<CR>"
 " endfunction
 
-let g:deoplete#omni#functions = {}
-let g:deoplete#omni#input_patterns = {}
-let g:deoplete#sources = {}
+" let g:deoplete#omni#functions = {}
+" let g:deoplete#omni#input_patterns = {}
+" let g:deoplete#sources = {}
 
-let g:deoplete#omni#functions.elm = ['elm#Complete']
-let g:deoplete#omni#input_patterns.elm = '[^ \t]+'
-let g:deoplete#sources.elm = ['omni']
+" let g:deoplete#omni#functions.elm = ['elm#Complete']
+" let g:deoplete#omni#input_patterns.elm = '[^ \t]+'
+" let g:deoplete#sources.elm = ['omni']
 
 let g:deoplete#sources#clang#libclang_path = '/usr/lib/libclang.so'
 let g:deoplete#sources#clang#clang_header = '/usr/include/c++/6.3.1'
@@ -155,14 +192,47 @@ set hidden
 
 let g:LanguageClient_serverCommands = {
     \ 'rust': ['rustup', 'run', 'nightly', 'rls'],
-    \ 'javascript': ['/opt/javascript-typescript-langserver/lib/language-server-stdio.js'],
+    \ 'haskell': ['hie', '--lsp']
     \ }
 
-let g:LanguageClient_autoStart = 1
+function! StartLanguageClient() abort
+    nnoremap <silent> K :call LanguageClient_textDocument_hover()<CR>
+    nnoremap <silent> gd :call LanguageClient_textDocument_definition()<CR>
+    nnoremap <silent> <F2> :call LanguageClient_textDocument_rename()<CR>
+    nnoremap <leader>sym :call LanguageClient_textDocument_documentSymbol()<CR>:Denite documentSymbol<CR>
+    nnoremap <leader>wsym :call LanguageClient_workspace_symbol()<CR>:Denite workspaceSymbol<CR>
+    nnoremap <leader>ref :call LanguageClient_textDocument_references()<CR>:Denite references<CR>
+    execute "LanguageClientStart"
+endfunction
 
-nnoremap <silent> K :call LanguageClient_textDocument_hover()<CR>
-nnoremap <silent> gd :call LanguageClient_textDocument_definition()<CR>
-nnoremap <silent> <F2> :call LanguageClient_textDocument_rename()<CR>
+nnoremap <leader>Ls :call StartLanguageClient()<CR>
+
+let g:LanguageClient_diagnosticsDisplay = {
+            \ 1: {
+            \   "name": "Error",
+            \   "texthl": "SyntasticError",
+            \   "signText": "✖",
+            \   "signTexthl": "Error"
+            \ },
+            \ 2: {
+            \   "name": "Warning",
+            \   "texthl": "SyntasticWarning",
+            \   "signText": "⚠",
+            \   "signTexthl": "SignWarning"
+            \ },
+            \ 3: {
+            \   "name": "Information",
+            \   "texthl": "LanguageClientInformation",
+            \   "signText": "ℹ",
+            \   "signTexthl": "SignInformation"
+            \ },
+            \ 4: {
+            \   "name": "Hint",
+            \   "texthl": "LanguageClientHint",
+            \   "signText": "ℹ",
+            \   "signTexthl": "SignHint"
+            \ }
+            \ }
 " }}}
 """ nvim-typescript {{{
 let g:nvim_typescript#javascript_support=1
@@ -192,7 +262,12 @@ let g:ale_sign_style_error = '✖|'
 let g:ale_sign_style_warning = '⚠|'
 let g:airline#extensions#ale#enabled = 1
 let g:ale_echo_msg_format = '[%linter%] %s [%severity%]'
-let g:ale_linters = { 'haskell': ['ghc-mod', 'ghc', 'hdevtools', 'hlint'] }
+
+if !filereadable(expand('./stack.yaml'))
+    let g:ale_linters = { 'haskell': ['ghc-mod', 'ghc', 'hdevtools', 'hlint'] }
+else
+    let g:ale_linters = { 'haskell': ['stack-ghc-mod', 'stack-ghc', 'hlint', 'hdevtools'] }
+endif
 " }}}
 """ ctrlp.vim {{{
 set wildignore+=*/tmp/*,*.so,*.swp,*.zip     " MacOSX/Linux
@@ -234,7 +309,7 @@ nmap <leader>T :enew<cr>
 nmap <leader>bq :bp <BAR> bd #<cr>
 " }}}
 """ NERDtree {{{
-autocmd vimenter * NERDTree
+" autocmd vimenter * NERDTree
 autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
 nmap <leader>n :NERDTreeToggle<cr>
 " }}}
@@ -250,8 +325,29 @@ let g:airline_exclude_preview = 1
 let g:airline#extensions#tabline#enabled = 1
 " }}}
 """ vim-polyglot {{{
-let g:polygot_disabled = ['latex']
-let g:polyglot_disabled = ['elm']
+let g:polygot_disabled = ['latex', 'haskell']
+" }}}
+""" Mundo {{{
+let g:mundo_right = 1
+nmap <silent> <leader>u :MundoToggle<CR>
+" }}}
+""" vim-tmux-navigator {{{
+let g:tmux_navigator_save_on_switch = 2
+let g:tmux_navigator_disable_when_zoomed = 1
+let g:tmux_navigator_no_mappings = 1
+
+nnoremap <silent> <C-h> :TmuxNavigateLeft<cr>
+nnoremap <silent> <C-j> :TmuxNavigateDown<cr>
+nnoremap <silent> <C-k> :TmuxNavigateUp<cr>
+nnoremap <silent> <C-l> :TmuxNavigateRight<cr>
+
+" }}}
+""" Slime {{{
+
+vmap <silent> <Leader>rs <Plug>SendSelectionToTmux
+nmap <silent> <Leader>rs <Plug>NormalModeSendToTmux
+nmap <silent> <Leader>rv <Plug>SetTmuxVars
+
 " }}}
 
 " vim:foldmethod=marker:foldlevel=0
