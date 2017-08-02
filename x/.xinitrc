@@ -84,7 +84,7 @@ case $session in
     unity             ) exec unity;;
     xfce|xfce4        ) exec startxfce4;;
     pantheon|elementary) exec cerbere;;
-    xmonad            ) xmonad_programs; exec xmonad;;
+    xmonad            ) xmonad_programs; exec my-xmonad;;
     # No known session, try to run it as command
     *) exec $1;;
 esac

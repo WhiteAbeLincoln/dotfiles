@@ -2,6 +2,9 @@ vim/.vim/bundle/*
 *.swp
 xmonad/.xmonad/*
 !xmonad/.xmonad/xmonad.hs
+!xmonad/.xmonad/stack.yaml
+!xmonad/.xmonad/my-xmonad.cabal
+!xmonad/.xmonad/build
 music/.config/mpd/*
 !music/.config/mpd/mpd.conf
 neovim/.config/nvim/*

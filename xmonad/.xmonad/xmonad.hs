@@ -11,6 +11,7 @@ import XMonad.Util.EZConfig(additionalKeys)
 import Graphics.X11.ExtraTypes.XF86
 import System.IO()
 import XMonad.Config
+import XMonad.Actions.Commands
 
 -----------------------------------------------------------------------------
 -- Functions
@@ -95,6 +96,9 @@ myLayout =  tall ||| Mirror tall ||| Full
         -- percent of screen to increment by when resizing panes
         delta = 1/100
 
+commands :: X [(String, X ())]
+commands = defaultCommands
+
 startup :: X()
 startup = do
     spawnOn (getWorkspace "term") myTerminal
@@ -131,6 +135,7 @@ main = do
         , ((0 , xF86XK_MonBrightnessDown   ),  spawn "xbacklight -dec 10")
         , ((mod4Mask .|. controlMask, xK_l ), spawn myScreensaver)
         , ((mod4Mask .|. controlMask, xK_c ), spawn toggleScreensaver)
+        , ((mod4Mask,                 xK_y ), commands >>= runCommand)
         , ((mod4Mask,                 xK_p ), spawn "rofi -show run")
         , ((mod4Mask,               xK_o   ), spawn "~/bin/themer")
         , ((mod4Mask .|. shiftMask,   xK_p ), spawn "j4-dmenu-desktop --dmenu='rofi -dmenu'")
