@@ -49,7 +49,7 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 
-executable my-xmonad
+executable xmonad
   -- .hs or .lhs file containing the Main module.
   main-is:             xmonad.hs
   
@@ -60,7 +60,7 @@ executable my-xmonad
   -- other-extensions:    
   
   -- Other library packages from which modules are imported.
-  ghc-options:         -Wall -Werror -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base >=4.9 && <4.10
                      , xmonad >= 0.13
                      , xmonad-contrib >= 0.13
