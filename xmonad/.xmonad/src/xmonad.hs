@@ -1,4 +1,6 @@
-{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 import XMonad hiding ((|||))
 import qualified XMonad.StackSet as W
 import Data.Maybe (fromMaybe)
@@ -6,8 +8,12 @@ import XMonad.Layout.NoBorders (smartBorders)
 import XMonad.Layout.BinarySpacePartition
 import XMonad.Layout.BorderResize
 import XMonad.Layout.LayoutCombinators
+import XMonad.Layout.LayoutModifier (ModifiedLayout(..))
 import XMonad.Layout.Renamed
-import XMonad.Layout.Spacing
+import XMonad.Layout.MySpacing (smartSpacingWithEdge, SmartSpacingWithEdge(..))
+import XMonad.Layout.DwmStyle
+import XMonad.Layout.MultiToggle
+import XMonad.Layout.MultiToggle.Instances
 import XMonad.Actions.SpawnOn (spawnOn)
 import XMonad.Actions.Navigation2D ( navigation2D, windowGo, windowSwap)
 import XMonad.Hooks.ManageDocks (manageDocks, avoidStruts, docks)
@@ -103,30 +109,25 @@ altMask = mod1Mask
 -- Layouts
 --
 jumpLayout = do
-  r <- dmenu $ layoutNames ++ gappedNames
+  r <- dmenu $ layoutNames
   sendMessage $ JumpToLayout r
-  where gappedNames = (++ "-gap") <$> layoutNames
+  where layoutNames = ["bsp", "tall", "mirror-tall", "full"]
 
-layoutNames = ["bsp", "tall", "mirror-tall", "full"]
+-- since the Spacing.setSpacing message wasn't working
+-- I have to use this as an alternative, and modify the
+-- Spacing module to export the SmartSpacingWithEdge data constructor
+data GAPPED = GAPPED deriving (Read, Show, Eq, Typeable)
+instance Transformer GAPPED Window where
+    transform _ x k = k (smartSpacingWithEdge 10 x)
+      (\(ModifiedLayout (SmartSpacingWithEdge 10) x') -> x')
 
-myLayout =    layouts ||| gapped
--- for some reason, this doesn't work
--- I can still switch to next layout, but jumpLayout doesn't seem to do anything
--- when a gapped layout is selected
--- layouts ||| gapped
--- gapped = renamed [Chain [CutWordsLeft 2, Append "-gap"]] $ smartSpacingWithEdge 10 layouts
+myLayout = mkToggle (single GAPPED) $ layouts
     where
         layouts = bsp ||| tall ||| mirrorTall ||| full
-        gapped = bspgap ||| tallgap ||| mirrorTallGap ||| fullgap
         bsp  = renamed [Replace "bsp"] emptyBSP
         tall = renamed [Replace "tall"] $ Tall nmaster delta ratio
         mirrorTall = renamed [Replace "mirror-tall"] $ Mirror tall
         full = renamed [Replace "full"] Full
-        bspgap = renamed [Replace "bsp-gap"] $ space gap emptyBSP
-        tallgap = renamed [Replace "tall-gap"] $ space gap $ Tall nmaster delta ratio
-        mirrorTallGap = renamed [Replace "mirror-tall-gap"] $ space gap $ Mirror tall
-        fullgap = renamed [Replace "full-gap"] $ space gap Full
-
 
         space = smartSpacingWithEdge
         gap = 10
@@ -140,11 +141,6 @@ myLayout =    layouts ||| gapped
         -- percent of screen to increment by when resizing panes
         delta = 1/100
 
-makeGapped = undefined
-
--- switchLayout = do
-
-
 startup :: X()
 startup = do
     spawnOn (getWorkspace "term") myTerminal
@@ -154,61 +150,56 @@ startup = do
 
 main :: IO()
 main = do
-    xmonad
-      $ ewmh
-      $ docks
-      $ navigation2D def (xK_w, xK_a, xK_s, xK_d) [(mod4Mask, windowGo), (mod4Mask .|. shiftMask, windowSwap)] False
-      $ def
-        { terminal           = myTerminal
-        , modMask            = modm
-        , workspaces         = myWorkspaces
-        , normalBorderColor  = myNormalBorderColor
-        , focusedBorderColor = myFocusedBorderColor
-        , borderWidth        = myBorderWidth
-        , manageHook         = myManageHook
-        , layoutHook         = avoidStruts $ smartBorders myLayout
-        -- , logHook            = dynamicLogWithPP $ XMonad.Hooks.DynamicLog.def { ppOutput = hPutStrLn h }
-        -- , startupHook        = startup
-        , handleEventHook    = fullscreenEventHook <+> handleEventHook def
-        } `additionalKeys`
-        [ ((0 , xF86XK_AudioLowerVolume     ),  spawn "ponymix -N decrease 2")
-        , ((0 , xF86XK_AudioRaiseVolume     ),  spawn "ponymix -N increase 2")
-        , ((0 , xF86XK_AudioMute            ),  spawn "ponymix -N toggle")
-        , ((0 , xF86XK_AudioPlay            ),  spawn "playerctl play-pause")
-        , ((0 , xF86XK_AudioNext            ),  spawn "playerctl next")
-        , ((0 , xF86XK_AudioPrev            ),  spawn "playerctl previous")
-        , ((0 , xF86XK_Forward              ),  spawn "playerctl next")
-        , ((0 , xF86XK_Back                 ),  spawn "playerctl previous")
-        , ((0 , xF86XK_MonBrightnessUp      ),  spawn "xbacklight -inc 10")
-        , ((0 , xF86XK_MonBrightnessDown    ),  spawn "xbacklight -dec 10")
-        , ((modm .|. controlMask,     xK_l  ),  spawn myScreensaver)
-        , ((modm .|. controlMask,     xK_c  ),  spawn toggleScreensaver)
-        , ((modm,                     xK_y  ),  defaultCommands >>= runCommand)
-        , ((modm,                     xK_o  ),  spawn "~/bin/themer")
-        , ((modm .|. shiftMask,       xK_p  ),  spawn "j4-dmenu-desktop --dmenu='rofi -dmenu'")
-        , ((modm,                     xK_p  ),  spawn "rofi -show run")
-        , ((modm,                   xK_Tab  ),  spawn "rofi -show window")
-        , ((modm,                     xK_s  ),  spawn "rofi -show ssh")
-        , ((modm,                     xK_i  ),  jumpLayout)
+  h <- spawnPipe "tee -a /tmp/xmonad.log"
+  xmonad
+    $ ewmh
+    $ docks
+    $ navigation2D def (xK_w, xK_a, xK_s, xK_d) [(mod4Mask, windowGo), (mod4Mask .|. shiftMask, windowSwap)] False
+    $ def
+      { terminal           = myTerminal
+      , modMask            = modm
+      , workspaces         = myWorkspaces
+      , normalBorderColor  = myNormalBorderColor
+      , focusedBorderColor = myFocusedBorderColor
+      , borderWidth        = myBorderWidth
+      , manageHook         = myManageHook
+      , layoutHook         = avoidStruts $ smartBorders myLayout
+      , logHook            = dynamicLogWithPP $ XMonad.Hooks.DynamicLog.def { ppOutput = hPutStrLn h }
+      -- , startupHook        = startup
+      , handleEventHook    = fullscreenEventHook <+> handleEventHook def
+      } `additionalKeys`
+      [ ((0 , xF86XK_AudioLowerVolume     ),  spawn "ponymix -N decrease 2")
+      , ((0 , xF86XK_AudioRaiseVolume     ),  spawn "ponymix -N increase 2")
+      , ((0 , xF86XK_AudioMute            ),  spawn "ponymix -N toggle")
+      , ((0 , xF86XK_AudioPlay            ),  spawn "playerctl play-pause")
+      , ((0 , xF86XK_AudioNext            ),  spawn "playerctl next")
+      , ((0 , xF86XK_AudioPrev            ),  spawn "playerctl previous")
+      , ((0 , xF86XK_Forward              ),  spawn "playerctl next")
+      , ((0 , xF86XK_Back                 ),  spawn "playerctl previous")
+      , ((0 , xF86XK_MonBrightnessUp      ),  spawn "xbacklight -inc 10")
+      , ((0 , xF86XK_MonBrightnessDown    ),  spawn "xbacklight -dec 10")
+      , ((modm .|. controlMask,     xK_l  ),  spawn myScreensaver)
+      , ((modm .|. controlMask,     xK_c  ),  spawn toggleScreensaver)
+      , ((modm,                     xK_y  ),  defaultCommands >>= runCommand)
+      , ((modm,                     xK_o  ),  spawn "~/bin/themer")
+      , ((modm .|. shiftMask,       xK_p  ),  spawn "j4-dmenu-desktop --dmenu='rofi -dmenu'")
+      , ((modm,                     xK_p  ),  spawn "rofi -show run")
+      , ((modm,                   xK_Tab  ),  spawn "rofi -show window")
+      , ((modm,                     xK_s  ),  spawn "rofi -show ssh")
+      , ((modm,                     xK_i  ),  jumpLayout)
+      , ((modm,                     xK_g  ), sendMessage $ Toggle GAPPED)
         -- BSP
-        , ((modm .|. altMask,                 xK_l     ), sendMessage $ ExpandTowards R)
-        , ((modm .|. altMask,                 xK_h     ), sendMessage $ ExpandTowards L)
-        , ((modm .|. altMask,                 xK_j     ), sendMessage $ ExpandTowards D)
-        , ((modm .|. altMask,                 xK_k     ), sendMessage $ ExpandTowards U)
-        , ((modm .|. altMask .|. controlMask, xK_l     ), sendMessage $ ShrinkFrom R)
-        , ((modm .|. altMask .|. controlMask, xK_h     ), sendMessage $ ShrinkFrom L)
-        , ((modm .|. altMask .|. controlMask, xK_j     ), sendMessage $ ShrinkFrom D)
-        , ((modm .|. altMask .|. controlMask, xK_k     ), sendMessage $ ShrinkFrom U)
-        , ((modm,                             xK_r     ), sendMessage Rotate)
-        , ((modm,                             xK_s     ), sendMessage Swap)
-        , ((modm,                             xK_n     ), sendMessage FocusParent)
-        , ((modm .|. controlMask,             xK_n     ), sendMessage SelectNode)
-        , ((modm .|. shiftMask,               xK_n     ), sendMessage MoveNode)
-        -- NAVIGATION2D
-        -- , ((mod4Mask .|. shiftMask, xK_space),  switchLayer)
-        -- Directional navigation of screens
-        -- , ((mod4Mask,             xK_Right  ),  screenGo R False)
-        -- , ((mod4Mask,              xK_Left  ),  screenGo L False)
-        -- , ((mod4Mask,                xK_Up  ),  screenGo U False)
-        -- , ((mod4Mask,              xK_Down  ),  screenGo D False)
-        ]
+      , ((modm .|. altMask,                 xK_l     ), sendMessage $ ExpandTowards R)
+      , ((modm .|. altMask,                 xK_h     ), sendMessage $ ExpandTowards L)
+      , ((modm .|. altMask,                 xK_j     ), sendMessage $ ExpandTowards D)
+      , ((modm .|. altMask,                 xK_k     ), sendMessage $ ExpandTowards U)
+      , ((modm .|. altMask .|. controlMask, xK_l     ), sendMessage $ ShrinkFrom R)
+      , ((modm .|. altMask .|. controlMask, xK_h     ), sendMessage $ ShrinkFrom L)
+      , ((modm .|. altMask .|. controlMask, xK_j     ), sendMessage $ ShrinkFrom D)
+      , ((modm .|. altMask .|. controlMask, xK_k     ), sendMessage $ ShrinkFrom U)
+      , ((modm,                             xK_r     ), sendMessage Rotate)
+      , ((modm,                             xK_s     ), sendMessage Swap)
+      , ((modm,                             xK_n     ), sendMessage FocusParent)
+      , ((modm .|. controlMask,             xK_n     ), sendMessage SelectNode)
+      , ((modm .|. shiftMask,               xK_n     ), sendMessage MoveNode)
+      ]

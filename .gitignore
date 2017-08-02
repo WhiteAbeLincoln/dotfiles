@@ -5,6 +5,7 @@ xmonad/.xmonad/*
 !xmonad/.xmonad/stack.yaml
 !xmonad/.xmonad/my-xmonad.cabal
 !xmonad/.xmonad/build
+!xmonad/.xmonad/src
 music/.config/mpd/*
 !music/.config/mpd/mpd.conf
 neovim/.config/nvim/*
