@@ -22,5 +22,7 @@
     uncommit = reset --mixed HEAD~
     amend = commit --amend
     nuke = !git reset --hard HEAD && git clean -d -f
+    graphd = log --graph --abbrev-commit --decorate --date=relative --all
+    graph = log --graph --oneline --decorate --all
 [web]
 	browser = xdg-open

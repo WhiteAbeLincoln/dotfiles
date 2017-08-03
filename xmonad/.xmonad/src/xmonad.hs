@@ -14,6 +14,8 @@ import XMonad.Layout.MySpacing (smartSpacingWithEdge, SmartSpacingWithEdge(..))
 import XMonad.Layout.DwmStyle
 import XMonad.Layout.MultiToggle
 import XMonad.Layout.MultiToggle.Instances
+import XMonad.Prompt
+import XMonad.Prompt.XMonad
 import XMonad.Actions.SpawnOn (spawnOn)
 import XMonad.Actions.Navigation2D ( navigation2D, windowGo, windowSwap)
 import XMonad.Hooks.ManageDocks (manageDocks, avoidStruts, docks)
@@ -180,7 +182,8 @@ main = do
       , ((0 , xF86XK_MonBrightnessDown    ),  spawn "xbacklight -dec 10")
       , ((modm .|. controlMask,     xK_l  ),  spawn myScreensaver)
       , ((modm .|. controlMask,     xK_c  ),  spawn toggleScreensaver)
-      , ((modm,                     xK_y  ),  defaultCommands >>= runCommand)
+      -- , ((modm,                     xK_y  ),  defaultCommands >>= runCommand)
+      , ((modm, xK_y), xmonadPrompt def)
       , ((modm,                     xK_o  ),  spawn "~/bin/themer")
       , ((modm .|. shiftMask,       xK_p  ),  spawn "j4-dmenu-desktop --dmenu='rofi -dmenu'")
       , ((modm,                     xK_p  ),  spawn "rofi -show run")
