@@ -1,7 +1,6 @@
 vim/.vim/bundle/*
 *.swp
 xmonad/.xmonad/*
-!xmonad/.xmonad/xmonad.hs
 !xmonad/.xmonad/stack.yaml
 !xmonad/.xmonad/my-xmonad.cabal
 !xmonad/.xmonad/build
@@ -15,7 +14,6 @@ tmux/.tmux/resurrect
 !tmux/.tmux/plugins/.gitkeep
 vim/.vim/plugged/
 x/.Xresources.d/colors
-.gitattributes
 themes/.shell-themes/.current_theme
 termite/.config/termite/config
 dunst/.config/dunst/dunstrc
