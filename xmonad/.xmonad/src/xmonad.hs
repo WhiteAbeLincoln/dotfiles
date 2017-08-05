@@ -175,6 +175,7 @@ myKeys c =
       , ("M-o",     addName "Switch themes"      $ spawn "~/bin/themer")
       , ("M-C-l",   addName "Lock screen"        $ spawn myScreensaver)
       , ("M-C-c",   addName "Toggle screensaver" $ spawn toggleScreensaver)
+      , ("<Print>", spawn' "scrot -e 'mv $f ~/Pictures/Screenshots'")
       ]
     myToggles =
       [ ("g", addName "Toggle gaps"        $ sendMessage $ Toggle GAPPED)
