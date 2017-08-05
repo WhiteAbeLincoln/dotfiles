@@ -1,35 +1,45 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+import Control.Monad (filterM)
+import Data.Maybe (fromMaybe)
+import Data.Monoid (Endo(..))
+import Graphics.X11.ExtraTypes.XF86
+
 import XMonad hiding ((|||))
 import qualified XMonad.StackSet as W
-import Data.Maybe (fromMaybe)
-import XMonad.Layout.NoBorders (smartBorders)
-import XMonad.Layout.BinarySpacePartition
-import XMonad.Layout.BorderResize
-import XMonad.Layout.LayoutCombinators
-import XMonad.Layout.LayoutModifier (ModifiedLayout(..))
-import XMonad.Layout.Renamed
-import XMonad.Layout.MySpacing (smartSpacingWithEdge, SmartSpacingWithEdge(..))
-import XMonad.Layout.DwmStyle
-import XMonad.Layout.MultiToggle
-import XMonad.Layout.MultiToggle.Instances
-import XMonad.Prompt
-import XMonad.Prompt.XMonad
 import XMonad.Actions.SpawnOn (spawnOn)
 import XMonad.Actions.Navigation2D ( navigation2D, windowGo, windowSwap)
+import XMonad.Actions.FloatSnap
+import XMonad.Actions.Submap (submap)
+import XMonad.Actions.Commands (defaultCommands, runCommand)
+import XMonad.Util.NamedActions
+
 import XMonad.Hooks.ManageDocks (manageDocks, avoidStruts, docks)
 import XMonad.Hooks.ManageHelpers (isFullscreen, doFullFloat)
 import XMonad.Hooks.EwmhDesktops (fullscreenEventHook, ewmh)
 import XMonad.Hooks.DynamicLog
-import XMonad.Util.EZConfig(additionalKeys)
+
+import XMonad.Layout.NoBorders (smartBorders)
+import XMonad.Layout.BinarySpacePartition
+import XMonad.Layout.LayoutCombinators ((|||), JumpToLayout(..))
+import XMonad.Layout.LayoutModifier (ModifiedLayout(..))
+import XMonad.Layout.Renamed (renamed, Rename (Replace))
+import XMonad.Layout.Spacing (smartSpacingWithEdge)
+import XMonad.Layout.MultiToggle
+import XMonad.Layout.MultiToggle.Instances
+import XMonad.Layout.WindowArranger
+import XMonad.Layout.DraggingVisualizer
+import XMonad.Layout.WindowSwitcherDecoration
+import XMonad.Layout.Decoration
+
+import XMonad.Prompt.XMonad (xmonadPrompt)
+
+import XMonad.Util.EZConfig (removeKeys, additionalMouseBindings, additionalKeys, mkNamedKeymap)
 import XMonad.Util.SpawnOnce (spawnOnce)
-import XMonad.Util.Dmenu
-import XMonad.Util.Run
-import Graphics.X11.ExtraTypes.XF86
-import XMonad.Config (def)
-import XMonad.Actions.Commands (defaultCommands, runCommand)
-import Data.Monoid (Endo(..))
+import XMonad.Util.Dmenu (dmenu)
+import XMonad.Util.Run (hPutStrLn, spawnPipe)
 
 -----------------------------------------------------------------------------
 -- Functions
@@ -64,27 +74,23 @@ myWorkspaces = foldr (\x acc -> snd x:acc) [] workspaceMap ++ map show [(length 
 -- Window Rules
 -- use xprop | grep WM_CLASS to find the name of a program
 --
-myDoFullFloat :: ManageHook
-myDoFullFloat = doF W.focusDown <+> doFullFloat
-
 myManageHook :: Query (Endo WindowSet)
-myManageHook = composeAll
-    [ className =? "Termite"        --> doShift (getWorkspace "term")
-    , className =? "Firefox"        --> doShift (getWorkspace "web")
-    , className =? "Google-chrome"  --> doShift (getWorkspace "web")
-    , className =? "Vivaldi-stable" --> doShift (getWorkspace "web")
-    , className =? "GVim"           --> doShift (getWorkspace "editor")
-    , className =? "jetbrains-idea" --> doShift (getWorkspace "editor")
-    , className =? "Code"           --> doShift (getWorkspace "editor")
-    , className =? "Emacs"          --> doShift (getWorkspace "editor")
-    , className =? "MultiMC5"       --> doShift (getWorkspace "games")
-    , className =? "Steam"          --> doShift (getWorkspace "games")
-    , className =? "Spotify"        --> doShift (getWorkspace "media")
-    , className =? "Google Play Music Desktop Player" --> doShift (getWorkspace "media")
-    , className =? "stalonetray"    --> doFloat
-    , isFullscreen                  --> myDoFullFloat
-    , manageDocks
-    ]
+myManageHook = (composeAll . concat $
+    [ [ className =? c --> doShift (getWorkspace "term")   | c <- myTerms   ]
+    , [ className =? c --> doShift (getWorkspace "web")    | c <- myWebs    ]
+    , [ className =? c --> doShift (getWorkspace "editor") | c <- myEditors ]
+    , [ className =? c --> doShift (getWorkspace "games")  | c <- myGames   ]
+    , [ className =? c --> doShift (getWorkspace "media")  | c <- myMedia   ]
+    , [ className =? c --> doFloat                         | c <- myFloat   ]
+    , [ isFullscreen   --> myDoFullFloat]
+    ]) <+> manageDocks
+  where myDoFullFloat = doF W.focusDown <+> doFullFloat
+        myTerms = ["Termite", "xterm"]
+        myWebs = ["Google-chrome", "Vivaldi-stable", "Firefox"]
+        myEditors = ["jetbrains-idea", "jetbrains-pycharm", "Code", "Emacs", "GVim"]
+        myGames = ["MultiMC5", "Steam"]
+        myMedia = ["Spotify", "Google Play Music Desktop Player"]
+        myFloat = ["stalonetray"]
 
 --------------------------------------------------------------------------------
 -- Colors and Borders
@@ -96,7 +102,7 @@ myFocusedBorderColor :: String
 myFocusedBorderColor = "#dab3af"
 
 myBorderWidth :: Dimension
-myBorderWidth = 1
+myBorderWidth = 2
 
 -------------------------------------------------------------------------------
 -- Key Bindings
@@ -110,20 +116,25 @@ altMask = mod1Mask
 ------------------------------------------------------------------------------
 -- Layouts
 --
+jumpLayout :: X ()
 jumpLayout = do
   r <- dmenu $ layoutNames
   sendMessage $ JumpToLayout r
   where layoutNames = ["bsp", "tall", "mirror-tall", "full"]
 
 -- since the Spacing.setSpacing message wasn't working
--- I have to use this as an alternative, and modify the
--- Spacing module to export the SmartSpacingWithEdge data constructor
+-- I have to use this as an alternative
 data GAPPED = GAPPED deriving (Read, Show, Eq, Typeable)
 instance Transformer GAPPED Window where
-    transform _ x k = k (smartSpacingWithEdge 10 x)
-      (\(ModifiedLayout (SmartSpacingWithEdge 10) x') -> x')
+  transform _ x k = k (smartSpacingWithEdge 10 x) (const x)
 
-myLayout = mkToggle (single GAPPED) $ layouts
+data DECORATED = DECORATED deriving (Read, Show, Eq, Typeable)
+instance Transformer DECORATED Window where
+  transform _ x k = k (mkDecorated x) (const x)
+
+mkDecorated l = renamed [Replace "decorated"] $ windowSwitcherDecoration shrinkText def (draggingVisualizer $ l)
+
+myLayout = mkToggle (NOBORDERS ?? FULL ?? EOT) . mkToggle1 GAPPED . mkToggle1 DECORATED $ layouts
     where
         layouts = bsp ||| tall ||| mirrorTall ||| full
         bsp  = renamed [Replace "bsp"] emptyBSP
@@ -143,6 +154,82 @@ myLayout = mkToggle (single GAPPED) $ layouts
         -- percent of screen to increment by when resizing panes
         delta = 1/100
 
+-------------------------------------------------
+-- Key Bindings
+myKeys c =
+  mkSM "Custom" "" myCustomKeys
+  ++ mkSM "Toggles ""M-S-t" myToggles
+  ++ mkSM "BSP" "M-b" myBSP
+  ++ mkSM "Fn" "" myMediaKeys
+  ++ mkSM "WindowArranger" "M-a" myWindowArranger
+  ++ mkSM "FloatSnap" "M-f" myFloatSnap
+  where
+    mkSM t [] l = (subtitle t:) $ mkNamedKeymap c $ l
+    mkSM t s l  = (subtitle t:) $ mkNamedKeymap c $ fmap (\(k, a) -> (s++" "++k, a)) l
+    myCustomKeys =
+      [ ("M-S-<Return>", addName "Launch terminal" $ spawn $ XMonad.terminal c)
+      , ("M-p",     addName "Launch rofi"        $ spawn "rofi -show run")
+      , ("M-S-p",   addName "Launch programs"    $ spawn "j4-dmenu-desktop --dmenu='rofi -dmenu'")
+      , ("M-<Tab>", addName "Window switcher"    $ spawn "rofi -show window")
+      , ("M-i",     addName "Select layout"      $ jumpLayout)
+      , ("M-o",     addName "Switch themes"      $ spawn "~/bin/themer")
+      , ("M-C-l",   addName "Lock screen"        $ spawn myScreensaver)
+      , ("M-C-c",   addName "Toggle screensaver" $ spawn toggleScreensaver)
+      ]
+    myToggles =
+      [ ("g", addName "Toggle gaps"        $ sendMessage $ Toggle GAPPED)
+      , ("d", addName "Toggle decorations" $ sendMessage $ Toggle DECORATED)
+      , ("z", addName "Toggle full"        $ sendMessage $ Toggle FULL)
+      ]
+    myBSP =
+      [ ("l",     addName "Expand Right"     $ sendMessage $ ExpandTowards R)
+      , ("h",     addName "Expand Left"      $ sendMessage $ ExpandTowards L)
+      , ("j",     addName "Expand Down"      $ sendMessage $ ExpandTowards D)
+      , ("k",     addName "Expand Up"        $ sendMessage $ ExpandTowards U)
+      , ("C-l",   addName "Shrink Right"     $ sendMessage $ ShrinkFrom R)
+      , ("C-h",   addName "Shrink Left"      $ sendMessage $ ShrinkFrom L)
+      , ("C-j",   addName "Shrink Down"      $ sendMessage $ ShrinkFrom D)
+      , ("C-k",   addName "Shrink Up"        $ sendMessage $ ShrinkFrom U)
+      , ("<Enter>",   addName "Swap"         $ sendMessage $ Swap)
+      , ("r",         addName "Rotate"       $ sendMessage $ Rotate)
+      , ("p",         addName "Focus Parent" $ sendMessage $ FocusParent)
+      , ("n",         addName "Select Node"  $ sendMessage $ SelectNode)
+      , ("m",         addName "Move Node"    $ sendMessage $ MoveNode)
+      ]
+    myMediaKeys =
+      [ ("<XF86AudioLowerVolume>",   spawn' "ponymix -N decrease 2")
+      , ("<XF86AudioRaiseVolume>",  spawn' "ponymix -N increase 2")
+      , ("<XF86AudioMute>",         spawn' "ponymix -N toggle")
+      , ("<XF86AudioPlay>",         spawn' "playerctl play-pause")
+      , ("<XF86AudioNext>",         spawn' "playerctl next")
+      , ("<XF86AudioPrev>",         spawn' "playerctl previous")
+      , ("<XF86MonBrightnessUp>",   spawn' "xbacklight -inc 10")
+      , ("<XF86MonBrightnessDown>", spawn' "xbacklight -dec 10")
+      ]
+    myWindowArranger =
+      [ ("a",   addName "Arrange"    $ sendMessage  Arrange)
+      , ("C-a", addName "DeArrange"  $ sendMessage  DeArrange)
+      , ("l",   addName "Right"      $ sendMessage (MoveRight     10))
+      , ("h",   addName "Left"       $ sendMessage (MoveLeft      10))
+      , ("j",   addName "Down"       $ sendMessage (MoveDown      10))
+      , ("k",   addName "Up"         $ sendMessage (MoveUp        10))
+      , ("S-l", addName "Increase H" $ sendMessage (IncreaseLeft  10) >> sendMessage (IncreaseRight 10))
+      , ("S-h", addName "Decrease H" $ sendMessage (DecreaseLeft  10) >> sendMessage (DecreaseRight 10))
+      , ("S-k", addName "Increase V" $ sendMessage (IncreaseDown  10) >> sendMessage (IncreaseUp 10))
+      , ("S-j", addName "Decrease V" $ sendMessage (DecreaseDown  10) >> sendMessage (DecreaseUp 10))
+      ]
+    myFloatSnap = 
+       [ ("h",   addName "Left"         $ withFocused $ snapMove L Nothing)
+       , ("l",   addName "Right"        $ withFocused $ snapMove R Nothing)
+       , ("k",   addName "Up"           $ withFocused $ snapMove U Nothing)
+       , ("j",   addName "Down"         $ withFocused $ snapMove D Nothing)
+       , ("C-l", addName "Shrink Right" $ withFocused $ snapShrink R Nothing)
+       , ("S-l", addName "Grow Right"   $ withFocused $ snapGrow R Nothing)
+       , ("C-j", addName "Shrink Down"  $ withFocused $ snapShrink D Nothing)
+       , ("S-j", addName "Grow Down"    $ withFocused $ snapGrow D Nothing)
+       ]
+
+
 startup :: X()
 startup = do
     spawnOn (getWorkspace "term") myTerminal
@@ -150,13 +237,21 @@ startup = do
     spawnOn (getWorkspace "media") "gpmdp"
     spawnOnce "/home/abe/bin/xmonad-autorun"
 
+toggleFloatingWindow :: String -> X()
+toggleFloatingWindow name = do
+  ss <- gets windowset
+  let ws = W.index ss
+  matchedWindows <- filterM (runQuery (className =? name)) ws
+  mapM_ hide matchedWindows
+
 main :: IO()
 main = do
   h <- spawnPipe "tee -a /tmp/xmonad.log"
   xmonad
     $ ewmh
     $ docks
-    $ navigation2D def (xK_w, xK_a, xK_s, xK_d) [(mod4Mask, windowGo), (mod4Mask .|. shiftMask, windowSwap)] False
+    $ navigation2D def (xK_w, xK_a, xK_s, xK_d) [(mod1Mask, windowGo), (mod1Mask .|. shiftMask, windowSwap)] False
+    $ addDescrKeys ((modm .|. shiftMask, xK_slash), xMessage) myKeys
     $ def
       { terminal           = myTerminal
       , modMask            = modm
@@ -165,44 +260,17 @@ main = do
       , focusedBorderColor = myFocusedBorderColor
       , borderWidth        = myBorderWidth
       , manageHook         = myManageHook
-      , layoutHook         = avoidStruts $ smartBorders myLayout
-      , logHook            = dynamicLogWithPP $ XMonad.Hooks.DynamicLog.def { ppOutput = hPutStrLn h }
+      , layoutHook         = avoidStruts $ smartBorders $ windowArrange myLayout
+      , logHook            = dynamicLogWithPP $ def { ppOutput = hPutStrLn h }
       -- , startupHook        = startup
       , handleEventHook    = fullscreenEventHook <+> handleEventHook def
-      } `additionalKeys`
-      [ ((0 , xF86XK_AudioLowerVolume     ),  spawn "ponymix -N decrease 2")
-      , ((0 , xF86XK_AudioRaiseVolume     ),  spawn "ponymix -N increase 2")
-      , ((0 , xF86XK_AudioMute            ),  spawn "ponymix -N toggle")
-      , ((0 , xF86XK_AudioPlay            ),  spawn "playerctl play-pause")
-      , ((0 , xF86XK_AudioNext            ),  spawn "playerctl next")
-      , ((0 , xF86XK_AudioPrev            ),  spawn "playerctl previous")
-      , ((0 , xF86XK_Forward              ),  spawn "playerctl next")
-      , ((0 , xF86XK_Back                 ),  spawn "playerctl previous")
-      , ((0 , xF86XK_MonBrightnessUp      ),  spawn "xbacklight -inc 10")
-      , ((0 , xF86XK_MonBrightnessDown    ),  spawn "xbacklight -dec 10")
-      , ((modm .|. controlMask,     xK_l  ),  spawn myScreensaver)
-      , ((modm .|. controlMask,     xK_c  ),  spawn toggleScreensaver)
-      -- , ((modm,                     xK_y  ),  defaultCommands >>= runCommand)
-      , ((modm, xK_y), xmonadPrompt def)
-      , ((modm,                     xK_o  ),  spawn "~/bin/themer")
-      , ((modm .|. shiftMask,       xK_p  ),  spawn "j4-dmenu-desktop --dmenu='rofi -dmenu'")
-      , ((modm,                     xK_p  ),  spawn "rofi -show run")
-      , ((modm,                   xK_Tab  ),  spawn "rofi -show window")
-      , ((modm,                     xK_s  ),  spawn "rofi -show ssh")
-      , ((modm,                     xK_i  ),  jumpLayout)
-      , ((modm,                     xK_g  ), sendMessage $ Toggle GAPPED)
-        -- BSP
-      , ((modm .|. altMask,                 xK_l     ), sendMessage $ ExpandTowards R)
-      , ((modm .|. altMask,                 xK_h     ), sendMessage $ ExpandTowards L)
-      , ((modm .|. altMask,                 xK_j     ), sendMessage $ ExpandTowards D)
-      , ((modm .|. altMask,                 xK_k     ), sendMessage $ ExpandTowards U)
-      , ((modm .|. altMask .|. controlMask, xK_l     ), sendMessage $ ShrinkFrom R)
-      , ((modm .|. altMask .|. controlMask, xK_h     ), sendMessage $ ShrinkFrom L)
-      , ((modm .|. altMask .|. controlMask, xK_j     ), sendMessage $ ShrinkFrom D)
-      , ((modm .|. altMask .|. controlMask, xK_k     ), sendMessage $ ShrinkFrom U)
-      , ((modm,                             xK_r     ), sendMessage Rotate)
-      , ((modm,                             xK_s     ), sendMessage Swap)
-      , ((modm,                             xK_n     ), sendMessage FocusParent)
-      , ((modm .|. controlMask,             xK_n     ), sendMessage SelectNode)
-      , ((modm .|. shiftMask,               xK_n     ), sendMessage MoveNode)
+      }
+      `removeKeys`
+      [(modm .|. shiftMask, xK_slash)]
+      `additionalMouseBindings`
+      [
+        -- FloatSnap
+        ((modm,               button1), (\w -> focus w >> mouseMoveWindow w >> afterDrag (snapMagicMove (Just 50) (Just 50) w)))
+      , ((modm .|. shiftMask, button1), (\w -> focus w >> mouseMoveWindow w >> afterDrag (snapMagicResize [L,R,U,D] (Just 50) (Just 50) w)))
+      , ((modm,               button3), (\w -> focus w >> mouseResizeWindow w >> afterDrag (snapMagicResize [R,D] (Just 50) (Just 50) w)))
       ]

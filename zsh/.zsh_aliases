@@ -7,7 +7,7 @@ alias grep='grep --color=always'
 alias sleepy='sudo rtcwake -m mem -u -t $(date +%s -d "tomorrow 06:30")'
 alias startXfce='startx $(which startxfce4) -- -nolisten tcp vt$XDG_VTNR'
 alias vim="nvim"
-alias pulsemixer="urxvt -e pulsemixer"
+alias pulsemixer="xterm -e pulsemixer"
 
 eval "$(hub alias -s)"
 
@@ -29,4 +29,8 @@ function ls {
 
 function chenv {
     eval $(~/bin/chenv.sh "$@")
+}
+
+function to_hex {
+    echo -n "$@" | od -A n -t x1 | tr -d ' '
 }
