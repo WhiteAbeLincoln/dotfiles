@@ -1,0 +1,26 @@
+plugins:
+  - xresources
+  - bash_colors
+  - termite
+  - dunst
+  - vim
+  - emacs
+  - wallpaper
+  - current
+  - template
+  - shell
+
+vim:
+  neovim: true
+
+emacs:
+  path: "~/.emacs.d/private/themes/"
+
+shell:
+  command: "~/bin/restart_bar"
+
+template:
+  gtk3:
+    path: "~/.config/gtk-3.0/gtk.css"
+  gtk2:
+    path: "~/.config/gtk-2.0/gtkrc"
