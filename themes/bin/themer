@@ -16,14 +16,10 @@ done
 theme=$(printf '%s\n' "${!basenames[@]}" | rofi -dmenu)
 old_theme=$(cat "$HOME/.local/share/xthemer/current_theme")
 if [[ -n "$theme" &&  "$(basename "$old_theme")" != "$theme" ]]; then
-    input=${basenames[$theme]}
+    input="${basenames[$theme]}"
 
-    xthemer "$input" >> $ERROR_FILE
+    xthemer -q "$input"/colors.* >> $ERROR_FILE
 
     # restart lemonbar
-    "$HOME/bin/kill_bar.sh"
-    "$HOME/bin/barrun" &
-    # restart dunst
-    pkill dunst
-    dunst -config ~/.config/dunst/dunstrc &
+    # "$HOME/bin/restart_bar"
 fi

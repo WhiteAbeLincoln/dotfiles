@@ -2,8 +2,9 @@
 set -f
 
 function workspaces {
+    local temp
     temp=$(wmctrl -d | awk '{ cols=$1","$2","; if (NF==10) print cols $10; else print cols $9 }')
-    i=0
+    local i=0
     for elem in $temp; do
         WORKSPACES[$i]=$elem;
         re=',\*,'
@@ -14,10 +15,10 @@ function workspaces {
     done
 
     temp=$(wmctrl -l | awk '{ s=""; for (i=4; i<=NF; i++) s=s $i " "; print $2 "," s }' )
-    IFS=$'\n'
+    local IFS=$'\n'
     i=0
     for elem in $temp; do
-        WINDOWS[$i]=$elem;
+        # WINDOWS[$i]=$elem;
         IFS=',' read -ra idx <<< "$elem"
         IFS=',' read -ra space <<< "${WORKSPACES[${idx[0]}]}"
         ACTIVE_WORKSPACES[${idx[0]}]="${space[2]}"
@@ -26,7 +27,7 @@ function workspaces {
     done
 
     IFS=',' read -ra idx <<< "$CURRENT_WS"
-    colorized="%{F$COLORS_color12}${idx[2]}%{F$COLORS_foreground}"
+    local colorized="%{F#${XCOLORS[12]}}${idx[2]}%{F#${XCOLORS[foreground]}}"
     if [[ ${ACTIVE_WORKSPACES[${idx[0]}]} ]]; then
         ACTIVE_WORKSPACES=("${ACTIVE_WORKSPACES[@]/"${idx[2]}"/"$colorized"}")
     else
@@ -58,7 +59,10 @@ function get_workspaces {
         ACTIVE_WINDOW="${ACTIVE_WINDOW:0:47}..."
     fi
 
-    echo -n %{F$COLORS_foreground}%{A4:wmctrl -s $y:}%{A5:wmctrl -s $x:}"${ACTIVE_WORKSPACES[@]}"%{A}%{A} : %{F$COLORS_color4}"$ACTIVE_WINDOW"%{F$COLORS_foreground}
+    local str="%{F#${XCOLORS[foreground]}}"
+    str+="%{A4:wmctrl -s $y:}%{A5:wmctrl -s $x:}${ACTIVE_WORKSPACES[*]}%{A}%{A}"
+    str+=" : %{F#${XCOLORS[4]}}$ACTIVE_WINDOW%{F#${XCOLORS[foreground]}}"
+    echo -n "$str"
 }
 
 function clock {
@@ -68,7 +72,7 @@ function clock {
 
 function get_clock {
     clock
-    echo -n "%{F$COLORS_color4}$DATE $TIME%{F$COLORS_foreground}"
+    echo -n "%{F#${XCOLORS[4]}}$DATE $TIME%{F#${XCOLORS[foreground]}}"
 }
 
 function music {
@@ -82,42 +86,46 @@ function music {
         STATUS=""
     fi
 
-    if [[ "$?" != "0" || -z "$CURRENT_SONG" ]]; then
+    if [[ -z "$CURRENT_SONG" ]]; then
         CURRENT_SONG="[NONE]"
     fi
 }
 
 function get_music {
     music
-    string="$CURRENT_SONG"
+    local string="$CURRENT_SONG"
     if [[ -z "$STATUS" ]]; then
-        echo -en "%{F$COLORS_color11}\uf04b ${string}%{F$COLORS_foreground}"
+        echo -en "%{F#${XCOLORS[11]}}\uf04b ${string}%{F#${XCOLORS[foreground]}}"
     else
-        echo -en "%{F$COLORS_color9}\uf04c ${string}%{F$COLORS_foreground}"
+        echo -en "%{F#${XCOLORS[9]}}\uf04c ${string}%{F#${XCOLORS[foreground]}}"
     fi
 }
 
 function weather {
+    local date
     date=$(date "+%H_%M")
-        if [[ -f "$HOME/.weather$date" ]]; then
-            WEATHER=$(cat "$HOME/.weather$date")
-        else
-            if [[ -f "$HOME"/.weather* ]]; then
-                rm "$HOME"/.weather*
-            fi
-            WEATHER=$(wget -q -O- http://www.accuweather.com/en/us/logan-ut/84321/weather-forecast/331213 | awk -F[\"\'] '/acm_RecentLocationsCarousel\.push/{print $2": "$16", "$12"°" }' | head -1)
-            echo $WEATHER > "$HOME/.weather$date"
-        fi
+    if [[ -f "$HOME/.weather/$date" ]]; then
+        WEATHER=$(cat "$HOME/.weather/$date")
+    else
+        set +f
+        for elem in "$HOME"/.weather/*; do
+            rm "$elem"
+        done
+        set -f
+
+        WEATHER=$(wget -q -O- http://www.accuweather.com/en/us/logan-ut/84321/weather-forecast/331213 | awk -F[\"\'] '/acm_RecentLocationsCarousel\.push/{print $2": "$16", "$12"°" }' | head -1)
+        echo "$WEATHER" > "$HOME/.weather/$date"
+    fi
 }
 
 function get_weather {
     weather
-    echo -en "%{F$COLORS_color14}$WEATHER%{F$COLORS_foreground}"
+    echo -en "%{F#${XCOLORS[14]}}$WEATHER%{F#${XCOLORS[foreground]}}"
 }
 
 function volume {
     VOLUME=$(ponymix get-volume)
-    $(ponymix is-muted)
+    ponymix is-muted
     STATUS=$?
 }
 
@@ -126,9 +134,9 @@ function get_volume {
     scroll="%{A:ponymix toggle:}"
     end_scroll="%{A}"
     if [[ ! "$STATUS" == "0" ]]; then
-        echo -en "%{F$COLORS_color11}${scroll}\uf028 $VOLUME%${end_scroll}%{F$COLORS_foreground}"
+        echo -en "%{F#${XCOLORS[11]}}${scroll}\uf028 $VOLUME%${end_scroll}%{F#${XCOLORS[foreground]}}"
     else
-        echo -en "%{F$COLORS_color9}${scroll}\uf026 $VOLUME%${end_scroll}%{F$COLORS_foreground}"
+        echo -en "%{F#${XCOLORS[9]}}${scroll}\uf026 $VOLUME%${end_scroll}%{F#${XCOLORS[foreground]}}"
     fi
 }
 
@@ -156,18 +164,18 @@ function get_power {
 
     if [[ $CAPACITY -gt "66" ]]; then
         color_out=$color_green
-    elif [[ $capacity -gt "33" ]]; then
+    elif [[ $CAPACITY -gt "33" ]]; then
         color_out=$color_yellow
     else
         color_out=$color_red
     fi
 
-    echo -en "%{F$color_out}$bat_symbol $CAPACITY%{F$COLORS_foreground}"
+    echo -en "%{F$color_out}$bat_symbol $CAPACITY%{F#${XCOLORS[foreground]}}"
 }
 
 function network {
     if [[ -e "/proc/net/wireless" ]]; then
-        WIRELESS_STATUS=$(cat /proc/net/wireless | awk '/^w/ {print $3}' | grep -Eo '[[:digit:]]+')
+        WIRELESS_STATUS=$(awk '/^w/ {print $3}' < /proc/net/wireless | grep -Eo '[[:digit:]]+')
         WIRELESS_STATUS=$(( WIRELESS_STATUS*100/70 ))
     fi
 }
@@ -180,17 +188,18 @@ function get_network {
         wifi_stat="$wifi_stat\xe2\x80\xa2"
         (( WIRELESS_STATUS-=25 ))
     done
-    echo -en "%{F$COLORS_color12}$wifi_stat%{F$COLORS_foreground}"
+    echo -en "%{F#${XCOLORS[12]}}$wifi_stat%{F#${XCOLORS[foreground]}}"
 }
 
 function set_sleep {
-    echo -en "%{F$COLORS_color5}%{A:systemctl suspend:}\uf011%{A}%{F$COLORS_foreground}"
+    echo -en "%{F#${XCOLORS[5]}}%{A:systemctl suspend:}\uf011%{A}%{F#${XCOLORS[foreground]}}"
 }
 
 while true; do
-    source ~/.barrc
+    # shellcheck source=/home/abe/.bash_colors
+    source "$HOME/.bash_colors"
     buff=""
-    buff="${buff}%{B$COLORS_background}"
+    buff="${buff}%{B#${XCOLORS[background]}}"
     buff="${buff}%{l} $(get_workspaces) "
     buff="${buff}%{c}$(get_clock) "
     buff="${buff}%{r} ║ $(get_volume) ║ $(get_network)"
@@ -200,7 +209,7 @@ while true; do
     buff="${buff} %{A:$HOME/bin/show-tray:}ℹ%{A}"
     buff="${buff}%{F-}%{B-}"
 
-    echo $buff
+    echo "$buff"
     sleep .20;
 done
 set +f
