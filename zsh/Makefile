@@ -1,4 +1,12 @@
 include ../Makefile.inc
-DEPS = zsh pkgfile
-AURDEPS = antibody
-# AURDEPS = zsh-autosuggestions zsh-history-substring-search-git zsh-syntax-highlighting
+DEPS = zsh pkgfile grml-zsh-config zsh-completions
+POST_INSTALL = post
+PRE_INSTALL = pre
+
+.PHONY: pre
+pre:
+	curl -sL https://git.io/antibody | bash -s
+
+.PHONY: post
+post:
+	antibody bundle < ~/.bundles.txt

@@ -12,6 +12,7 @@ HOME = /home/abe
 # for more granular options
 # like installing pip packages
 # or installing with curl | bash
+PRE_INSTALL = noop
 POST_INSTALL = noop
 POST_DEPS = noop
 POST_UNINSTALL = noop
@@ -23,6 +24,7 @@ install: install-deps
 
 .PHONY: install-deps
 install-deps:
+	@$(MAKE) $(PRE_INSTALL)
 ifdef INSTALL
 	-$(INSTALL) $(DEPS)
 endif

@@ -89,7 +89,7 @@ myManageHook = (composeAll . concat $
         myWebs = ["Google-chrome", "Vivaldi-stable", "Firefox"]
         myEditors = ["jetbrains-idea", "jetbrains-pycharm", "Code", "Emacs", "GVim"]
         myGames = ["MultiMC5", "Steam"]
-        myMedia = ["Spotify", "Google Play Music Desktop Player"]
+        myMedia = ["Spotify", "spotify", "Google Play Music Desktop Player"]
         myFloat = ["stalonetray"]
 
 --------------------------------------------------------------------------------

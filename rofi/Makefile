@@ -1,2 +1,2 @@
 include ../Makefile.inc
-DEPS = git hub
+DEPS = rofi

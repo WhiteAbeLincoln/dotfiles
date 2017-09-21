@@ -1,5 +1,6 @@
 include Makefile.inc
 DEPS = stow
+AURDEPS = git-crypt
 DIRS = $(wildcard */)
 
 .PHONY: all

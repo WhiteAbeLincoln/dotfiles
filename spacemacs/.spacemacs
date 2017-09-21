@@ -55,6 +55,9 @@ values."
      typescript
      python
      shell-scripts
+     (latex :variables
+            latex-enable-auto-fill t
+            latex-enable-folding t)
      (c-c++ :variables
             c-c++-default-mode-for-headers 'c++-mode
             c-c++-enable-clang-support t)
@@ -62,17 +65,22 @@ values."
      evil-commentary
      xkcd
      colors
-     org
+     (org :variables
+          org-enable-github-support t
+          org-projectile-file "TODOs.org")
      (shell :variables
             shell-default-shell 'ansi-term
             shell-default-height 30
             shell-default-position 'bottom)
      ;; spell-checking
      syntax-checking
+     semantic
+     salt
      version-control
      (git :variables
           git-gutter-use-fringe t
           git-gutter-fr:side (quote right-fringe))
+     gnus
      )
    ;; List of additional packages that will be installed without being
    ;; wrapped in a layer. If you need some configuration for these
@@ -80,7 +88,7 @@ values."
    ;; configuration in `dotspacemacs/user-config'.
    dotspacemacs-additional-packages '(base16-theme editorconfig)
    ;; A list of packages that cannot be updated.
-   dotspacemacs-frozen-packages '()
+   dotspacemacolorscs-frozen-packages '()
    ;; A list of packages that will not be installed and loaded.
    dotspacemacs-excluded-packages '()
    ;; Defines the behaviour of Spacemacs when installing packages.
@@ -324,6 +332,11 @@ executes.
  This function is mostly useful for variables that need to be set
 before packages are loaded. If you are unsure, you should try in setting them in
 `dotspacemacs/user-config' first."
+
+  (setq user-mail-address "abelincoln.white@gmail.com"
+        user-full-name "Abraham White")
+  (setq x-select-enable-clipboard nil)
+  ; (global-git-commit-mode t)
   )
 
 (defun dotspacemacs/user-config ()
@@ -333,13 +346,37 @@ layers configuration.
 This is the place where most of your configurations should be done. Unless it is
 explicitly specified that a variable should be set before a package is loaded,
 you should place your code here."
+  (fset 'evil-visual-update-x-selection 'ignore)
+  (add-hook 'doc-view-mode-hook 'auto-revert-mode)
+  (with-eval-after-load 'org
+    ;; active Org-babel languages
+    (org-babel-do-load-languages
+     'org-babel-load-languages
+     '(;; other Babel languages
+       (gnuplot . t)
+       (plantuml . t)))
+
+    (setq org-plantuml-jar-path
+          (expand-file-name "~/Documents/Programs/plantuml.jar"))
+    (setq org-agenda-include-diary t)
+    (setq org-agenda-files '("~/Documents/org"))
+    (add-hook 'org-mode-hook '(lambda () (setq fill-column 80)))
+    (add-hook 'org-mode-hook 'auto-fill-mode)
+    (setq org-highlight-latex-and-related '(latex script entities))
+    (setq org-list-demote-modify-bullet
+          '(("+" . "-") ("-" . "+") ("*" . "+")))
+
+    )
+  (add-hook 'c++-mode-hook (lambda () (setq flycheck-clang-language-standard "c++11")))
+
+
   (defun disable-all-themes ()
     "disable all active themes."
     (dolist (i custom-enabled-themes)
       (disable-theme i)))
 
-  ;; disables all themes so that the default spacemac-dark doesn't
-  ;; overlap with the base16 theme, which doesn't provide a comment background color
+  ;; disables all themes so that the default spacemacs-dark doesn't
+  ;; overlap with the base16 theme
   (disable-all-themes)
   (use-package base16-theme
     :init
@@ -347,7 +384,6 @@ you should place your code here."
     :config
     (load-theme 'base16-custom t))
   (use-package editorconfig
-    :ensure t
     :config
     (editorconfig-mode 1))
 
@@ -367,15 +403,15 @@ codepoints starting from codepoint-start."
     (let ((codepoints (-iterate '1+ codepoint-start (length ligatures))))
       (-zip-pair ligatures codepoints)))
 
-  ; list can be found at https://github.com/i-tu/Hasklig/blob/master/GlyphOrderAndAliasDB#L1588
   (setq my-hasklig-ligatures
-    (let* ((ligs '("&&" "***" "*>" "\\\\" "||" "|>" "::"
-                   "==" "===" "==>" "=>" "=<<" "!!" ">>"
-                   ">>=" ">>>" ">>-" ">-" "->" "-<" "-<<"
-                   "<*" "<*>" "<|" "<|>" "<$>" "<>" "<-"
-                   "<<" "<<<" "<+>" ".." "..." "++" "+++"
-                   "/=" ":::" ">=>" "->>" "<=>" "<=<" "<->")))
-      (my-correct-symbol-bounds (my-ligature-list ligs #Xe100))))
+  ; list can be found at https://github.com/i-tu/Hasklig/blob/master/GlyphOrderAndAliasDB#L1588
+        (let* ((ligs '("&&" "***" "*>" "\\\\" "||" "|>" "::"
+                       "==" "===" "==>" "=>" "=<<" "!!" ">>"
+                       ">>=" ">>>" ">>-" ">-" "->" "-<" "-<<"
+                       "<*" "<*>" "<|" "<|>" "<$>" "<>" "<-"
+                       "<<" "<<<" "<+>" ".." "..." "++" "+++"
+                       "/=" ":::" ">=>" "->>" "<=>" "<=<" "<->")))
+          (my-correct-symbol-bounds (my-ligature-list ligs #Xe100))))
 
   ;; nice glyphs for haskell with hasklig
   (defun my-set-hasklig-ligatures ()
@@ -387,6 +423,26 @@ codepoints starting from codepoint-start."
   (add-hook 'haskell-mode-hook 'my-set-hasklig-ligatures)
 
   (setq prettify-symbols-unprettify-at-point 'right-edge)
+
+  (setq gnus-secondary-select-methods
+        '(
+          (nnimap "gmail"
+                  (nnimap-address "imap.gmail.com")  ; it could also be imap.googlemail.com if that's your server.
+                  (nnimap-server-port "imaps")
+                  (nnimap-stream ssl)
+                  (nnmail-expiry-target "nnimap+gmail:[Gmail]/Trash")  ; Move expired messages to Gmail's trash.
+                  (nnmail-expiry-wait immediate)) ; Mails marked as expired can be processed immediately.
+          )
+        )
+
+  ;; Archive outgoing email in Sent folder on imap.gmail.com:
+  (setq gnus-message-archive-method '(nnimap "imap.gmail.com")
+        gnus-message-archive-group "[Gmail]/Sent Mail")
+
+  (setq smtpmail-smtp-server "smtp.gmail.com"
+        smtpmail-smtp-service 587
+        gnus-ignored-newsgroups "^to\\.\\|^[0-9. ]+\\( \\|$\\)\\|^[\"]\"[#'()]")
+
   )
 
 ;; Do not write anything past this comment. This is where Emacs will
@@ -396,13 +452,25 @@ codepoints starting from codepoint-start."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(ansi-color-names-vector
+   ["#0a0814" "#f2241f" "#67b11d" "#b1951d" "#4f97d7" "#a31db1" "#28def0" "#b2b2b2"])
  '(blink-cursor-mode nil)
  '(column-number-mode t)
+ '(custom-safe-themes
+   (quote
+    ("1025e775a6d93981454680ddef169b6c51cc14cea8cb02d1872f9d3ce7a1da66" "b3bcf1b12ef2a7606c7697d71b934ca0bdd495d52f901e73ce008c4c9825a3aa" "1d18d9864f30a8192ab44831d68b0c91e8e30be3c874d7edc5adf86a1ee174ba" default)))
  '(display-battery-mode t)
+ '(doc-view-continuous t)
  '(evil-want-Y-yank-to-eol nil)
  '(package-selected-packages
    (quote
-    (editorconfig base16-custom-theme yaml-mode base16-theme yapfify xterm-color xkcd web-mode web-beautify tide typescript-mode tagedit slim-mode shell-pop scss-mode sass-mode rainbow-mode rainbow-identifiers pyvenv pytest pyenv-mode py-isort pug-mode pip-requirements org-projectile org-present org-pomodoro alert log4e gntp org-download multi-term livid-mode skewer-mode simple-httpd live-py-mode less-css-mode json-mode json-snatcher json-reformat js2-refactor multiple-cursors js2-mode js-doc insert-shebang hy-mode htmlize helm-pydoc helm-css-scss haml-mode gnuplot flycheck-elm fish-mode evil-commentary eshell-z eshell-prompt-extras esh-help emmet-mode elm-mode disaster cython-mode company-web web-completion-data company-tern dash-functional tern company-shell company-c-headers company-anaconda color-identifiers-mode coffee-mode cmake-mode clang-format anaconda-mode pythonic intero hlint-refactor hindent helm-hoogle haskell-snippets flycheck-haskell company-ghci company-ghc ghc haskell-mode company-cabal cmm-mode unfill smeargle orgit mwim mmm-mode markdown-toc markdown-mode magit-gitflow helm-gitignore helm-company helm-c-yasnippet gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link git-gutter-fringe+ git-gutter-fringe fringe-helper git-gutter+ git-gutter gh-md fuzzy flyspell-correct-helm flyspell-correct flycheck-pos-tip pos-tip flycheck evil-magit magit magit-popup git-commit with-editor diff-hl company-statistics company auto-yasnippet yasnippet auto-dictionary ac-ispell auto-complete ws-butler winum which-key volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline powerline restart-emacs request rainbow-delimiters popwin persp-mode pcre2el paradox spinner org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint info+ indent-guide hungry-delete hl-todo highlight-parentheses highlight-numbers parent-mode highlight-indentation hide-comnt help-fns+ helm-themes helm-swoop helm-projectile helm-mode-manager helm-make projectile pkg-info epl helm-flx helm-descbinds helm-ag google-translate golden-ratio flx-ido flx fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state smartparens evil-indent-plus evil-iedit-state iedit evil-exchange evil-escape evil-ediff evil-args evil-anzu anzu evil goto-chg eval-sexp-fu highlight elisp-slime-nav dumb-jump diminish define-word column-enforce-mode clean-aindent-mode bind-map bind-key auto-highlight-symbol auto-compile packed ace-link ace-jump-helm-line helm helm-core popup undo-tree org-plus-contrib hydra evil-unimpaired f s dash async aggressive-indent adaptive-wrap ace-window avy)))
+    (salt-mode mmm-jinja2 stickyfunc-enhance srefactor org-category-capture company-auctex auctex-latexmk auctex ox-gfm editorconfig base16-custom-theme yaml-mode base16-theme yapfify xterm-color xkcd web-mode web-beautify tide typescript-mode tagedit slim-mode shell-pop scss-mode sass-mode rainbow-mode rainbow-identifiers pyvenv pytest pyenv-mode py-isort pug-mode pip-requirements org-projectile org-present org-pomodoro alert log4e gntp org-download multi-term livid-mode skewer-mode simple-httpd live-py-mode less-css-mode json-mode json-snatcher json-reformat js2-refactor multiple-cursors js2-mode js-doc insert-shebang hy-mode htmlize helm-pydoc helm-css-scss haml-mode gnuplot flycheck-elm fish-mode evil-commentary eshell-z eshell-prompt-extras esh-help emmet-mode elm-mode disaster cython-mode company-web web-completion-data company-tern dash-functional tern company-shell company-c-headers company-anaconda color-identifiers-mode coffee-mode cmake-mode clang-format anaconda-mode pythonic intero hlint-refactor hindent helm-hoogle haskell-snippets flycheck-haskell company-ghci company-ghc ghc haskell-mode company-cabal cmm-mode unfill smeargle orgit mwim mmm-mode markdown-toc markdown-mode magit-gitflow helm-gitignore helm-company helm-c-yasnippet gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link git-gutter-fringe+ git-gutter-fringe fringe-helper git-gutter+ git-gutter gh-md fuzzy flyspell-correct-helm flyspell-correct flycheck-pos-tip pos-tip flycheck evil-magit magit magit-popup git-commit with-editor diff-hl company-statistics company auto-yasnippet yasnippet auto-dictionary ac-ispell auto-complete ws-butler winum which-key volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline powerline restart-emacs request rainbow-delimiters popwin persp-mode pcre2el paradox spinner org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint info+ indent-guide hungry-delete hl-todo highlight-parentheses highlight-numbers parent-mode highlight-indentation hide-comnt help-fns+ helm-themes helm-swoop helm-projectile helm-mode-manager helm-make projectile pkg-info epl helm-flx helm-descbinds helm-ag google-translate golden-ratio flx-ido flx fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state smartparens evil-indent-plus evil-iedit-state iedit evil-exchange evil-escape evil-ediff evil-args evil-anzu anzu evil goto-chg eval-sexp-fu highlight elisp-slime-nav dumb-jump diminish define-word column-enforce-mode clean-aindent-mode bind-map bind-key auto-highlight-symbol auto-compile packed ace-link ace-jump-helm-line helm helm-core popup undo-tree org-plus-contrib hydra evil-unimpaired f s dash async aggressive-indent adaptive-wrap ace-window avy)))
+ '(safe-local-variable-values
+   (quote
+    ((eval add-hook
+           (quote after-save-hook)
+           (quote org-latex-export-to-pdf)
+           nil t))))
  '(tool-bar-mode nil)
  '(tool-bar-position (quote top)))
 (custom-set-faces

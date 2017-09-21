@@ -7,6 +7,9 @@ xmonad/.xmonad/*
 !xmonad/.xmonad/src
 music/.config/mpd/*
 !music/.config/mpd/mpd.conf
+music/.ncmpcpp/*
+!music/.ncmpcpp/bindings
+!music/.ncmpcpp/config
 neovim/.config/nvim/*
 !neovim/.config/nvim/init.vim
 tmux/.tmux/plugins/

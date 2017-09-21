@@ -1,6 +1,6 @@
 include ../Makefile.inc
 DEPS = emacs
-POST_INSTALL = 
+POST_INSTALL = install-spacemacs
 
 .PHONY: install-spacemacs
 install-spacemacs:

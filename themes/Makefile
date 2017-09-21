@@ -1,5 +1,5 @@
 include ../Makefile.inc
-DEPS = rofi
+DEPS = feh rofi
 POST_INSTALL = install-themer
 
 .PHONY: install-themer

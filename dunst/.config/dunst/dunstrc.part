@@ -26,7 +26,7 @@
     #   %I  iconname (without its path)
     #   %p  progress value if set ([  0%] to [100%]) or nothing
     # Markup is allowed
-    format = "<b>%s %p</b>\n%b"
+    format = "<b>%a</b>\n<i>%s %p</i>\n%b"
 
     # Sort messages by urgency.
     sort = yes
@@ -55,7 +55,6 @@
 
     # Ignore newlines '\n' in notifications.
     ignore_newline = no
-
 
     # The geometry of the window:
     #   [{width}]x{height}[+/-{x}+/-{y}]
@@ -99,7 +98,7 @@
     #
     # If this option is set to mouse or keyboard, the monitor option
     # will be ignored.
-    follow = mouse
+    follow = keyboard
 
     # Should a notification popped up from history be sticky or timeout
     # as if it would normally do.
@@ -148,7 +147,7 @@
     dmenu = /usr/bin/dmenu -p dunst:
 
     # Browser for opening urls in context menu.
-    browser = /usr/bin/firefox -new-tab
+    browser = /usr/bin/xdg-open
 
     # Align icons left/right/off
     icon_position = left
@@ -166,18 +165,18 @@
     # Xev might be helpful to find names for keys.
 
     # Close notification.
-    close = ctrl+space
+    close = ctrl+mod4+mod1+space
 
     # Close all notifications.
-    close_all = ctrl+shift+space
+    close_all = ctrl+mod4+mod1+shift+space
 
     # Redisplay last message(s).
     # On the US keyboard layout "grave" is normally above TAB and left
     # of "1".
-    history = ctrl+grave
+    history = ctrl+mod4+mod1+grave
 
     # Context menu.
-    context = ctrl+shift+period
+    context = ctrl+mod4+mod1+shift+period
 
 [urgency_low]
     # IMPORTANT: colors have to be defined in quotation marks.
@@ -215,6 +214,11 @@
 # to "".
 # NOTE: It might be helpful to run dunst -print in a terminal in order
 # to find fitting options for rules.
+
+[sms]
+    body = "SMS*"
+    urgency = normal
+    timeout = 10
 
 #[espeak]
 #    summary = "*"
