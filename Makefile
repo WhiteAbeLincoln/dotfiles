@@ -1,16 +1,22 @@
-include Makefile.inc
-DEPS = stow
-AURDEPS = git-crypt
-DIRS = $(wildcard */)
+# makefile template from http://blog.byronjsmith.com/makefile-shortcuts.html
 
-.PHONY: all
-all: install-deps
-	- for d in $(DIRS); do (cd $$d && $(MAKE) install); done
+.git:
+	git init
 
-.PHONY: all-install-deps
-all-install-deps:
-	- for d in $(DIRS); do (cd $$d && $(MAKE) install-deps); done
+git-config: | .git
+	;
 
-.PHONY: all-uninstall-deps
-all-uninstall-deps:
-	- for d in $(DIRS); do (cd $$d && $(MAKE) uninstall-deps); done
+VENV = .venv
+export VIRTUAL_ENV := $(abspath ${VENV})
+export PATH := ${VIRTUAL_ENV}/bin:${PATH}
+
+${VENV}:
+	python3 -m venv $@
+
+python-reqs: requirements.pip | ${VENV}
+	pip install --upgrade -r requirements.pip
+
+install: ${VENV}
+	$(EXEC) salt-call state.apply $(SLS)
+
+.PHONY: python-reqs setup git-config

@@ -1,5 +1,0 @@
-rofi.color-normal: base00,base05,base00,base0C,base00
-rofi.color-urgent: base00,base01,base00,base09,base00
-rofi.color-active: base00,base06,base00,base0E,base00
-rofi.color-window: base00,base08,base00
-rofi.separator-style: none

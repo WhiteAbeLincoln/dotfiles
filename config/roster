@@ -1,0 +1,8 @@
+# vim: ft=yaml:
+blackbird.local:
+  user: abe
+  sudo: True
+
+raptor.local:
+  user: abe
+  sudo: True

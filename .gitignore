@@ -1,4 +1,3 @@
-vim/.vim/bundle/*
 *.swp
 xmonad/.xmonad/*
 !xmonad/.xmonad/stack.yaml
@@ -10,16 +9,6 @@ music/.config/mpd/*
 music/.ncmpcpp/*
 !music/.ncmpcpp/bindings
 !music/.ncmpcpp/config
-neovim/.config/nvim/*
-!neovim/.config/nvim/init.vim
-tmux/.tmux/plugins/
-tmux/.tmux/resurrect
-!tmux/.tmux/plugins/.gitkeep
-vim/.vim/plugged/
-x/.Xresources.d/colors
-themes/.shell-themes/.current_theme
-termite/.config/termite/config
-dunst/.config/dunst/dunstrc
-rofi/.Xresources.d/*
-!rofi/.Xresources.d/rofi
-!rofi/.Xresources.d/rofi_colors
+var/
+config/gpgkeys/
+.venv/

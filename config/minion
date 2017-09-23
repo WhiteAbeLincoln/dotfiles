@@ -1,0 +1,15 @@
+
+# vim: ft=yaml:
+id: local
+file_client: local
+minion_id_caching: False
+root_dir: .
+file_roots:
+  base:
+    - states
+    - workspace
+pillar_roots:
+  base:
+    - pillar
+decrypt_pillar:
+  - 'secrets:vault': gpg
