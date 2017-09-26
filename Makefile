@@ -14,7 +14,7 @@ ${VENV}:
 	python3 -m venv $@
 
 python-reqs: requirements.pip | ${VENV}
-	pip install --upgrade -r requirements.pip
+	pip3 install --upgrade -r requirements.pip
 
 install: ${VENV}
 	$(EXEC) salt-call state.apply $(SLS)

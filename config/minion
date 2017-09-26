@@ -13,3 +13,14 @@ pillar_roots:
     - pillar
 decrypt_pillar:
   - 'secrets:vault': gpg
+fileserver_backend:
+  - roots
+  - git
+gitfs_remotes:
+  - https://github.com/saltstack-formulas/openssh-formula
+  - https://github.com/saltstack-formulas/timezone-formula
+  - https://github.com/saltstack-formulas/locale-formula
+  - https://github.com/saltstack-formulas/users-formula
+  - https://github.com/saltstack-formulas/hostsfile-formula
+  - https://github.com/saltstack-formulas/samba-formula
+  - https://github.com/saltstack-formulas/salt-formula
