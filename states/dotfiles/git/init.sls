@@ -1,6 +1,5 @@
-{% for user in salt['pillar.get']('users', [{'username': 'abe'}]) %}
-{% set username = user.get('username', 'abe') %}
-{% set group = user.get('group', 'abe') %}
+{% for username, user in salt['pillar.get']('users', {'abe': {}}) %}
+{% set group = user.get('prime_group.name', username) %}
 {% set home = user.get('home', '/home/' + username)  %}
 
 {{username}} copy git config files:
