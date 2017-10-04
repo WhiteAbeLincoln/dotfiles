@@ -5,7 +5,7 @@
 {{username}} copy vim config files:
   file.managed:
     - name: {{ home }}/.vimrc
-    - source: salt://dotfiles/vim/files/vimrc.vim
+    - source: salt://vim/files/vimrc.vim
     - user: {{ username }}
     - group: {{ group }}
 

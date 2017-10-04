@@ -1,0 +1,71 @@
+{% set vim = salt['grains.filter_by']({
+    'Arch': {
+        'pkg': {
+            'console': 'vim',
+            'graphical': 'gvim'
+        },
+        'share_dir': '/usr/share/vim/vimfiles',
+        'group': 'root',
+        'config_root': '/etc',
+    },
+
+    'Debian': {
+        'alternatives': {
+            'link': '/usr/bin/editor',
+            'path': '/usr/bin/vim.basic',
+            'priority': 100,
+        },
+        'pkg': {
+            'console': 'vim',
+            'graphical': 'gvim'
+        },
+        'share_dir': '/usr/share/vim/vimfiles',
+        'group': 'root',
+        'config_root': '/etc/vim',
+    },
+    'OpenBSD': {
+        'pkg': {
+            'console': 'vim--no_x11',
+            'graphical': 'vim--gtk2-perl-python3-ruby'
+        },
+        'share_dir': '/usr/local/share/vim/vimfiles',
+        'group': 'wheel',
+        'config_root': '/etc',
+    },
+    'RedHat': {
+        'pkg': {
+            'console': 'vim-enhanced',
+            'graphical': 'vim-x11'
+        },
+        'share_dir': '/usr/share/vim/vimfiles',
+        'group': 'root',
+        'config_root': '/etc',
+    },
+    'Suse': {
+        'pkg': {
+            'console': 'vim',
+            'graphical': 'gvim'
+        },
+        'share_dir': '/usr/share/vim/site',
+        'group': 'root',
+        'config_root': '/etc',
+    },
+    'FreeBSD': {
+        'pkg': {
+            'console': 'vim-lite',
+            'graphical': 'vim'
+        },
+        'share_dir': '/usr/local/share/vim/vimfiles',
+        'group': 'wheel',
+        'config_root': '/etc',
+        },
+    'Gentoo': {
+        'pkg': {
+            'console': 'app-editors/vim',
+            'graphical': 'app-editors/vim',
+        },
+        'share_dir': '/usr/share/vim/vimfiles',
+        'group': 'wheel',
+        'config_root': '/etc',
+    },
+}, merge=salt['pillar.get']('vim:lookup')) %}

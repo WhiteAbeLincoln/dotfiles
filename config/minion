@@ -24,3 +24,4 @@ gitfs_remotes:
   - https://github.com/saltstack-formulas/hostsfile-formula
   - https://github.com/saltstack-formulas/samba-formula
   - https://github.com/saltstack-formulas/salt-formula
+  - https://github.com/whiteabelincoln/salt-formula-git

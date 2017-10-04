@@ -1,4 +1,0 @@
-include:
-  - .vim
-  - .emacs
-  - .packages

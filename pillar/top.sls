@@ -1,5 +1,7 @@
 base:
   '*':
+    - git
+    - ssh
     - packages
     - services
     - secrets
