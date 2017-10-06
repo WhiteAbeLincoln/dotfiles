@@ -14,6 +14,7 @@ ${VENV}:
 	python3 -m venv $@
 
 python-reqs: requirements.pip | ${VENV}
+	sudo pacman -S libgit2
 	pip3 install --upgrade -r requirements.pip
 
 config/gpgkeys:
@@ -22,7 +23,7 @@ config/gpgkeys:
 	sudo chmod 600 config/gpgkeys
 	sudo gpg --homedir config/gpgkeys --import salt_dotfiles.key
 
-install: ${VENV} config/gpgkeys
+install: python-reqs config/gpgkeys
 	sudo env "PATH=${PATH}" salt-call state.apply
 
 .PHONY: python-reqs setup git-config
