@@ -1,9 +1,16 @@
 base:
   '*':
-    - basic
+    - users
+    - locale
+    - timezone
+    - zsh
+    - tmux
+    - vim
+    - git
+    - mutt
   'localhost:raptor':
      - match: grain
-     - graphical
-  'localhost:blackbird':
-     - match: grain
-     - console
+     - xorg
+     - termite
+  # 'localhost:blackbird':
+     # - match: grain

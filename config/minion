@@ -1,4 +1,3 @@
-
 # vim: ft=yaml:
 id: local
 file_client: local
@@ -8,20 +7,20 @@ file_roots:
   base:
     - states
     - workspace
+    - formulas/salt-formula-git
+    - formulas/salt-formula-vim
 pillar_roots:
   base:
     - pillar
 decrypt_pillar:
   - 'secrets:vault': gpg
 fileserver_backend:
-  - roots
   - git
+  - roots
 gitfs_remotes:
-  - https://github.com/saltstack-formulas/openssh-formula
   - https://github.com/saltstack-formulas/timezone-formula
   - https://github.com/saltstack-formulas/locale-formula
   - https://github.com/saltstack-formulas/users-formula
-  - https://github.com/saltstack-formulas/hostsfile-formula
-  - https://github.com/saltstack-formulas/samba-formula
-  - https://github.com/saltstack-formulas/salt-formula
   - https://github.com/whiteabelincoln/salt-formula-git
+  - https://github.com/whiteabelincoln/salt-formula-vim
+  - https://github.com/whiteabelincoln/salt-formula-tmux

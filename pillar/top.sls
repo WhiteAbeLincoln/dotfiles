@@ -2,6 +2,9 @@ base:
   '*':
     - git
     - ssh
+    - vim
+    - tmux
+    - users
     - packages
     - services
     - secrets

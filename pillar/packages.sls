@@ -6,35 +6,11 @@ packages:
     - nss-mdns
     - avahi
 
-  w3m:
-    - w3m
-
-  lynx:
-    - lynx
-
   firefox:
     - firefox
 
   chromium:
     - chromium
-
-  nginx:
-    - nginx
-
-  apache:
-    - apache
-
-  curl:
-    - curl
-
-  wget:
-    - wget
-
-  sshfs:
-    - sshfs
-
-  ssh:
-    - openssh
 
   transmission:
     console:
@@ -42,23 +18,11 @@ packages:
     graphical:
       - transmission-gtk
 
-  qbittorrent:
-    graphical:
-      - qbittorrent
-    console:
-      - qbittorrent-nox
-
-  deluge:
-    - deluge
-
   gist:
     - gist
 
   mutt:
     - mutt
-
-  evolution:
-    - evolution
 
   thunderbird:
     - thunderbird
@@ -66,44 +30,8 @@ packages:
   irssi:
     - irssi
 
-  weechat:
-    - weechat
-
-  hexchat:
-    - hexchat
-
-  polari:
-    - polari
-
-  empathy:
-    - empathy
-
-  pidgin:
-    - pidgin
-
-  telepathy:
-    - telepathy-kde-meta
-
-  x2goclient:
-    - x2goclient
-
-  remmina:
-    - remmina
-
-  x2goserver:
-    - x2goserver
-
-  x11vnc:
-    - x11vnc
-
-  tigervnc:
-    - tigervnc
-
   feh:
     - feh
-
-  xloadimage:
-    - xloadimage
 
   gimp:
     - gimp
@@ -114,54 +42,15 @@ packages:
   darktable:
     - darktable
 
-  krita:
-    - krita
-
-  graphiz:
-    - graphviz
-
-  inkscape:
-    - inkscape
-
-  freecad:
-    - freecad
-
-  librecad:
-    - librecad
-
-  qcad:
-    - qcad
-
-  blender:
-    - blender
-
-  cmus:
-    - cmus
-
   vlc:
-    graphical:
-      - vlc
-      - qt4
-    console:
-      - vlc
+    - vlc
+    - qt4
 
   ncmpcpp:
     - ncmpcpp
 
-  pianobar:
-    - pianobar
-
-  mps_youtube:
-    - mps-youtube
-
   mpd:
     - mpd
-
-  clementine:
-    - clementine
-
-  rhythmbox:
-    - rhythmbox
 
   ponymix:
     - ponymix
@@ -175,15 +64,6 @@ packages:
   mpv:
     - mpv
 
-  subdl:
-    - subdl
-
-  handbrake:
-    console:
-      - handbrake-cli
-    graphical:
-      - handbrake
-
   kdeconnect:
     - kdeconnect
 
@@ -192,12 +72,6 @@ packages:
 
   termite:
     - termite
-
-  simpleterm:
-    - st
-
-  xterm:
-    - xterm
 
   gradle:
     - gradle
@@ -324,14 +198,12 @@ packages:
     - dunst
 
   pulseaudio:
-    console:
-      - pulseaudio
-      - pulseaudio-bluetooth
-      - pulseaudio-zeroconf
-      - ponymix
-    graphical:
-      - paprefs
-      - pavucontrol
+    - pulseaudio
+    - pulseaudio-bluetooth
+    - pulseaudio-zeroconf
+    - ponymix
+    - paprefs
+    - pavucontrol
 
   gnuplot:
     - gnuplot
@@ -362,10 +234,6 @@ packages:
     - mathjax
     - sagemath-jupyter
 
-  python:
-    - python
-    - python-pip
-
   gtk_theme:
     - arc-gtk-theme
     - arc-icon-theme
@@ -373,7 +241,3 @@ packages:
     - breeze-gtk
     - breeze
     - lxappearance
-
-  git:
-    - git
-    - hub

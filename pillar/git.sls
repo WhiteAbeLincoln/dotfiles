@@ -1,18 +1,18 @@
 git:
+  managed_userconfig: True
   users:
     abe:
-      fullname: Abraham White
-      email: abelincoln.white@gmail.com
+      git_config:
+        user:
+          name: Abraham White
+          email: abelincoln.white@gmail.com
+        core:
+          excludesfile: /home/abe/.gitignore_global
+          editor: emacs
 
 git_config:
-  user:
-    email: abelincoln.white@gmail.com
-    name: Abraham White
   push:
     default: simple
-  core:
-    excludesfile: /home/abe/.gitignore_global
-    editor: emacs
   alias:
     branches: branch -a
     commits: log
