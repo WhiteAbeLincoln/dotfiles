@@ -16,7 +16,13 @@ ${VENV}:
 python-reqs: requirements.pip | ${VENV}
 	pip3 install --upgrade -r requirements.pip
 
-install: ${VENV}
-	$(EXEC) salt-call state.apply $(SLS)
+config/gpgkeys:
+	gpg --pinentry-mode loopback --decrypt salt_dotfiles.key.gpg > salt_dotfiles.key
+	sudo mkdir config/gpgkeys
+	sudo chmod 600 config/gpgkeys
+	sudo gpg --homedir config/gpgkeys --import salt_dotfiles.key
+
+install: ${VENV} config/gpgkeys
+	sudo env "PATH=${PATH}" salt-call state.apply
 
 .PHONY: python-reqs setup git-config
