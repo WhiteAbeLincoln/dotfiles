@@ -5,8 +5,6 @@ alias l='ls -CF'
 alias grep='grep --color=always'
 
 alias sleepy='sudo rtcwake -m mem -u -t $(date +%s -d "tomorrow 06:30")'
-alias startXfce='startx $(which startxfce4) -- -nolisten tcp vt$XDG_VTNR'
-alias vim="nvim"
 alias pulsemixer="xterm -e pulsemixer"
 
 eval "$(hub alias -s)"

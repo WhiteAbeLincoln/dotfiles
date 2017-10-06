@@ -3,7 +3,7 @@ install mutt:
   pkg.installed:
     - pkgs: {{ salt['pillar.get']('packages:mutt', ['mutt']) }}
 
-{% set email = pillar['secrets']['vault']['email'] %}
+{% set email = salt['pillar.get']('secrets:vault:email') %}
 
 copy abes mutt config:
   file.managed:

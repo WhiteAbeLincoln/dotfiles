@@ -170,7 +170,25 @@ packages:
     - efibootmgr
 
   xorg:
-    - xorg
+    - xorg-iceauth
+    - xorg-luit
+    - xorg-mkfontdir
+    - xorg-mkfontscale
+    - xorg-server
+    - xorg-setxkbmap
+    - xorg-xauth
+    - xorg-xbacklight
+    - xorg-xdpyinfo
+    - xorg-xev
+    - xorg-xinput
+    - xorg-xkbcomp
+    - xorg-xkbevd
+    - xorg-xkbutils
+    - xorg-xkill
+    - xorg-xmodmap
+    - xorg-xset
+    - xf86-video-intel
+    - xf86-input-libinput
     - xclip
     - arandr
     - xorg-xinit
@@ -193,6 +211,7 @@ packages:
   zsh:
     - zsh-completions
     - zsh
+    - pkgfile
 
   dunst:
     - dunst

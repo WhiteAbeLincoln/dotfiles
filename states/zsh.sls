@@ -4,7 +4,7 @@ install zsh:
 
 install grml config:
   pkg.installed:
-    - pkgs: {{ salt['pillar.get']('packages.grml_zsh_config', []) }}
+    - pkgs: {{ salt['pillar.get']('packages:grml_zsh_config', []) }}
 
 install antibody:
   cmd.run:
@@ -40,14 +40,6 @@ manage abes zshenv:
     - user: abe
     - group: abe
 
-manage abes zplugins:
-  file.managed:
-    - name: /home/abe/.zplugins
-    - source: salt://dotfiles/zsh/zplugins.zsh
-    - user: abe
-    - group: abe
-
-
 manage abes zshrc:
   file.managed:
     - name: /home/abe/.zshrc.local
@@ -57,6 +49,6 @@ manage abes zshrc:
 
 update abes antibody bundles:
   cmd.run:
-    - name: antibody bundle < /home/abe/.zbundles.txt
+    - name: antibody bundle < /home/abe/.zbundles.txt > /home/abe/.zplugins
     - cwd: /home/abe
     - runas: abe

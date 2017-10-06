@@ -3,6 +3,11 @@ install xorg:
   pkg.installed:
     - pkgs: {{ salt['pillar.get']('packages:xorg', ['xorg']) }}
 
+manage touchpad configuration:
+  file.managed:
+    - name: /etc/X11/xorg.conf.d/30-touchpad.conf
+    - source: salt://dotfiles/xorg/30-touchpad.conf
+
 copy abes XCompose:
   file.managed:
     - name: /home/abe/.XCompose
@@ -35,3 +40,5 @@ copy abes xprofile:
 create abes .Xresources.d:
   file.directory:
     - name: /home/abe/.Xresources.d
+    - user: abe
+    - group: abe
