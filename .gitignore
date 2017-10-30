@@ -3,3 +3,4 @@ var/
 config/gpgkeys/
 .venv/
 salt_dotfiles.key
+*~

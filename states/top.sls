@@ -4,13 +4,17 @@ base:
     - locale
     - timezone
     - zsh
-    - tmux
-    - vim
-    - git
+    - tmux.config
+    - vim.config
+    - git.config
     - mutt
+    - network
   'localhost:raptor':
-     - match: grain
-     - xorg
-     - termite
+    - match: grain
+    - xorg
+    - termite
+    - rofi
+    - xmonad
+    - desktop_packages
   # 'localhost:blackbird':
      # - match: grain

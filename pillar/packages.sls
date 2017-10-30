@@ -1,22 +1,24 @@
 # vim:ft=yaml
 
 packages:
-  networkmanager:
+  network:
     - networkmanager
-    - nss-mdns
-    - avahi
 
-  firefox:
+  browser:
     - firefox
-
-  chromium:
-    - chromium
 
   transmission:
     console:
       - transmission-cli
     graphical:
       - transmission-gtk
+
+  clang:
+    - clang
+    - clang-tools-extra
+
+  stack:
+    - stack
 
   gist:
     - gist
@@ -30,45 +32,36 @@ packages:
   irssi:
     - irssi
 
-  feh:
-    - feh
-
-  gimp:
-    - gimp
-
-  imagemagick:
+  images:
     - imagemagick
+    - gimp
+    - feh
 
   darktable:
     - darktable
 
-  vlc:
-    - vlc
-    - qt4
-
   ncmpcpp:
     - ncmpcpp
+
+  video:
+    - vlc
+    - qt4
+    - mpv
+    - ffmpeg
+
+  music:
+    - beets
+    - playerctl
+    - cmus
 
   mpd:
     - mpd
 
-  ponymix:
-    - ponymix
-
   audacity:
     - audacity
 
-  ffmpeg:
-    - ffmpeg
-
-  mpv:
-    - mpv
-
   kdeconnect:
     - kdeconnect
-
-  beets:
-    - beets
 
   termite:
     - termite
@@ -85,7 +78,7 @@ packages:
   ranger:
     - ranger
 
-  thunar:
+  filemanager:
     - thunar
     - gvfs
     - gvfs-mtp
@@ -98,45 +91,19 @@ packages:
     - ffmpegthumbnailer
     - raw-thumbnailer
 
-  trash_cli:
-    - trash-cli
-
-  7zip:
+  compression:
     - p7zip
-
-  tar:
-    - tar
-
-  zip:
     - zip
     - unzip
-
-  rar:
+    - tar
     - unrar
-
-  xarchiver:
     - xarchiver
 
   fileroller:
     - file-roller
 
-  htop:
-    - htop
-
-  vim:
-    console:
-      - vim
-    graphical:
-      - gvim
-
   emacs:
-    console:
-      - emacs-nox
-    graphical:
-      - emacs
-
-  neovim:
-    - neovim
+    - emacs
 
   atom:
     - atom
@@ -151,9 +118,6 @@ packages:
     - hunspell-en
     - libpaper
 
-  pandoc:
-    - pandoc
-
   calibre:
     - calibre
 
@@ -162,9 +126,6 @@ packages:
     - zathura-pdf-poppler
     - zathura-djvu
     - zathura-ps
-
-  evince:
-    - evince
 
   efibootmgr:
     - efibootmgr
@@ -187,23 +148,22 @@ packages:
     - xorg-xkill
     - xorg-xmodmap
     - xorg-xset
+    - xorg-xmessage
     - xf86-video-intel
     - xf86-input-libinput
     - xclip
     - arandr
     - xorg-xinit
-
-  compton:
     - compton
 
   rofi:
     - rofi
 
-  playerctl:
-    - playerctl
-
-  locate:
+  utilites:
     - mlocate
+    - htop
+    - trash-cli
+    - pandoc
 
   grml_zsh_config:
     - grml-zsh-config
@@ -213,7 +173,7 @@ packages:
     - zsh
     - pkgfile
 
-  dunst:
+  notifications:
     - dunst
 
   pulseaudio:
@@ -224,14 +184,9 @@ packages:
     - paprefs
     - pavucontrol
 
-  gnuplot:
-    - gnuplot
-
-  tmux:
-    - tmux
-
   latex:
     - texlive-most
+    - gnuplot
 
   fonts:
     - ttf-symbola

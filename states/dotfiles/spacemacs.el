@@ -61,6 +61,7 @@ values."
      (c-c++ :variables
             c-c++-default-mode-for-headers 'c++-mode
             c-c++-enable-clang-support t)
+     cscope
      ;; MISC
      evil-commentary
      xkcd
@@ -367,7 +368,7 @@ you should place your code here."
           '(("+" . "-") ("-" . "+") ("*" . "+")))
 
     )
-  (add-hook 'c++-mode-hook (lambda () (setq flycheck-clang-language-standard "c++11")))
+  (add-hook 'c++-mode-hook (lambda () (setq flycheck-clang-language-standard "c++14")))
 
 
   (defun disable-all-themes ()
@@ -380,7 +381,7 @@ you should place your code here."
   (disable-all-themes)
   (use-package base16-theme
     :init
-    (add-to-list 'custom-theme-load-path "~/.emacs.d/private/themes")
+    (add-to-list 'custom-theme-load-path "~/.spacemacs.d/themes")
     :config
     (load-theme 'base16-custom t))
   (use-package editorconfig
