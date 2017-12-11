@@ -1,5 +1,5 @@
 typeset -U path
-path=($GEMBIN $GOBIN $path[@])
+path=($GEM_HOME/bin $GOBIN $path[@])
 
 # Add private bin
 if [[ -d "$HOME/bin" ]]; then

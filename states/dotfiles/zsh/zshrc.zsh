@@ -31,3 +31,12 @@ ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(history-substring-search-up history-substring-se
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+eval $(keychain --eval --quiet --systemd id_rsa)
+# OPAM configuration
+. /home/abe/.opam/opam-init/init.zsh > /dev/null 2> /dev/null || true
+
+export GEOMETRY_SYMBOL_ROOT="◆"
+export GEOMETRY_PROMPT_PLUGINS=(virtualenv docker_machine exec_time jobs git hg)
+export PROMPT_GEOMETRY_COLORIZE_SYMBOL=true
+export PROMPT_GEOMETRY_COLORIZE_ROOT=true

@@ -35,6 +35,7 @@ fi
 [ -f /etc/xprofile  ] && source /etc/xprofile
 [ -f ~/.xprofile  ] && source ~/.xprofile
 
+export _JAVA_AWT_WM_NONREPARENTING=1
 # twm &
 # xclock -geometry 50x50-1+1 &
 # xterm -geometry 80x50+494+51 &
@@ -61,6 +62,7 @@ function xmonad_programs {
 }
 
 session=${1:-xmonad}
+export SSH_ASKPASS=/usr/lib/ssh/ssh-askpass
 
 case $session in
     awesome           ) exec awesome;;

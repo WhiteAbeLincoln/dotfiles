@@ -1,6 +1,6 @@
 # swap caps and escape
-setxkbmap -option caps:swapescape
-setxkbmap -option compose:ralt
+# setxkbmap -option caps:swapescape
+# setxkbmap -option compose:ralt
 xsetroot -cursor_name left_ptr &
 
 # homepage server
