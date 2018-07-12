@@ -1,10 +1,14 @@
-install zsh:
-  pkg.installed:
-      - pkgs: {{ salt['pillar.get']('packages:zsh', ['zsh']) }}
+# install zsh:
+#   pkg.installed:
+#       - pkgs: {{ salt['pillar.get']('packages:zsh', ['zsh']) }}
 
 install grml config:
-  pkg.installed:
-    - pkgs: {{ salt['pillar.get']('packages:grml_zsh_config', []) }}
+  file.managed:
+    - name: /home/abe/.zshrc
+    - source: https://git.grml.org/f/grml-etc-core/etc/zsh/zshrc
+    - skip_verify: true
+    - user: abe
+    - group: abe
 
 install antibody:
   cmd.run:
@@ -52,3 +56,5 @@ update abes antibody bundles:
     - name: antibody bundle < /home/abe/.zbundles.txt > /home/abe/.zplugins
     - cwd: /home/abe
     - runas: abe
+
+# vim:ft=yaml

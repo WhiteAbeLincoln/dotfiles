@@ -5,7 +5,7 @@ setopt interactivecomments
 
 [[ -f ~/.zaliases ]] && . ~/.zaliases
 
-source /usr/share/doc/pkgfile/command-not-found.zsh
+source /etc/zsh_command_not_found
 
 if command -v stack >/dev/null 2>&1; then
 	autoload -U +X bashcompinit && bashcompinit
@@ -40,3 +40,7 @@ export GEOMETRY_SYMBOL_ROOT="◆"
 export GEOMETRY_PROMPT_PLUGINS=(virtualenv docker_machine exec_time jobs git hg)
 export PROMPT_GEOMETRY_COLORIZE_SYMBOL=true
 export PROMPT_GEOMETRY_COLORIZE_ROOT=true
+
+if [[ -z "$TMUX" ]] && [[ -n "$SSH_TTY" ]]; then
+    (tmux attach-session -t ssh || (tmux new-session -s ssh && tmux set -g prefix C-b)) && exit
+fi
