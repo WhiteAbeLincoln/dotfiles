@@ -21,6 +21,7 @@ gitfs_remotes:
   - https://github.com/saltstack-formulas/locale-formula
   - https://github.com/saltstack-formulas/users-formula
   - https://github.com/saltstack-formulas/openssh-formula
+  - https://github.com/saltstack-formulas/ddclient-formula
   - https://github.com/whiteabelincoln/salt-formula-git
   - https://github.com/whiteabelincoln/salt-formula-vim
   - https://github.com/whiteabelincoln/salt-formula-tmux

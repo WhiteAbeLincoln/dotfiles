@@ -1,6 +1,44 @@
 #!yaml|gpg
 secrets:
   vault:
+    ddclient:
+      valkyrie:
+        username: |
+          -----BEGIN PGP MESSAGE-----
+
+          hQIMA78GF1gcs/QpARAAiKmLVSmbIcx2PtvKXfVcBEk6MvXBbJR8OseTz7DtEBJ4
+          cVyUbS1Rj1P4MvNwDb5REdwNe2TIdy5qgu6CRupsKnrCrUEbOFRHKdeVM6X/Ht8v
+          BjPnUbGGlgXRDYObOGSJqRT8XSQoT8UiYW9onWnKBinMRiVQA6oaWzLDruv4bSK8
+          j4Q7ghf5RSUWVwo9Xa/+4vNRn/J5IRS4Jb2WLegrg7ZWHBB/iBvmc/DaXF1uzHs5
+          RiYS833NCmI44iIrTafP/ebPBba7K9WF/n6rrdaUSo6bH9NKXvNrhkeIa9hDWI4/
+          bSJdiahIvmyEZBsqHsu8l8h/5UeoLpCvi7xaWTGw7xxjqNxNeyHBH//QHRh6//7R
+          MtUMB2emNRoO2jbvXNGkqiOQKyqnHehJa+X40JhdbSi6Gx+s/I50YHbEeqBDOkev
+          KV+gEycTRrmVfjZOk6/T/OhYYk6qNAPZCAKB17/HBTqFY7q4pGcEVufe7oNTWQO0
+          SFuSAOPCYwhE4OrY0IYjCtrfVWTVEFD+FUJ6HN/wevauUdddSeujjHbQKUjGrxJG
+          iax+6l5Hc4DyxtgnMFRPH6icRri3NBFYiUxyRrPl13yjgmfd1WwRnJTxzz9l6sw3
+          PlHb4jGWvdG6SLT/AxYx5WUD/fUpoB/8buG456+FbimtczGyToHIpmDu804PjvPS
+          SwGHzoUCP+aM2ozWXnhpnpEGkyaRZ2oRddQl9IUGKNk4Dq6dRXqR7dDOmAfSXZtM
+          t66x+js6WUXQp1HJ1NGBpg280ou74SkqGkvjuA==
+          =wkjz
+          -----END PGP MESSAGE-----
+        password: |
+          -----BEGIN PGP MESSAGE-----
+
+          hQIMA78GF1gcs/QpARAAigyGgqg6btCgHGyEHHs42IMts/9jYyl8YljlYWxN3iyz
+          jyx5HwViWUA0eZll3r3N8mEFMAmg0p1vLUd/c3PQ0aGobJ9seIN17owK8AZnqPgv
+          I+mcZeykb9mn7pk0cy8FDu7OOFqYf2u3U21TUKJNKhr6GfCDs2fCpwLXOdSKZ/HC
+          0VFxUwGSiTO/lfLYLf/uSF6qusWyT00fZ4xhY2paEBctau/qUq9+HsRb7wGP//wK
+          eXDOw70PPt5bEamHiLh2BGtIvBCZ8dCw77KiAd2Yv7GM+bdcMSzx5iSOAlKTz9KS
+          wpmyGSzNxWsuNGNEv2pGCaP3+ZHdVSpMwSPfbERNhTpCfg/Eqznoxdiq6uLgHBj3
+          b9uUMucofBge2zMwo07ibLYs2JBbJMp/6/358LvS9Y9HiRpJ6MKiTh7TBbL1YmJn
+          MJZG+oP4Z4tYTTBvf7OLlBOSH7l/+sB/SlsEabXmuybAdlLT0hzWeXQbdt4RE/yH
+          Uy/nnEdzCHNcCA4kbhdRcXAgt+CNzDPfFSnVEwBnYqqxUwm1Q/zba6oYZ6Gfjc1r
+          Q4Ie9HyoYK8HHA2reOTRd3nyNwm7bHKDiFczi0UxWOLVsTMBOjueOsDaB1S7xEtc
+          xebZm+E0UF22Na93z8CGKeTjGJbGqSPQZg5+mIdYvKGR/ohDlL9ntWxSjnYeZsfS
+          SwFOqvEdEzHD/SKrPk0zK8UfQG8gDIr/K0CtJYnTinpVO21Cq2KSYoYH+3J0uA6P
+          Gfxt/8PJmGgb/tg61uc/EOTTve7nQMoOJRHl6Q==
+          =+B0I
+          -----END PGP MESSAGE-----
     ssh_keys:
       abe:
         id_rsa:

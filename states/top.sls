@@ -19,6 +19,7 @@ base:
     - match: grain
     - openssh
     - openssh.config
+    - ddclient
   # 'localhost:blackbird':
      # - match: grain
 

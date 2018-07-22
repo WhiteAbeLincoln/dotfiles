@@ -1,6 +1,7 @@
 base:
   '*':
     - git
+    - ddclient
     - openssh
     - vim
     - tmux
