@@ -29,3 +29,5 @@ git_config:
     graph: log --graph --oneline --decorate --all
   web:
     browser: xdg-open
+
+# vim: ft=yaml

@@ -5,13 +5,22 @@ users:
     ssh_keys_pillar:
       id_rsa: "secrets:vault:ssh_keys:abe"
     password: $1$0xhbScOH$TjidxpvEuF/H8b2oxJVSx.
-    shell: /bin/zsh
+    shell: /usr/bin/zsh
     groups:
       - users
     optional_groups:
       - games
-      - http
+      - cdrom
+      - floppy
+      - audio
+      - dip
+      - video
+      - plugdev
+      - netdev
+      - lpadmin
       - log
-      - rfkill
       - sys
       - systemd-journal
+      - scanner
+
+# vim: ft=yaml
