@@ -1,12 +1,12 @@
 base:
   '*':
     - git
-    - ssh
+    - ddclient
+    - openssh
     - vim
     - tmux
     - users
     - packages
-    - services
     - secrets
     - general
 

@@ -1,14 +1,12 @@
 base:
   '*':
-    - users
     - locale
     - timezone
+    - users
     - zsh
     - tmux.config
     - vim.config
     - git.config
-    - mutt
-    - network
   'localhost:raptor':
     - match: grain
     - xorg
@@ -16,5 +14,13 @@ base:
     - rofi
     - xmonad
     - desktop_packages
+    - mutt
+  'localhost:valkyrie':
+    - match: grain
+    - openssh
+    - openssh.config
+    - ddclient
   # 'localhost:blackbird':
      # - match: grain
+
+# vim:ft=yaml
