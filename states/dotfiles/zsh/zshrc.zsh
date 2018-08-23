@@ -5,7 +5,8 @@ setopt interactivecomments
 
 [[ -f ~/.zaliases ]] && . ~/.zaliases
 
-source /usr/share/doc/pkgfile/command-not-found.zsh
+CNF=/usr/share/doc/pkgfile/command-not-found.zsh
+[[ -f $CNF ]] && . $CNF
 
 if command -v stack >/dev/null 2>&1; then
 	autoload -U +X bashcompinit && bashcompinit
