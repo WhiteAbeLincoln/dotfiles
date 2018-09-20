@@ -1,11 +1,8 @@
-# swap caps and escape
-# setxkbmap -option caps:swapescape
-# setxkbmap -option compose:ralt
 xsetroot -cursor_name left_ptr &
+setxkbmap -model pc104 -layout us,us -variant ,dvp -option caps:swapescape,compose:ralt,grp:shifts_toggle,grp_led:caps
 
-# homepage server
-# $HOME/Documents/Projects/homepage/server/server.py &
-# /usr/bin/xautolock -time 10 -locker '/usr/bin/light-locker-command -l' -corners 0-00 &
-libinput-gestures-setup start
+if [ "$HOST" == "raptor" ]; then
+    libinput-gestures-setup start
+fi
 
 # vim:ft=sh

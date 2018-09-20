@@ -8,7 +8,7 @@ git:
           email: abelincoln.white@gmail.com
         core:
           excludesfile: /home/abe/.gitignore_global
-          editor: emacs
+          editor: vim
 
 git_config:
   push:
