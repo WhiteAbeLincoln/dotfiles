@@ -1,5 +1,0 @@
-salt-ssh:
-  config_dir: config
-
-salt-call:
-  config_dir: config

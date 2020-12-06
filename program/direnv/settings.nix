@@ -1,0 +1,3 @@
+{
+  enableNixDirenvIntegration = true;
+}

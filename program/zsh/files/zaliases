@@ -1,0 +1,30 @@
+alias sleepy='sudo rtcwake -m mem -u -t $(date +%s -d "tomorrow 06:30")'
+alias pulsemixer="xterm -e pulsemixer"
+alias show='highlight -O ansi --force'
+
+function volup {
+    pactl set-sink-volume "@DEFAULT_SINK@" +8%
+}
+
+function voldown {
+    pactl set-sink-volume "@DEFAULT_SINK@" -8%
+}
+
+function to_hex {
+    echo -n "$@" | od -A n -t x1 | tr -d ' '
+}
+
+alias rm="trash"
+if islinux; then
+  alias pbcopy="xclip -i -selection clipboard"
+  alias pbpaste="xclip -o -selection clipboard"
+fi
+command -v code >/dev/null 2>&1 || {
+  alias code="visual-studio-code"
+}
+
+function empire2fa {
+  pbpaste | gpg --decrypt | grep "Security code" | sed -n 's/.*: \(.*\)/\1/p' | pbcopy
+}
+
+# vim:ft=zsh foldmethod=marker foldlevel=0

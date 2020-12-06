@@ -1,0 +1,90 @@
+setopt NO_clobber
+
+### Plugins {{{
+if [ -n "$ZPLUG_INSTDIR" ]; then
+    source "$ZPLUG_INSTDIR/init.zsh"
+    zplug "zplug/zplug", hook-build:"zplug --self-manage"
+    zplug "zsh-users/zsh-completions"
+    zplug "zsh-users/zsh-autosuggestions"
+    zplug "zsh-users/zsh-syntax-highlighting", defer:2
+    zplug "zsh-users/zsh-history-substring-search"
+    zplug "spwhitt/nix-zsh-completions"
+    zplug "denysdovhan/spaceship-prompt", use:spaceship.zsh, from:github, as:theme
+    if ! zplug check --verbose; then
+        printf "Install? [y/N]: "
+        if read -q; then
+            echo; zplug install
+        fi
+    fi
+
+    # soruce plugins and add commands to $PATH
+    zplug load
+fi
+# }}}
+
+# source aliases
+[[ -f ~/.zaliases ]] && . ~/.zaliases
+
+# vim keybindings
+setopt vi
+
+### zsh-history-substring-search {{{
+if [ -n "$ZPLUG_INSTDIR" ]; then
+    bindkey "$terminfo[kcuu1]" history-substring-search-up
+    bindkey "$terminfo[kcud1]" history-substring-search-down
+    bindkey '^[[A' history-substring-search-up
+    bindkey '^[[B' history-substring-search-down
+    bindkey -M vicmd 'k' history-substring-search-up
+    bindkey -M vicmd 'j' history-substring-search-down
+fi
+### }}}
+
+### zsh-autosuggestions {{{
+if [ -n "$ZPLUG_INSTDIR" ]; then
+    ZSH_AUTOSUGGEST_USE_ASYNC=true
+    ZSH_AUTOSUGGEST_CLEAR_WIDGETS=("${(@)ZSH_AUTOSUGGEST_CLEAR_WIDGETS:#(up|down)-line-or-history}")
+    ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(history-substring-search-up history-substring-search-down)
+fi
+### }}}
+
+### Completions and program configuration {{{
+fpath=($HOME/.zsh/completions /usr/share/bash-completion/completions $fpath[@])
+autoload -Uz compinit && compinit -i
+autoload -U +X bashcompinit && bashcompinit -i
+
+# # fnm
+# if [ -d "$HOME/.fnm" ]; then
+#     path+="$HOME/.fnm"
+#     eval "$(fnm env)"
+# fi
+
+# # pyenv
+# path+='/home/abe/.pyenv/bin'
+# eval "$(pyenv init -)"
+# eval "$(pyenv virtualenv-init -)"
+
+# start keychain if binary exists and not on macos
+if islinux && check_com -c keychain; then
+    eval $(keychain --eval --quiet --systemd id_rsa)
+fi
+
+# OPAM configuration
+test -r /home/abe/.opam/opam-init/init.zsh && . /home/abe/.opam/opam-init/init.zsh > /dev/null 2> /dev/null || true
+
+# stack completion
+if check_com -c stack; then
+	eval "$(stack --bash-completion-script stack)"
+fi
+
+if [ -n "$DIRENV_INSTDIR" ]; then
+    eval "$("$DIRENV_INSTDIR/bin/direnv" hook zsh)"
+fi
+### }}}
+
+# remove duplicates from these arrays
+typeset -U path PATH cdpath CDPATH fpath FPATH manpath MANPATH
+
+if [[ -z "$TMUX" ]] && [[ -n "$SSH_TTY" ]]; then
+    (tmux attach-session -t ssh || (tmux new-session -s ssh && tmux set -g prefix C-b)) && exit
+fi
+# vim: ft=zsh foldmethod=marker foldlevel=0

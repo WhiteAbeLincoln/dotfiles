@@ -1,0 +1,3 @@
+[submodule "packages/xmonad"]
+	path = packages/xmonad
+	url = git@github.com:WhiteAbeLincoln/abes-xmonad.git

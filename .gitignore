@@ -4,3 +4,5 @@ config/gpgkeys/
 .venv/
 salt_dotfiles.key
 *~
+home.nix
+current-theme.nix

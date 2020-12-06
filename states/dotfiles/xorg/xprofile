@@ -1,8 +1,0 @@
-xsetroot -cursor_name left_ptr &
-setxkbmap -model pc104 -layout us,us -variant ,dvp -option caps:swapescape,compose:ralt,grp:shifts_toggle,grp_led:caps
-
-if [ "$HOST" == "raptor" ]; then
-    libinput-gestures-setup start
-fi
-
-# vim:ft=sh
