@@ -6,3 +6,4 @@ salt_dotfiles.key
 *~
 home.nix
 current-theme.nix
+!lib/
