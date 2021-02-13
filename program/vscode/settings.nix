@@ -84,6 +84,7 @@ pkgs:
 
     "[markdown]"."files.trimTrailingWhitespace" = false;
     "[typescript]"."editor.defaultFormatter" = "esbenp.prettier-vscode";
+    "[typescriptreact]"."editor.defaultFormatter" = "esbenp.prettier-vscode";
     "[javascript]"."editor.defaultFormatter" = "esbenp.prettier-vscode";
     "[markdown]"."editor.defaultFormatter" = "esbenp.prettier-vscode";
     "emmet.showSuggestionsAsSnippets" = true;

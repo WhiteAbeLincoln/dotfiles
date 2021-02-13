@@ -6,8 +6,5 @@
   ];
   programs.firefox = {
     enable = true;
-    extraPackageConfig = {
-      enableTridactylNative = true;
-    };
   } // ((import ./settings.nix) args);
 }

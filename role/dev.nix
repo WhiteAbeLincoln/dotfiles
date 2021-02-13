@@ -1,5 +1,7 @@
 { pkgs, lib, ...  }:
 
+with lib;
+
 {
   imports = [
     ../program/git
@@ -18,7 +20,10 @@
     google-chrome
     haskellPackages.ShellCheck
     nur.repos.bb010g.pkgs.xcolor
+    (lowPrio binutils)
     moreutils
+    trash-cli
+    gcc
   ];
   programs.jq.enable = true;
   programs.ssh.enable = true;
@@ -32,4 +37,5 @@
   programs.tmux-custom = lib.attrsets.recursiveUpdate ((import ../program/tmux/settings.nix) pkgs) {
     shell = "${pkgs.zsh}/bin/zsh";
   };
+  programs.command-not-found.enable = true;
 }

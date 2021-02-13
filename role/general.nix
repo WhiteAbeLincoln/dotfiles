@@ -4,6 +4,7 @@
   imports = [
     ../program/firefox
     ../program/zathura
+    ../program/tridactyl
   ];
 
   home.packages = with pkgs; [
@@ -12,6 +13,7 @@
     zoom-us
     libreoffice-qt
     hunspell
+    tightvnc
   ];
   programs.texlive = {
     enable = true;

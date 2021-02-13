@@ -3,12 +3,12 @@ pkgs: {
     dmenu = "rofi";
     dmenuArgs = ["-dmenu" "-i"];
     normalBorderColor = "#555555";
-    focusedBorderColor = "#736113";
+    focusedBorderColor = "#adbf8a";
     borderWidth = 2;
     terminal = {
       keyMap = "M-S-<Return>";
       name = "Launch terminal";
-      value = "${pkgs.termite} -e ${pkgs.tmux}";
+      value = "${pkgs.termite}/bin/termite -e ${pkgs.tmux}/bin/tmux";
     };
     keybindings = {
       "M-p" = { name = "Launch application"; value = "rofi -show drun"; };

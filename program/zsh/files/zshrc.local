@@ -64,9 +64,9 @@ autoload -U +X bashcompinit && bashcompinit -i
 # eval "$(pyenv virtualenv-init -)"
 
 # start keychain if binary exists and not on macos
-if islinux && check_com -c keychain; then
-    eval $(keychain --eval --quiet --systemd id_rsa)
-fi
+# if islinux && check_com -c keychain; then
+#     eval $(keychain --eval --quiet --systemd id_rsa)
+# fi
 
 # OPAM configuration
 test -r /home/abe/.opam/opam-init/init.zsh && . /home/abe/.opam/opam-init/init.zsh > /dev/null 2> /dev/null || true
@@ -76,13 +76,15 @@ if check_com -c stack; then
 	eval "$(stack --bash-completion-script stack)"
 fi
 
-if [ -n "$DIRENV_INSTDIR" ]; then
-    eval "$("$DIRENV_INSTDIR/bin/direnv" hook zsh)"
-fi
+# if [ -n "$DIRENV_INSTDIR" ]; then
+#     eval "$("$DIRENV_INSTDIR/bin/direnv" hook zsh)"
+# fi
 ### }}}
 
 # remove duplicates from these arrays
 typeset -U path PATH cdpath CDPATH fpath FPATH manpath MANPATH
+
+[[ -f ~/.zshrc.post ]] && . ~/.zshrc.post
 
 if [[ -z "$TMUX" ]] && [[ -n "$SSH_TTY" ]]; then
     (tmux attach-session -t ssh || (tmux new-session -s ssh && tmux set -g prefix C-b)) && exit

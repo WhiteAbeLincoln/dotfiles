@@ -7,7 +7,6 @@
     react-devtools
     reddit-enhancement-suite
     terms-of-service-didnt-read
-    tridactyl
     ublock-origin
     lastpass-password-manager
     darkreader
@@ -25,8 +24,5 @@
       "signon.autofillForms" = false; # disable form filling
       "signon.rememberSignons" = false; # disable password saving
     };
-  };
-  extraPackageConfig = {
-    enableTridactylNative = true;
   };
 }

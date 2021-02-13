@@ -1,5 +1,11 @@
 { config, pkgs, ... }:
 
+let
+
+cfg = config.programs.zsh;
+
+in
+
 {
   home.packages = with pkgs; [
     zplug
@@ -16,5 +22,6 @@
     ".zshrc".source = ./files/zshrc;
     ".zshrc.local".source = ./files/zshrc.local;
     ".zshrc.pre".source = ./files/zshrc.pre;
+    ".zshrc.post".text = "${cfg.initExtra}";
   };
 }
