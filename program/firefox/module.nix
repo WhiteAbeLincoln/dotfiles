@@ -17,7 +17,8 @@ in
       };
     };
   };
-  config = mkIf (cfg.extraPackageConfig != {}) {
+  # only works with linux derivation
+  config = mkIf (pkgs.stdenv.isLinux && cfg.extraPackageConfig != {}) {
     programs.firefox.package = pkgs.firefox.override {
       cfg = cfg.extraPackageConfig;
     };

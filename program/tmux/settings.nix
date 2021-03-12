@@ -12,7 +12,6 @@ pkgs:
     pain-control
     yank
   ];
-  secureSocket = true;
   terminal = "xterm-256color"; # support 24-bit color in termite
   extraConfig = ''
     set -ga terminal-overrides ",xterm-termite:Tc"

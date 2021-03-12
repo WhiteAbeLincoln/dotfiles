@@ -4,8 +4,8 @@ pkgs:
   extensions = with pkgs.vscode-extensions; [
     bbenoist.Nix
     vscodevim.vim
-    ms-vscode.cpptools
-    ms-python.python
+    # ms-vscode.cpptools
+    # ms-python.python
     ms-azuretools.vscode-docker
   ] ++ pkgs.vscode-utils.extensionsFromVscodeMarketplace [
     # use function gethash { nix-prefetch-url "https://$1.gallery.vsassets.io/_apis/public/gallery/publisher/$1/extension/$2/$3/assetbyname/Microsoft.VisualStudio.Services.VSIXPackage" | pbcopy }
@@ -99,7 +99,6 @@ pkgs:
         commands = [ { command = "editor.action.marker.prev"; when = "editorTextFocus && !editorReadonly"; } ];
       }
     ];
-    "workbench.colorTheme" = "Solarized Dark";
   };
   keybindings = [
     {

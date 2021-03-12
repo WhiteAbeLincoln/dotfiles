@@ -8,12 +8,12 @@
   ];
 
   home.packages = with pkgs; [
-    google-chrome
+    chromium
     spotify
-    zoom-us
-    libreoffice-qt
-    hunspell
-    tightvnc
+    # zoom-us
+    # libreoffice-qt
+    # hunspell
+    # tightvnc
   ];
   programs.texlive = {
     enable = true;
@@ -21,5 +21,4 @@
       inherit (tpkgs) scheme-full;
     };
   };
-  programs.feh.enable = true;
 }

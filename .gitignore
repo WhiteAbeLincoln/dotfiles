@@ -4,6 +4,7 @@ config/gpgkeys/
 .venv/
 salt_dotfiles.key
 *~
-home.nix
+/home.nix
 current-theme.nix
 !lib/
+darwin-configuration.nix

@@ -13,26 +13,26 @@ with lib;
     ../program/emacs
     ../program/tmux
     ../program/direnv
-    ../program/termite
   ];
 
   home.packages = with pkgs; [
-    google-chrome
+    chromium
     haskellPackages.ShellCheck
-    nur.repos.bb010g.pkgs.xcolor
-    (lowPrio binutils)
-    moreutils
     trash-cli
-    gcc
   ];
   programs.jq.enable = true;
   programs.ssh.enable = true;
+  programs.ssh.extraConfig = mkIf pkgs.stdenv.isDarwin ''
+    IgnoreUnknown AddKeysToAgent,UseKeychain
+    AddKeysToAgent yes
+    UseKeychain yes
+  '';
   programs.htop = {
     enable = true;
     vimMode = true;
   };
   programs.neovim.enable = true;
-  programs.keychain.enable = true;
+  programs.keychain.enable = pkgs.stdenv.isLinux;
   programs.opam.enable = true;
   programs.tmux-custom = lib.attrsets.recursiveUpdate ((import ../program/tmux/settings.nix) pkgs) {
     shell = "${pkgs.zsh}/bin/zsh";

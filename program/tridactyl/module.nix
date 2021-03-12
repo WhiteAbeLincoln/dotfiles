@@ -25,7 +25,7 @@ in
         };
       };
     };
-    config = mkIf (firefoxCfg.enable && cfg.enable){
+    config = mkIf (firefoxCfg.enable && cfg.enable) {
       programs.firefox = {
         extensions = [
           cfg.package

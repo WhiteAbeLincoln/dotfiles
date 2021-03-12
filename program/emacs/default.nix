@@ -2,7 +2,7 @@
 
 {
   programs.emacs.enable = true;
-  services.emacs.enable = true;
+  # services.emacs.enable = pkgs.stdenv.isLinux;
   home.file.".spacemacs".source = ./spacemacs-new;
   # home.file.".emacs.d" = {
   #   source = pkgs.fetchFromGitHub {
