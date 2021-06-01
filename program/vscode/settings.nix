@@ -77,7 +77,7 @@ pkgs:
     "editor.snippetSuggestions" = "bottom";
     "editor.fontFamily" = "'Fira Code', 'Droid Sans Mono', 'monospace', monospace, 'Droid Sans Fallback'";
 
-    "breadcrums.enabled" = true;
+    "breadcrumbs.enabled" = true;
     "workbench.editor.highlightModifiedTabs" = true;
     "debug.inlineValues" = true;
     "explorer.confirmDelete" = false;

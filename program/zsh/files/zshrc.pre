@@ -9,8 +9,7 @@ fi
 CNF=('/usr/share/doc/pkgfile/command-not-found.zsh' '/etc/zsh_command_not_found')
 
 for f in $CNF; do
-	if [[ -f "$f" ]]; then
+  if [[ -f "$f" ]]; then
     source "$f"
   fi
 done
-

@@ -6,19 +6,13 @@ with lib;
   imports = [
     ../program/git
     ../program/timew
-    ../program/vscode
     ../program/vim
-    ../program/firefox
     ../program/zsh
-    ../program/emacs
-    ../program/tmux
     ../program/direnv
   ];
 
   home.packages = with pkgs; [
-    chromium
     haskellPackages.ShellCheck
-    trash-cli
   ];
   programs.jq.enable = true;
   programs.ssh.enable = true;
@@ -33,9 +27,5 @@ with lib;
   };
   programs.neovim.enable = true;
   programs.keychain.enable = pkgs.stdenv.isLinux;
-  programs.opam.enable = true;
-  programs.tmux-custom = lib.attrsets.recursiveUpdate ((import ../program/tmux/settings.nix) pkgs) {
-    shell = "${pkgs.zsh}/bin/zsh";
-  };
   programs.command-not-found.enable = true;
 }

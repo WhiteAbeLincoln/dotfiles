@@ -75,6 +75,10 @@ function issolaris () {
     [[ $GRML_OSTYPE == "SunOS" ]]
 }
 
+function iswsl () {
+  [[ ! -z "${WSL_DISTRO_NAME+x}" ]] || [[ "$(< /proc/version)" = *[Mm]icrosoft* ]]
+}
+
 #f1# are we running within an utf environment?
 function isutfenv () {
     case "$LANG $CHARSET $LANGUAGE" in
