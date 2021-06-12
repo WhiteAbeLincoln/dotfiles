@@ -4,12 +4,11 @@
 (import ../../../lib/funcs.nix).mkApplication rec {
   inherit stdenv undmg unzip;
   name = "Firefox";
-  version = "86.0.1";
+  version = "89.0";
   src = fetchurl {
     name = "Firefox-${version}.dmg";
     url = "https://download-installer.cdn.mozilla.net/pub/firefox/releases/${version}/mac/en-US/Firefox%20${version}.dmg";
-    sha256 = "1cd55z11wpkgi1lnidwg8kdxy8b6p00arz07sizrbyiiqxzrmvx3";
-
+    sha256 = "0z86q1hlwmhfwrddhapwiy8qrn3v03d7nbsnzhnkr3fc9vz58ga3";
   };
   installPhase = path: ''
     cp -pR Firefox.app/* ${path}

@@ -12,9 +12,9 @@ pkgs:
     pain-control
     yank
   ];
-  terminal = "xterm-256color"; # support 24-bit color in termite
+  terminal = "tmux-256color";
   extraConfig = ''
-    set -ga terminal-overrides ",xterm-termite:Tc"
+    set -ga terminal-overrides ",*256col*:Tc"
     # only set C-f as prefix if not in ssh session
     if 'test ! -n "$SSH_TTY"' \
       "unbind C-b; set -g prefix C-f"

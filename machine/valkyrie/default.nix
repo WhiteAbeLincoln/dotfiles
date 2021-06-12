@@ -3,16 +3,29 @@
 {
   imports = [
     <home-manager/nix-darwin>
+    ../../modules/darwin
     ../../packages/nur
     ../../program/yabai
     ../../program/skhd
   ];
 
   system = {
+    defaults-writer = {
+      "com.apple.dock" = {
+        show-recents = false;
+      };
+      "com.apple.finder" = {
+        ShowPathbar = true;
+      };
+      "com.apple.menuextra.clock" = {
+        DateFormat = "d MMM HH:mm";
+      };
+    };
     defaults = {
       dock.mru-spaces = false; # don't rearrange spaces by most recent use, needed for yabai
       dock.autohide = true;
       finder = {
+        AppleShowAllFiles = true;
         AppleShowAllExtensions = true;
         CreateDesktop = false; # hide desktop icons
         _FXShowPosixPathInTitle = true;
@@ -58,7 +71,8 @@
   # environment.darwinConfig = "$HOME/.config/nixpkgs/darwin/configuration.nix";
 
   # Auto upgrade nix package and the daemon service.
-  # services.nix-daemon.enable = true;
+  services.nix-daemon.enable = true;
+  users.nix.configureBuildUsers = true;
   # nix.package = pkgs.nix;
 
   # Create /etc/bashrc that loads the nix-darwin environment.

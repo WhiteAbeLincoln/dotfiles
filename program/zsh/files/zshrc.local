@@ -71,6 +71,11 @@ autoload -U +X bashcompinit && bashcompinit -i
 # OPAM configuration
 test -r /home/abe/.opam/opam-init/init.zsh && . /home/abe/.opam/opam-init/init.zsh > /dev/null 2> /dev/null || true
 
+# kitty terminal
+if check_com -c kitty; then
+  kitty + complete setup zsh | source /dev/stdin
+fi
+
 # stack completion
 if check_com -c stack; then
 	eval "$(stack --bash-completion-script stack)"

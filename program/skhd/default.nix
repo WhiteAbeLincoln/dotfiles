@@ -8,6 +8,7 @@
     alt - j : yabai -m window --focus next || yabai -m window --focus first # focus next
     alt - k : yabai -m window --focus prev || yabai -m window --focus last # focus previous
 
+    alt + shift - return : open -n "$HOME/Applications/Home Manager Apps/kitty.app"
     alt - return : yabai -m window --swap recent # swap window with focused
     alt + shift - j : yabai -m window --swap next || yabai -m window --swap first # swap with next
     alt + shift - k : yabai -m window --swap prev || yabai -m window --swap last # swap with previous

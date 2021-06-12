@@ -7,10 +7,10 @@
   # Branch Base position is the new version number
   inherit stdenv undmg unzip;
   name = "Chromium";
-  version = "827102";
+  version = "857950";
   src = fetchurl {
     url = "https://commondatastorage.googleapis.com/chromium-browser-snapshots/Mac/${version}/chrome-mac.zip";
-    sha256 = "1dfkmv2k5bm9jn0knsk1khp1ss0h03rsy88hnndc615yw9kkl1cy";
+    sha256 = "12vg0g75v7xzl5kgn85nmq8xvk2p6i1sh5bwgjavrharx1dvq2rs";
   };
   installPhase = path: ''
     cp -pR chrome-mac/Chromium.app/* ${path}

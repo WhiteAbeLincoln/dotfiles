@@ -11,6 +11,7 @@ with lib;
     ../program/firefox
     ../program/zsh
     ../program/emacs
+    ../program/kitty
     ../program/tmux
     ../program/direnv
   ];
@@ -29,11 +30,12 @@ with lib;
   '';
   programs.htop = {
     enable = true;
-    vimMode = true;
+    settings = {
+      vim_mode = true;
+    };
   };
   programs.neovim.enable = true;
   programs.keychain.enable = pkgs.stdenv.isLinux;
-  programs.opam.enable = true;
   programs.tmux-custom = lib.attrsets.recursiveUpdate ((import ../program/tmux/settings.nix) pkgs) {
     shell = "${pkgs.zsh}/bin/zsh";
   };

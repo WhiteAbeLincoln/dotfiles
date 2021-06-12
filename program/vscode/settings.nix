@@ -87,6 +87,7 @@ pkgs:
     "[typescriptreact]"."editor.defaultFormatter" = "esbenp.prettier-vscode";
     "[javascript]"."editor.defaultFormatter" = "esbenp.prettier-vscode";
     "[markdown]"."editor.defaultFormatter" = "esbenp.prettier-vscode";
+    "[json]"."editor.defaultFormatter" = "esbenp.prettier-vscode";
     "emmet.showSuggestionsAsSnippets" = true;
     "vim.handleKeys"."<C-f>" = false;
     "vim.normalModeKeyBindings" = [
@@ -99,6 +100,7 @@ pkgs:
         commands = [ { command = "editor.action.marker.prev"; when = "editorTextFocus && !editorReadonly"; } ];
       }
     ];
+    "debug.javascript.autoAttachFilter" = "onlyWithFlag";
   };
   keybindings = [
     {

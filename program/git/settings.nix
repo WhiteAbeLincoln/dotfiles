@@ -74,5 +74,6 @@
     ".directory"
     ".Trash-*"
     ".nfs*"
+    ".direnv/"
   ];
 }
