@@ -21,4 +21,11 @@
       inherit (tpkgs) scheme-full;
     };
   };
+  programs.command-not-found.enable = true;
+  programs.htop = {
+    enable = true;
+    settings = {
+      vim_mode = true;
+    };
+  };
 }

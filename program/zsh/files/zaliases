@@ -14,8 +14,8 @@ function to_hex {
     echo -n "$@" | od -A n -t x1 | tr -d ' '
 }
 
-alias rm="trash"
 if islinux; then
+  alias rm="trash"
   alias pbcopy="xclip -i -selection clipboard"
   alias pbpaste="xclip -o -selection clipboard"
 fi
@@ -23,8 +23,13 @@ command -v code >/dev/null 2>&1 || {
   alias code="visual-studio-code"
 }
 
-function empire2fa {
-  pbpaste | gpg --decrypt | grep "Security code" | sed -n 's/.*: \(.*\)/\1/p' | pbcopy
+function deep-which {
+  local p
+  p="$(which "$1")"
+  while [[ -L "$p" ]]; do
+    p="$(readlink "$p")"
+  done
+  echo "$p"
 }
 
 # vim:ft=zsh foldmethod=marker foldlevel=0

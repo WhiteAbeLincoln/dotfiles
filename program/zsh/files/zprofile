@@ -1,5 +1,5 @@
-# we want to source the global bash profile, since it defines usefull
-source /etc/profile
+# we want to source the global bash profile, since it defines useful
+emulate sh -c 'source /etc/profile'
 
 typeset -U path
 # export ANDROID_HOME=$HOME/Android/Sdk

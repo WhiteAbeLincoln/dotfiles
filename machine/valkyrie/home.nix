@@ -5,6 +5,7 @@ with lib;
   imports = [
     ../../role/general.nix
     ../../role/dev.nix
+    ../../role/devgui.nix
   ];
 
   programs.home-manager.enable = true;

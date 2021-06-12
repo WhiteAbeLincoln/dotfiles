@@ -9,6 +9,7 @@
   userName = "Abraham White";
   userEmail = "abelincoln.white@gmail.com";
   aliases = {
+    aliases = ''! git config --get-regexp ^alias\. | sed -e s/^alias\.// -e s/\ /\ =\ /'';
     branches = "branch -a";
     commits = "log";
     tags = "tag";
@@ -26,6 +27,9 @@
   extraConfig = {
     pull.rebase = false;
   };
+  ignoreFiles = [
+    ./ignores/vscode.ignore
+  ];
   ignores = [
     "*~"
     "\\#*\\#"
@@ -56,11 +60,6 @@
     "Session.vim"
     ".netrwhist"
     "tags"
-    ".vscode/*"
-    "!.vscode/settings.json"
-    "!.vscode/tasks.json"
-    "!.vscode/launch.json"
-    "!.vscode/extensions.json"
     ".Python"
     "[Bb]in"
     "[Ii]nclude"

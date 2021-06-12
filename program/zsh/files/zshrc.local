@@ -1,5 +1,9 @@
 setopt NO_clobber
 
+if iswsl; then
+  export WINHOST="$(grep nameserver /etc/resolv.conf | grep -v ':' | awk '{ print $2 }' | head -1)"
+fi
+
 ### Plugins {{{
 if [ -n "$ZPLUG_INSTDIR" ]; then
     source "$ZPLUG_INSTDIR/init.zsh"
