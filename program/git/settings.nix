@@ -25,6 +25,7 @@
     grapho = "log --graph --oneline --decorate --all";
   };
   extraConfig = {
+    init.defaultBranch = "trunk";
     pull.rebase = false;
   };
   ignoreFiles = [

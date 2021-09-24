@@ -76,7 +76,7 @@ function issolaris () {
 }
 
 function iswsl () {
-  [[ ! -z "${WSL_DISTRO_NAME+x}" ]] || [[ "$(< /proc/version)" = *[Mm]icrosoft* ]]
+  [[ ! -z "${WSL_DISTRO_NAME+x}" ]] || ([[ -f /proc/version ]] && [[ "$(< /proc/version)" = *[Mm]icrosoft* ]])
 }
 
 #f1# are we running within an utf environment?
