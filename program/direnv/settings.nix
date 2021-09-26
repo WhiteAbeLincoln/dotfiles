@@ -1,3 +1,3 @@
 {
-  enableNixDirenvIntegration = true;
+  nix-direnv.enable = true;
 }

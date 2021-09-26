@@ -1,16 +1,16 @@
-{ stdenv, fetchurl, undmg, unzip }:
+{ stdenv, fetchurl, undmg, unzip, lib }:
 
 (import ../../../lib/funcs.nix).mkApplication rec {
   # updating - go to https://chromiumdash.appspot.com/releases?platform=Mac
   # find latest version number for stable
   # paste in version lookup section on https://omahaproxy.appspot.com
   # Branch Base position is the new version number
-  inherit stdenv undmg unzip;
+  inherit stdenv undmg unzip lib;
   name = "Chromium";
-  version = "857950";
+  version = "911515";
   src = fetchurl {
     url = "https://commondatastorage.googleapis.com/chromium-browser-snapshots/Mac/${version}/chrome-mac.zip";
-    sha256 = "12vg0g75v7xzl5kgn85nmq8xvk2p6i1sh5bwgjavrharx1dvq2rs";
+    sha256 = "0h2abyla53jhlc737yxff1c95qismk80yw1f9wvhswzf13laj3p0";
   };
   installPhase = path: ''
     cp -pR chrome-mac/Chromium.app/* ${path}
