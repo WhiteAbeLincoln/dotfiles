@@ -25,5 +25,11 @@ with lib;
     };
   in "${apps}/Applications";
 
+  home.packages = [
+    (pkgs.writeShellScriptBin "nixFlakes" ''
+      exec ${pkgs.nixUnstable}/bin/nix --experimental-features "nix-command flakes" "$@"
+    '')
+  ];
+
   home.stateVersion = "21.03";
 }
