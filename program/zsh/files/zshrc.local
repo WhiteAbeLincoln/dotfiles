@@ -28,6 +28,9 @@ fi
 
 # source aliases
 [[ -f ~/.zaliases ]] && . ~/.zaliases
+if [[ -d ~/.zaliases.d ]]; then
+  for f in ~/.zaliases.d/*; do source "$f"; done
+fi
 
 # vim keybindings
 setopt vi

@@ -23,6 +23,7 @@
       ../../program/git/ignores/nixshell.ignore
       ../../program/git/ignores/visualstudio.ignore
     ];
+    svnHooks = true;
   };
 
   # This value determines the Home Manager release that your
