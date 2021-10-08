@@ -8,7 +8,6 @@ with lib;
     ../program/firefox
     ../program/emacs
     ../program/kitty
-    ../program/tmux
   ];
 
   home.packages = with pkgs; [

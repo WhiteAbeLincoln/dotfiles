@@ -9,6 +9,7 @@ with lib;
     ../program/vim
     ../program/zsh
     ../program/direnv
+    ../program/tmux
   ];
 
   home.packages = with pkgs; [

@@ -1,13 +1,12 @@
 {
   # install system apps in /Applications/Nix Apps by copying so Spotlight can index
-
   # also can do the same for home manager apps
   # adapted from nicknovitski https://github.com/nix-community/home-manager/issues/1341#issuecomment-778820334
   # and andreykaipov https://github.com/andreykaipov/home/blob/384292d67c76b4a0df2308f51f8eb39abb36725c/.config/nix/packages/default.nix#L35-L64
   installAppScript = sourceDir: destDir: ''
     IFS=$'\n'
     getContents() {
-      find "$1" -type d -path "*/Contents/MacOS" | while read file; do                                                                                                   /nix/store/xv60nnw42mkx2d6axn1hjh1hd2y9sh0a-home-manager-applications/Applications/Chromium.app
+      find "$1" -type d -path "*/Contents/MacOS" | while read file; do
         printf '%s:%s\n' "$(tr -dc / <<< "$file" | wc -c)" "$file"
       done | sort -t':' -n | head -n 1 | cut -d':' -f2
     }
@@ -82,7 +81,7 @@
   mkApplication = {
     name, appname ? name, version, src, description, homepage,
     installPhase ? (path: ''cp -pR * ${path}''), sourceRoot ? ".",
-    stdenv, undmg, unzip, ...
+    lib, stdenv, undmg, unzip, ...
   }: stdenv.mkDerivation {
     name = "${name}-${version}";
     version = "${version}";
@@ -93,7 +92,7 @@
     installPhase = ''
       mkdir -p "$out/Applications/${appname}.app"
     '' + (installPhase "$out/Applications/${appname}.app");
-    meta = with stdenv.lib; {
+    meta = with lib; {
       description = description;
       homepage = homepage;
       platforms = platforms.darwin;
