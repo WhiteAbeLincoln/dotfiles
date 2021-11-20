@@ -23,9 +23,17 @@ in
           Additional ignore files
         '';
       };
+      svnHooks = mkOption {
+        default = false;
+        type = types.bool;
+        description = ''
+          Add a shell function enabling svn hooks
+        '';
+      };
     };
   };
-  config = mkIf (cfg.ignoreFiles != []) {
-    programs.git.ignores = concatMap (p: filter (s: (trim s) != "") (splitString "\n" (fileContents p))) cfg.ignoreFiles;
+  config = {
+    programs.git.ignores = mkIf (cfg.ignoreFiles != []) (concatMap (p: filter (s: (trim s) != "") (splitString "\n" (fileContents p))) cfg.ignoreFiles);
+    home.file.".zaliases.d/git-svn.sh".source = mkIf cfg.svnHooks ./files/git-svn.sh;
   };
 }
