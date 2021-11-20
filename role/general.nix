@@ -21,7 +21,8 @@
       inherit (tpkgs) scheme-full;
     };
   };
-  programs.command-not-found.enable = true;
+  # adds command-not-found handler
+  programs.nix-index.enable = true;
   programs.htop = {
     enable = true;
     settings = {

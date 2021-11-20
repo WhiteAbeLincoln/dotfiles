@@ -40,6 +40,8 @@
   services.yabai-custom.package = pkgs.yabai-binary;
   services.yabai-custom.bigSurScriptingAddition = true;
 
+  homebrew.enable = true;
+
   users.users.abe = {
     description = "Abraham White";
     home = "/Users/abe";
