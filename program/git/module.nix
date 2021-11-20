@@ -34,6 +34,6 @@ in
   };
   config = {
     programs.git.ignores = mkIf (cfg.ignoreFiles != []) (concatMap (p: filter (s: (trim s) != "") (splitString "\n" (fileContents p))) cfg.ignoreFiles);
-    home.file.".zaliases.d/git-svn.sh".source = mkIf cfg.svnHooks ./files/git-svn.sh;
+    home.file.".zaliases.d/git-svn.sh" = mkIf cfg.svnHooks { source = ./files/git-svn.sh; };
   };
 }
