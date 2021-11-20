@@ -10,10 +10,14 @@ with lib;
     ../program/zsh
     ../program/direnv
     ../program/tmux
+    ../program/starship
   ];
 
-  home.packages = with pkgs; [
-    haskellPackages.ShellCheck
+  home.packages = [
+    pkgs.haskellPackages.ShellCheck
+    (pkgs.writeShellScriptBin "nixFlakes" ''
+      exec ${pkgs.nixUnstable}/bin/nix --experimental-features "nix-command flakes" "$@"
+    '')
   ];
   programs.jq.enable = true;
   programs.ssh.enable = true;

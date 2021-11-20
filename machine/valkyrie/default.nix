@@ -16,16 +16,17 @@
       };
       "com.apple.finder" = {
         ShowPathbar = true;
+        AppleShowAllFiles = true;
       };
       "com.apple.menuextra.clock" = {
         DateFormat = "d MMM HH:mm";
       };
+      "com.apple.loginwindow".SHOWOTHERUSERS_MANAGED = false;
     };
     defaults = {
       dock.mru-spaces = false; # don't rearrange spaces by most recent use, needed for yabai
       dock.autohide = true;
       finder = {
-        AppleShowAllFiles = true;
         AppleShowAllExtensions = true;
         CreateDesktop = false; # hide desktop icons
         _FXShowPosixPathInTitle = true;
