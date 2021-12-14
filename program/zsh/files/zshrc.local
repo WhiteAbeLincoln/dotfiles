@@ -13,7 +13,6 @@ if [ -n "$ZPLUG_INSTDIR" ]; then
     zplug "zsh-users/zsh-syntax-highlighting", defer:2
     zplug "zsh-users/zsh-history-substring-search"
     zplug "spwhitt/nix-zsh-completions"
-    zplug "denysdovhan/spaceship-prompt", use:spaceship.zsh, from:github, as:theme
     if ! zplug check --verbose; then
         printf "Install? [y/N]: "
         if read -q; then
