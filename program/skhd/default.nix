@@ -39,6 +39,7 @@
 
     toggle < z : yabai -m window --toggle zoom-fullscreen; ${pkgs.skhd}/bin/skhd -k "escape"
     toggle < b : if [ "$(yabai -m config window_border)" = "on" ]; then yabai -m config window_border "off"; else yabai -m config window_border "on"; fi; ${pkgs.skhd}/bin/skhd -k "escape"
+    toggle < f : yabai -m window --toggle float; ${pkgs.skhd}/bin/skhd -k "escape"
     '';
   };
   launchd.user.agents.skhd.serviceConfig.StandardOutPath = "/tmp/skhd.out.log";

@@ -63,7 +63,17 @@
   environment.systemPackages =
     [ pkgs.vim ];
   environment.variables.EDITOR = "vim";
-  programs.zsh.shellInit = ''export OLD_NIX_PATH="$NIX_PATH";'';
+  programs.zsh.shellInit = ''
+  if [ -x /usr/libexec/path_helper ]; then
+    function () {
+      local OLDP="$PATH"
+      eval "$(/usr/libexec/path_helper -s)"
+      export PATH="$OLDP:$PATH"
+      typeset -U path
+    }
+  fi
+  export OLD_NIX_PATH="$NIX_PATH";
+  '';
   programs.zsh.interactiveShellInit = ''
   if [ -n "$OLD_NIX_PATH" ]; then
     if [ "$OLD_NIX_PATH" != "$NIX_PATH" ]; then
@@ -78,4 +88,7 @@
   users.nix.configureBuildUsers = true;
 
   programs.zsh.enable = true;
+
+  fonts.enableFontDir = true;
+  fonts.fonts = [ pkgs.cascadia-code ];
 }

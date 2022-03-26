@@ -1,11 +1,1 @@
 export EDITOR=vim
-
-typeset -U path
-# export ANDROID_HOME=$HOME/Android/Sdk
-addpaths=("$HOME/bin" "$HOME/.local/bin")
-
-for p in $addpaths; do
-if [[ -d "$p" ]]; then
-    path=("$p" $path[@])
-fi
-done

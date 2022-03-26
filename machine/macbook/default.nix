@@ -41,6 +41,8 @@
   services.yabai-custom.bigSurScriptingAddition = true;
 
   homebrew.enable = true;
+  homebrew.casks = [ "fig" ];
+  homebrew.brews = [ "bitwarden-cli" ];
 
   users.users.abe = {
     description = "Abraham White";
