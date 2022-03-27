@@ -42,6 +42,6 @@
     toggle < f : yabai -m window --toggle float; ${pkgs.skhd}/bin/skhd -k "escape"
     '';
   };
-  launchd.user.agents.skhd.serviceConfig.StandardOutPath = "/tmp/skhd.out.log";
-  launchd.user.agents.skhd.serviceConfig.StandardErrorPath = "/tmp/skhd.err.log";
+  launchd.user.agents.skhd.serviceConfig.StandardOutPath = "/tmp/skhd-out.log";
+  launchd.user.agents.skhd.serviceConfig.StandardErrorPath = "/tmp/skhd-err.log";
 }
