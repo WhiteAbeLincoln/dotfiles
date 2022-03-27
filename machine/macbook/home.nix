@@ -25,5 +25,5 @@ with lib;
     };
   in "${apps}/Applications";
 
-  home.stateVersion = "21.03";
+  home.stateVersion = "22.05";
 }

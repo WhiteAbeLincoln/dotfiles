@@ -102,6 +102,3 @@ if [[ -z "$TMUX" ]] && [[ -n "$SSH_TTY" ]]; then
     (tmux attach-session -t ssh || (tmux new-session -s ssh && tmux set -g prefix C-b)) && exit
 fi
 # vim: ft=zsh foldmethod=marker foldlevel=0
-
-# Fig post block. Keep at the bottom of this file.
-eval "$(fig init zsh post)"

@@ -1,3 +1,7 @@
+# Fig pre block. Keep at the top of this file.
+export PATH="${PATH}:${HOME}/.local/bin"
+eval "$(fig init zsh pre)"
+
 # zsh profiling
 # just execute 'ZSH_PROFILE_RC=1 zsh' and run 'zprof' to get the details
 if [[ $ZSH_PROFILE_RC -gt 0 ]] ; then
@@ -1680,3 +1684,6 @@ zrclocal
 xunfunction
 
 # vim: ft=zsh foldmethod=marker foldlevel=0 foldmarker=--{,}--
+
+# Fig post block. Keep at the bottom of this file.
+eval "$(fig init zsh post)"

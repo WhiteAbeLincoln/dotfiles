@@ -30,6 +30,9 @@
       "ctrl+f>r" = "layout_action rotate";
       "kitty_mod+space" = "next_layout";
     };
+    extraConfig = ''# Fig Kitty Integration: Enabled
+watcher ''${HOME}/.fig/tools/kitty-integration
+# End of Fig Kitty Integration'';
   };
   xdg.configFile."kitty/zoom_toggle.py".source = ./kittens/zoom_toggle.py;
 }
