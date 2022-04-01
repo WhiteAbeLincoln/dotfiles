@@ -80,6 +80,7 @@ test -r /home/abe/.opam/opam-init/init.zsh && . /home/abe/.opam/opam-init/init.z
 # kitty terminal
 if check_com -c kitty; then
   kitty + complete setup zsh | source /dev/stdin
+  alias ssh="kitty +kitten ssh"
 fi
 
 # stack completion
@@ -101,3 +102,6 @@ if [[ -z "$TMUX" ]] && [[ -n "$SSH_TTY" ]]; then
     (tmux attach-session -t ssh || (tmux new-session -s ssh && tmux set -g prefix C-b)) && exit
 fi
 # vim: ft=zsh foldmethod=marker foldlevel=0
+
+# Fig post block. Keep at the bottom of this file.
+eval "$(fig init zsh post)"

@@ -1,12 +1,18 @@
+# Fig pre block. Keep at the top of this file.
+export PATH="${PATH}:${HOME}/.local/bin"
+eval "$(fig init zsh pre)"
+
 # we want to source the global bash profile, since it defines useful
-emulate sh -c 'source /etc/profile'
+# emulate sh -c 'source /etc/profile'
 
 typeset -U path
-# export ANDROID_HOME=$HOME/Android/Sdk
-addpaths=("$HOME/bin" "$HOME/.local/bin")
+addpaths=("$HOME/bin" "$HOME/.local/bin" "/Applications/kitty.app/Contents/MacOS")
 
 for p in $addpaths; do
 if [[ -d "$p" ]]; then
-    path=("$p" $path[@])
+  path=("$p" $path[@])
 fi
 done
+
+# Fig post block. Keep at the bottom of this file.
+eval "$(fig init zsh post)"

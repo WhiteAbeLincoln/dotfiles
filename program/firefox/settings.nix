@@ -2,7 +2,6 @@
 
 {
   extensions = with pkgs.nur.repos.rycee.firefox-addons; [
-    https-everywhere
     multi-account-containers
     temporary-containers
     violentmonkey
@@ -11,7 +10,6 @@
     terms-of-service-didnt-read
     ublock-origin
     bitwarden
-    darkreader
     cookie-autodelete
   ];
   profiles.default = {
@@ -27,6 +25,8 @@
       "media.eme.enabled" = true; # enable drm content
       "signon.autofillForms" = false; # disable form filling
       "signon.rememberSignons" = false; # disable password saving
+      "dom.security.https_only_mode" = true;
+      "dom.security.https_only_mode_ever_enabled" = true;
     };
   };
 }
