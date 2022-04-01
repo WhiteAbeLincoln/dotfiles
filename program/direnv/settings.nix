@@ -1,4 +1,4 @@
 {
   nix-direnv.enable = true;
-  nix-direnv.enableFlakes = true;
+  # nix-direnv.enableFlakes = true;
 }
