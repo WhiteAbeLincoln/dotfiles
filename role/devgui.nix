@@ -5,7 +5,7 @@ with lib;
 {
   imports = [
     ../program/vscode
-    ../program/firefox
+    # ../program/firefox
     # ../program/emacs
     ../program/kitty
   ];

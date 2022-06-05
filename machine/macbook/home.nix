@@ -6,6 +6,7 @@ with lib;
     ../../role/general.nix
     ../../role/dev.nix
     ../../role/devgui.nix
+    ../../program/emacs
   ];
 
   programs.home-manager.enable = true;

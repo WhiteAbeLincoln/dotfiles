@@ -2,9 +2,9 @@
 
 {
   imports = [
-    ../program/firefox
+    # ../program/firefox
     ../program/zathura
-    ../program/tridactyl
+    # ../program/tridactyl
   ];
 
   home.packages = with pkgs; [
