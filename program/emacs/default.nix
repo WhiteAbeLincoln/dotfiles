@@ -6,7 +6,11 @@
     enable = true;
     rev = "51686e5f1206d57a86d9d33a62ed02c9aa9c7e8b";
     rcfile.source = ./spacemacs-new;
+    package = if pkgs.stdenv.isDarwin then pkgs.emacsMacport else pkgs.emacs;
   };
+  home.packages = [
+    pkgs.python310Packages.pygments
+  ];
   # services.emacs.enable = pkgs.stdenv.isLinux;
   # home.file.".emacs.d" = {
   #   source = pkgs.fetchFromGitHub {

@@ -22,12 +22,20 @@ in {
       type = types.nullOr ((import ../../lib/types.nix { inherit lib; }).file);
       default = null;
     };
+    package = mkOption {
+      type = types.package;
+      default = pkgs.emacs;
+      description = "The Emacs package to use.";
+    };
   };
 
   config = mkIf cfg.enable(
     mkMerge ([
       {
-        programs.emacs.enable = true;
+        programs.emacs = {
+          enable = true;
+          package = cfg.package;
+        };
         home.activation.spacemacs-setup =
           lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           if ! [ -e ~/.emacs.d ]; then
