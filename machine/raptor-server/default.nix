@@ -173,6 +173,9 @@
       hosts deny = 0.0.0.0/0
       guest account = nobody
       map to guest = bad user
+      follow symlinks = yes
+      wide links = yes
+      unix extensions = no
     '';
     shares = {
       Media = {
