@@ -193,6 +193,43 @@
     };
   };
 
+  # dont sleep when laptop lid closes
+  services.logind.lidSwitchExternalPower = "ignore";
+
+  # virtualisation.docker.enable = true;
+  virtualisation.oci-containers.containers = {
+    minecraft-tina = {
+      image = "itzg/minecraft-server";
+      ports = [ "25565:25565" ];
+      volumes = [
+        "/data/disk2/docker-services/minecraft-tina/data:/data"
+      ];
+      environment = {
+        EULA = "TRUE";
+        VERSION = "1.18.1";
+        TYPE = "FORGE";
+        FORGEVERSION = "39.0.64";
+        DIFFICULTY = "normal";
+        # WHITELIST_FILE: /extras/whitelist.json
+        # MODS_FILE: /extras/mods.txt
+        # OPS_FILE: /extras/ops.json
+        # REMOVE_OLD_MODS: "true"
+        ENABLE_RCON = "true";
+        # password isn't a secret since we don't publicly
+        # expose this server
+        RCON_PASSWORD = "mc2022!awhite";
+        EXAMPLE_COMMAND_BLOCK = "true";
+        SPAWN_PROTECTION = "0";
+        ALLOW_FLIGHT = "TRUE";
+        MAX_TICK_TIME = "120000";
+        MEMORY = "";
+        JVM_XX_OPTS = "-XX:MaxRAMPercentage=75";
+        VIEW_DISTANCE = "18";
+        SIMULATION_DISTANCE = "7";
+      };
+    };
+  };
+
   # Copy the NixOS configuration file and link it from the resulting system
   # (/run/current-system/configuration.nix). This is useful in case you
   # accidentally delete configuration.nix.
