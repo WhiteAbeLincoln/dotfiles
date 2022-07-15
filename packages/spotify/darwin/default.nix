@@ -7,7 +7,7 @@
   src = fetchurl {
     name = "Spotify-${version}.dmg";
     url = "https://download.spotify.com/Spotify.dmg";
-    sha256 = "1vrshxpxvnrlx4fjrwb6q8ffmx54sclni4y16g7hivg39wdw2bn2";
+    sha256 = "01v1nn3msaihmcjp851yqkzn7gxw3z13v37zgby1m0c597szx5l5";
   };
   installPhase = path: ''
     cp -pR Spotify.app/* ${path}

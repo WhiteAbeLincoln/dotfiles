@@ -6,6 +6,7 @@ with lib;
     ../../role/general.nix
     ../../role/dev.nix
     ../../role/devgui.nix
+    ../../program/emacs
   ];
 
   programs.home-manager.enable = true;
@@ -25,5 +26,5 @@ with lib;
     };
   in "${apps}/Applications";
 
-  home.stateVersion = "21.03";
+  home.stateVersion = "22.05";
 }
