@@ -13,6 +13,7 @@
   # paths it should manage.
   home.username = "awhite";
   home.homeDirectory = "/home/awhite";
+  home.file.WinHome.source = config.lib.file.mkOutOfStoreSymlink "/mnt/c/Users/awhite";
 
   programs.git = {
     # use gitFull so that we get git-svn

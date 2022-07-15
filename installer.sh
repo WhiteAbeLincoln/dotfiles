@@ -309,4 +309,7 @@ if [ "$ACTION" = "install" ]; then
   do_install
 elif [ "$ACTION" = "uninstall" ]; then
   do_uninstall
+else
+  show_help
+  exit 1
 fi
