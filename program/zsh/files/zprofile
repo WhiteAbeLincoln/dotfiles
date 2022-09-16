@@ -1,6 +1,3 @@
-# Fig pre block. Keep at the top of this file.
-export PATH="${PATH}:${HOME}/.local/bin"
-eval "$(fig init zsh pre)"
 
 # we want to source the global bash profile, since it defines useful
 # emulate sh -c 'source /etc/profile'
@@ -14,5 +11,10 @@ if [[ -d "$p" ]]; then
 fi
 done
 
-# Fig post block. Keep at the bottom of this file.
-eval "$(fig init zsh post)"
+if [[ -d "$HOME/.local/opt" ]]; then
+  for p in "$HOME/.local/opt/"*; do
+    if [[ -d "$p/bin" ]]; then
+      path=("$p/bin" $path[@])
+    fi
+  done
+fi

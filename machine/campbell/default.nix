@@ -4,6 +4,7 @@
   imports = [
     ../../packages/nur
     ../../role/dev.nix
+    ../../modules/windows/winget
   ];
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
@@ -12,6 +13,7 @@
   # paths it should manage.
   home.username = "awhite";
   home.homeDirectory = "/home/awhite";
+  home.file.WinHome.source = config.lib.file.mkOutOfStoreSymlink "/mnt/c/Users/awhite";
 
   programs.git = {
     # use gitFull so that we get git-svn
@@ -25,6 +27,23 @@
     ];
     svnHooks = true;
   };
+
+  winget.enable = true;
+  winget.sources = {
+    winget = {
+      Type = "Microsoft.PreIndexed.Package";
+      Argument = "https://winget.azureedge.net/cache";
+      Identifier = "Microsoft.Winget.Source_8wekyb3d8bbwe";
+    };
+  };
+  winget.packages = [
+    "Microsoft.VisualStudioCode"
+    {
+      PackageIdentifier = "Microsoft.Powertoys";
+      Version = "0.15.2";
+      Source = "msstore";
+    }
+  ];
 
   # This value determines the Home Manager release that your
   # configuration is compatible with. This helps avoid breakage

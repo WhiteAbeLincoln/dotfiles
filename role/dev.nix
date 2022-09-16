@@ -5,7 +5,6 @@ with lib;
 {
   imports = [
     ../program/git
-    ../program/timew
     ../program/vim
     ../program/zsh
     ../program/direnv
