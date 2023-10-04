@@ -16,7 +16,8 @@
     # tightvnc
   ];
   programs.texlive = {
-    enable = true;
+    # not using LaTeX right now
+    enable = false;
     extraPackages = tpkgs: {
       inherit (tpkgs) scheme-full;
     };

@@ -7,13 +7,10 @@ let
 cfg = config.programs.zsh;
 relToDotDir = file: (optionalString (cfg.dotDir != null) (cfg.dotDir + "/")) + file;
 figInitText = ''
-# Fig pre block. Keep at the top of this file.
-export PATH="${PATH}:${HOME}/.local/bin"
-eval "$(fig init zsh pre)"
+. "$HOME/.fig/shell/zshrc.pre.zsh"
 '';
 figExitText = ''
-# Fig post block. Keep at the bottom of this file.
-eval "$(fig init zsh post)"
+. "$HOME/.fig/shell/zshrc.post.zsh"
 '';
 withFig = text: if cfg.fig then (figInitText + text + figExitText) else text;
 

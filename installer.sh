@@ -227,6 +227,7 @@ do_uninstall() {
       execute sudo mv /etc/zshrc.backup-before-nix /etc/zshrc
       execute sudo mv /etc/bashrc.backup-before-nix /etc/bashrc
       execute sudo mv /etc/zprofile.orig /etc/zprofile
+      execute sudo rm -i "/etc/*.backup-before-nix"
 
       printf '%s\n' "Removing nix store volume from fstab"
       execute sudo vifs
@@ -252,6 +253,12 @@ do_uninstall() {
       printf '%s\n' "Removing nix store volume"
       execute sudo diskutil apfs deleteVolume /nix
       execute sudo rm -rf /nix/
+
+      printf '%s\n' "Removing user nix temp files"
+      execute rm -rf "$HOME/.local/state/nix"
+      execute rm -rf "$HOME/.local/state/home-manager"
+      execute rm -rf "$HOME/Applications/Nix Apps"
+      execute rm -rf "$HOME/Applications/Home Manager Apps"
 
       echo "Rebooting."
       if prompt; then

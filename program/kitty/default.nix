@@ -7,7 +7,7 @@
       focus_follows_mouse = true;
       active_border_color = "#adbf8a";
       inactive_border_color = "#555555";
-      hide_window_decorations = if pkgs.stdenv.isDarwin then "titlebar-only" else true;
+      # hide_window_decorations = if pkgs.stdenv.isDarwin then "titlebar-only" else true;
       tab_bar_style = "powerline";
       close_on_child_death = true;
       clipboard_control = "write-clipboard write-primary read-clipboard read-primary";
@@ -30,9 +30,9 @@
       "ctrl+f>r" = "layout_action rotate";
       "kitty_mod+space" = "next_layout";
     };
-    extraConfig = ''# Fig Kitty Integration: Enabled
-watcher ''${HOME}/.fig/tools/kitty-integration
-# End of Fig Kitty Integration'';
+#     extraConfig = ''# Fig Kitty Integration: Enabled
+# watcher ''${HOME}/.fig/tools/kitty-integration
+# # End of Fig Kitty Integration'';
   };
   xdg.configFile."kitty/zoom_toggle.py".source = ./kittens/zoom_toggle.py;
 }

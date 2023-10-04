@@ -6,7 +6,11 @@ fi
 
 ### Plugins {{{
 if [ -n "$ZPLUG_INSTDIR" ]; then
-    source "$ZPLUG_INSTDIR/init.zsh"
+    if [[ -f "$ZPLUG_INSTDIR/init.zsh" ]]; then
+      source "$ZPLUG_INSTDIR/init.zsh"
+    elif [[ -f "$ZPLUG_INSTDIR/share/zplug/init.zsh" ]]; then
+      source "$ZPLUG_INSTDIR/share/zplug/init.zsh"
+    fi
     zplug "zplug/zplug", hook-build:"zplug --self-manage"
     zplug "zsh-users/zsh-completions"
     zplug "zsh-users/zsh-autosuggestions"
