@@ -12,6 +12,7 @@
       # Include the results of the hardware scan.
       ./hardware-configuration.nix
       ../../role/nixos.nix
+      ../../program/plex
     ];
 
   nixpkgs.config.allowUnfree = true;
@@ -90,40 +91,6 @@
   in {
     "/data/disk1" = mkMediaFs "AC7208AE72087EF8";
     "/data/disk2" = mkMediaFs "0A92598F92597FDD";
-  };
-
-  services.plex = {
-    enable = true;
-    openFirewall = true;
-    extraScanners = [
-      (pkgs.fetchFromGitHub {
-        owner = "ZeroQI";
-        repo = "Absolute-Series-Scanner";
-        rev = "4ef18a738c6263a8b96ab6f83ae391d4550b9cc9";
-        sha256 = "2bdp0e5XES/phLLUP2mngwITUWdZIE6Y6ness86xSNI=";
-      })
-    ];
-    extraPlugins = [
-      (builtins.path {
-        name = "Hama.bundle";
-        path = pkgs.fetchFromGitHub {
-          owner = "ZeroQI";
-          repo = "Hama.bundle";
-          rev = "16c8a40a7b004ed14e46cd457d8c393672a09c5a";
-          sha256 = "2aLMfjc/qMImWx3nSBpRIiJJM66PUbACwUmtkKW7QCE=";
-        };
-      })
-      # an audiobook library organizer
-      # (builtins.path {
-      #   name = "Audnexus.bundle";
-      #   path = pkgs.fetchFromGitHub {
-      #     owner = "djdembeck";
-      #     repo = "Audnexus.bundle";
-      #     rev = "v0.2.8";
-      #     sha256 = "sha256-IWOSz3vYL7zhdHan468xNc6C/eQ2C2BukQlaJNLXh7E=";
-      #   };
-      # })
-    ];
   };
 
   services.calibre-web = {

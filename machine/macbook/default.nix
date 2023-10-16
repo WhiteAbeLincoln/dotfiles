@@ -6,6 +6,8 @@
     ../../modules/darwin
     ../../role/darwin.nix
     ../../packages/nur
+    ../../program/plex/macos-module.nix
+    ../../program/plex
     # ../../program/yabai
     # ../../program/skhd
   ];
