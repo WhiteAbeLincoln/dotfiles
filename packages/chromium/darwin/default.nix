@@ -6,7 +6,7 @@
   # paste in version lookup section on https://omahaproxy.appspot.com
   # Branch Base position is the new version number
   inherit stdenv undmg unzip lib;
-  name = "Chromium";
+  pname = "Chromium";
   version = "911515";
   src = fetchurl {
     url = "https://commondatastorage.googleapis.com/chromium-browser-snapshots/Mac/${version}/chrome-mac.zip";

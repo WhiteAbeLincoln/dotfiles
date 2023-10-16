@@ -2,7 +2,7 @@
 
 (import ../../../lib/funcs.nix).mkApplication rec {
   inherit stdenv undmg unzip lib;
-  name = "Spotify";
+  pname = "Spotify";
   version = "1.1.52.687.gf5565fe5";
   src = fetchurl {
     name = "Spotify-${version}.dmg";

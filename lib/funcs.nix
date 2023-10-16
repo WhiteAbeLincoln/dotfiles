@@ -79,12 +79,12 @@
     done
   '';
   mkApplication = {
-    name, appname ? name, version, src, description, homepage,
+    pname, appname ? pname, version, src, description, homepage,
     installPhase ? (path: ''cp -pR * ${path}''), sourceRoot ? ".",
     lib, stdenv, undmg, unzip, ...
   }: stdenv.mkDerivation {
-    name = "${name}-${version}";
-    version = "${version}";
+    pname = pname;
+    version = version;
     src = src;
     buildInputs = [ undmg unzip ];
     sourceRoot = sourceRoot;
