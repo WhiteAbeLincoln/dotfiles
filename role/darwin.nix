@@ -92,4 +92,6 @@
 
   fonts.fontDir.enable = true;
   fonts.fonts = [ pkgs.cascadia-code ];
+
+  security.pam.enableSudoTouchIdAuth = true;
 }
