@@ -13,7 +13,7 @@ in
       # most of these options are unused, but remain to be compatible with the NixOS options
       dataDir = mkOption {
         type = types.str;
-        default = "/Users/abe/Library/Application Support";
+        default = "/Users/${cfg.user}/Library/Application Support";
         description = lib.mdDoc ''
           The directory where Plex stores its data files.
         '';
@@ -118,6 +118,8 @@ in
         ProcessType = "Interactive";
         StandardOutPath = "/tmp/plex.out.log";
         StandardErrorPath = "/tmp/plex.err.log";
+        UserName = cfg.user;
+        GroupName = cfg.group;
       };
     };
   };

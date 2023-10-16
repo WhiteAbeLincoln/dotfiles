@@ -13,6 +13,7 @@
       ./hardware-configuration.nix
       ../../role/nixos.nix
       ../../program/plex
+      ../../program/calibre-web
     ];
 
   nixpkgs.config.allowUnfree = true;
@@ -91,15 +92,6 @@
   in {
     "/data/disk1" = mkMediaFs "AC7208AE72087EF8";
     "/data/disk2" = mkMediaFs "0A92598F92597FDD";
-  };
-
-  services.calibre-web = {
-    enable = true;
-    listen.ip = "0.0.0.0";
-    options = {
-      enableBookUploading = true;
-      calibreLibrary = /data/Media/books;
-    };
   };
 
   # stuck behind a double-NAT with no router control. This helps

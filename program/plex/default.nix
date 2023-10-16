@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 
 {
   # importing this conditionally causes recursion issues
@@ -37,5 +37,7 @@
       #   };
       # })
     ];
+    user = lib.mkIf pkgs.stdenv.isDarwin "abe";
+    group = lib.mkIf pkgs.stdenv.isDarwin "staff";
   };
 }

@@ -8,6 +8,8 @@
     ../../packages/nur
     ../../program/plex/macos-module.nix
     ../../program/plex
+      ../../program/calibre-web/macos-module.nix
+      ../../program/calibre-web
     # ../../program/yabai
     # ../../program/skhd
   ];
@@ -48,6 +50,8 @@
     "kitty"
   ];
   homebrew.brews = [ "bitwarden-cli" ];
+
+  services.calibre-web.options.calibreLibrary = pkgs.lib.mkForce null;
 
   users.users.abe = {
     description = "Abraham White";
