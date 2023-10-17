@@ -81,11 +81,12 @@
   mkApplication = {
     pname, appname ? pname, version, src, description, homepage,
     installPhase ? (path: ''cp -pR * ${path}''), sourceRoot ? ".",
-    lib, stdenv, undmg, unzip, ...
+    lib, stdenv, undmg, unzip, outputs ? [ "out" ], ...
   }: stdenv.mkDerivation {
     pname = pname;
     version = version;
     src = src;
+    outputs = outputs;
     buildInputs = [ undmg unzip ];
     sourceRoot = sourceRoot;
     phases = [ "unpackPhase" "installPhase" ];

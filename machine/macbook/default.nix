@@ -16,6 +16,9 @@
   nixpkgs.overlays = (import ../../packages/overlays/darwin.nix) ++ [
     # I disable installing kitty package because there were errors with the bs4 dependency
     (self: super: { kitty = pkgs.runCommandLocal "no-kitty" {} "mkdir $out"; })
+    # I download plex out of band since it has trouble with a readonly plugins.db file when in the nix store
+    (self: super: { plexRaw = pkgs.runCommandLocal "no-plex" {} ''mkdir -p "$out/Applications"; ln -s "/Applications/Plex Media Server.app" "$out/Applications/Plex Media Server.app"''; })
+
     # yabai is having some issues building from source on macos 11 with nix
     # (self: super: {
     #   yabai-binary = super.yabai.overrideAttrs (
@@ -53,16 +56,14 @@
     description = "Abraham White";
     home = "/Users/abe";
   };
-  # users.users.server = {
-  #   description = "Server User";
-  #   home = "/Users/server";
-  #   createHome = true;
-  # };
-  # users.knownUsers = [ "server" ];
+  users.users.server = {
+    description = "Server User";
+    home = "/Users/server";
+  };
 
   home-manager.useGlobalPkgs = true;
   home-manager.users.abe = import ./home.nix;
-  # home-manager.users.server = import ./server-home.nix;
+  home-manager.users.server = import ./server-home.nix;
 
   system.stateVersion = 4;
 }

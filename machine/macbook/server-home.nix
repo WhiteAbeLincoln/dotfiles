@@ -14,8 +14,10 @@ with lib;
 
   services.calibre-web.options.calibreLibrary = pkgs.lib.mkForce null;
   services.calibre-web.user = "server";
+  services.calibre-web.group = "staff";
 
   services.plex.user = "server";
+  services.plex.group = "staff";
 
   home.stateVersion = "22.05";
 }
