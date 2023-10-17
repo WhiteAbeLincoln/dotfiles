@@ -101,4 +101,21 @@
       ];
     };
   };
+  launchdAgent = pkgs: { enable ? true, name, script ? "", config }:
+    (let
+      cmd = if script != "" then pkgs.writeScript "${name}-start" ''
+        #! ${pkgs.stdenv.shell}
+
+        ${script}
+      '' else null;
+      argsObj = if cmd != null then { ProgramArguments = ["${cmd}"]; } else {};
+    in {
+      launchd.agents.${name} = {
+        enable = enable;
+        config = {
+          StandardOutPath = "/tmp/${name}.out.log";
+          StandardErrorPath = "/tmp/${name}.err.log";
+        } // config // argsObj;
+      };
+    });
 }

@@ -1,4 +1,4 @@
-{ pkgs, lib, ... }:
+{ pkgs, ... }:
 
 {
   # importing this conditionally causes recursion issues
@@ -23,7 +23,7 @@
           owner = "ZeroQI";
           repo = "Hama.bundle";
           rev = "c6987a00e68b23883a263481c823bb7aa7684c21";
-          sha256 = "2aLMfjc/qMImWx3nSBpRIiJJM66PUbACwUmtkKW7QCE=";
+          sha256 = "pH7oO0dsTA2zXsquwCV6z8IdNoDwippP806KT9TX4RU=";
         };
       })
       # an audiobook library organizer
@@ -37,7 +37,5 @@
       #   };
       # })
     ];
-    user = lib.mkIf pkgs.stdenv.isDarwin "abe";
-    group = lib.mkIf pkgs.stdenv.isDarwin "staff";
   };
 }

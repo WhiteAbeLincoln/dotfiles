@@ -1,4 +1,4 @@
-{ pkgs, lib, ... }:
+{ pkgs, ... }:
 
 {
   # importing this conditionally causes recursion issues
@@ -12,7 +12,5 @@
       enableBookUploading = true;
       calibreLibrary = /data/Media/books;
     };
-    user = lib.mkIf pkgs.stdenv.isDarwin "abe";
-    group = lib.mkIf pkgs.stdenv.isDarwin "staff";
   };
 }

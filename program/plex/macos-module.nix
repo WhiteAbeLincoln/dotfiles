@@ -1,9 +1,10 @@
-{ config, pkgs, lib, ... }:
+args@{ config, pkgs, lib, ... }:
 
 with lib;
 
 let
   cfg = config.services.plex;
+  myLib = ((import ../../lib) args).lib.awhite;
 in
 {
   options = {
@@ -102,25 +103,26 @@ in
     };
   };
 
-  config = mkIf cfg.enable {
-    environment.systemPackages = [ cfg.package ];
-
-    launchd.user.agents.plex = {
-      serviceConfig = {
-        ProgramArguments = [ "${cfg.package}/plex-run-script" ];
-        KeepAlive = true;
-        RunAtLoad = true;
-        EnvironmentVariables = {
-          PLEX_DATADIR = cfg.dataDir;
-          PLEX_PLUGINS = concatMapStringsSep ":" builtins.toString cfg.extraPlugins;
-          PLEX_SCANNERS = concatMapStringsSep ":" builtins.toString cfg.extraScanners;
+  config = mkIf cfg.enable (
+    lib.mkMerge [
+      { home.packages = [ cfg.package ]; }
+      (myLib.launchdAgent {
+        name = "plex";
+        enable = true;
+        config = {
+          ProgramArguments = [ "${cfg.package}/plex-run-script" ];
+          KeepAlive = true;
+          RunAtLoad = true;
+          EnvironmentVariables = {
+            PLEX_DATADIR = cfg.dataDir;
+            PLEX_PLUGINS = concatMapStringsSep ":" builtins.toString cfg.extraPlugins;
+            PLEX_SCANNERS = concatMapStringsSep ":" builtins.toString cfg.extraScanners;
+          };
+          ProcessType = "Interactive";
+          UserName = cfg.user;
+          GroupName = cfg.group;
         };
-        ProcessType = "Interactive";
-        StandardOutPath = "/tmp/plex.out.log";
-        StandardErrorPath = "/tmp/plex.err.log";
-        UserName = cfg.user;
-        GroupName = cfg.group;
-      };
-    };
-  };
+      })
+    ]
+  );
 }

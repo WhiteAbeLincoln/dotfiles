@@ -6,10 +6,6 @@
     ../../modules/darwin
     ../../role/darwin.nix
     ../../packages/nur
-    ../../program/plex/macos-module.nix
-    ../../program/plex
-      ../../program/calibre-web/macos-module.nix
-      ../../program/calibre-web
     # ../../program/yabai
     # ../../program/skhd
   ];
@@ -51,15 +47,22 @@
   ];
   homebrew.brews = [ "bitwarden-cli" ];
 
-  services.calibre-web.options.calibreLibrary = pkgs.lib.mkForce null;
+  # services.tailscale.enable = true;
 
   users.users.abe = {
     description = "Abraham White";
     home = "/Users/abe";
   };
+  # users.users.server = {
+  #   description = "Server User";
+  #   home = "/Users/server";
+  #   createHome = true;
+  # };
+  # users.knownUsers = [ "server" ];
 
   home-manager.useGlobalPkgs = true;
   home-manager.users.abe = import ./home.nix;
+  # home-manager.users.server = import ./server-home.nix;
 
   system.stateVersion = 4;
 }
