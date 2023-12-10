@@ -70,7 +70,7 @@ iswsl() {
 }
 
 isnixos() {
-  islinux && [ -f /etc/NIXOS ]
+  islinux && grep NixOS /etc/os-release >/dev/null
 }
 
 nixinstalled() {
@@ -97,7 +97,19 @@ install_nixdarwin() {
 }
 
 install_homemanager() {
-  echo "Installing home-manager"
+  if [ -z "$HOME_VER" ] && [ -n "$host_dir" ]; then
+    # this matches a line like `home.stateVersion = "23.11";`, accounting for spaces.
+    # It doesn't handle the expression being split over multiple lines, using different quotes
+    # or using an attrset instead of straight assignment (e.g. `home = { stateVersion = "23.11"; };`)
+    HOME_VER="$(sed -n 's/.*home\.stateVersion[[:blank:]]\{0,1\}=[[:blank:]]\{0,1\}"\(.*\)"[[:blank:]]\{0,1\};/\1/p' "$SCRIPT_DIR/machine/$host_dir/home.nix")"
+  fi
+  if [ -z "$HOME_VER" ]; then
+    HOME_VER="master"
+  else
+    HOME_VER="release-$HOME_VER"
+  fi
+
+  echo "Installing home-manager $HOME_VER"
   prompt || {
     printf '%s\n' "Skipping home-manager install..."
     return 0
@@ -106,11 +118,11 @@ install_homemanager() {
   # install system home-manager if we are in nixos or macos
   if isdarwin || isnixos; then
     printf '%s\n' "Installing system home-manager"
-    execute sudo -i nix-channel --add https://github.com/nix-community/home-manager/archive/master.tar.gz home-manager
+    execute sudo -i nix-channel --add "https://github.com/nix-community/home-manager/archive/$HOME_VER.tar.gz" home-manager
     execute sudo -i nix-channel --update
   else
     printf '%s\n' "Installing standalone home-manager"
-    execute nix-channel --add https://github.com/nix-community/home-manager/archive/master.tar.gz home-manager
+    execute nix-channel --add "https://github.com/nix-community/home-manager/archive/$HOME_VER.tar.gz" home-manager
     execute nix-channel --update
 
     export NIX_PATH="$HOME/.nix-defexpr/channels:/nix/var/nix/profiles/per-user/root/channels${NIX_PATH:+:$NIX_PATH}"
@@ -280,10 +292,11 @@ do_uninstall() {
 }
 
 show_help() {
-  echo "installer.sh [-h|--help] [--dry-run] (install | uninstall)"
+  echo "installer.sh [-h|--help] [--dry-run] [--home-ver <VERSION>] (install | uninstall)"
 }
 
 ACTION=
+HOME_VER=
 
 while :; do
   case $1 in
@@ -298,6 +311,10 @@ while :; do
     -i|--interactive)
       INTERACTIVE=1
       echo "---Interactive---"
+      ;;
+    --home-ver)
+      shift
+      HOME_VER="$1"
       ;;
     install)
       ACTION="install"

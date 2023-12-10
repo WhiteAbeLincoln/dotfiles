@@ -13,7 +13,7 @@
         owner = "ZeroQI";
         repo = "Absolute-Series-Scanner";
         rev = "b33b1935480cae76007a82f8887cb173200cfc53";
-        sha256 = "2bdp0e5XES/phLLUP2mngwITUWdZIE6Y6ness86xSNI=";
+        sha256 = "YupSXgFi/qfODuay3LoIl/1178gtU+MwhiZJAvvGV2g=";
       })
     ];
     extraPlugins = [
