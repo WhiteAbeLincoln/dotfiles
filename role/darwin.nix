@@ -49,13 +49,14 @@
 
     activationScripts.applications.text = let
       apps = config.system.build.applications;
+      home = config.users.users.abe.home;
     in ''
       echo "setting up ~/Applications/Nix Apps..." >&2
 
-      if [ ! -e ~/Applications/Nix\ Apps -o -L ~/Applications/Nix\ Apps ]; then
-        ln -sfn ${apps}/Applications ~/Applications/Nix\ Apps
+      if [ ! -e ${home}/Applications/Nix\ Apps -o -L ${home}/Applications/Nix\ Apps ]; then
+        ln -sfn ${apps}/Applications ${home}/Applications/Nix\ Apps
       else
-        echo "warning: ~/Applications and ~/Applications/Nix Apps are directories, skipping App linking..." >&2
+        echo "warning: ${home}/Applications and ${home}/Applications/Nix Apps are directories, skipping App linking..." >&2
       fi
     '';
   };
@@ -85,10 +86,12 @@
   '';
 
   services.nix-daemon.enable = true;
-  users.nix.configureBuildUsers = true;
+  nix.configureBuildUsers = true;
 
   programs.zsh.enable = true;
 
-  fonts.enableFontDir = true;
+  fonts.fontDir.enable = true;
   fonts.fonts = [ pkgs.cascadia-code ];
+
+  security.pam.enableSudoTouchIdAuth = true;
 }

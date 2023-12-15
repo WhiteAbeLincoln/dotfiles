@@ -6,7 +6,7 @@
   ];
   programs.zsh = {
     enable = true;
-    fig = pkgs.stdenv.isDarwin;
+    # fig = pkgs.stdenv.isDarwin;
     enableCompletion = false;
   };
 }

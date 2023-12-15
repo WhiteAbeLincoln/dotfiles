@@ -18,7 +18,7 @@ with lib;
       colorizer
     ];
     package = mkIf pkgs.stdenv.isDarwin (pkgs.vim_configurable.override {
-      python = pkgs.python3;
+      # python = pkgs.python3;
       guiSupport = "no";
       darwinSupport = true;
     });

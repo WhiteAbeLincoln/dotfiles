@@ -79,13 +79,14 @@
     done
   '';
   mkApplication = {
-    name, appname ? name, version, src, description, homepage,
+    pname, appname ? pname, version, src, description, homepage,
     installPhase ? (path: ''cp -pR * ${path}''), sourceRoot ? ".",
-    lib, stdenv, undmg, unzip, ...
+    lib, stdenv, undmg, unzip, outputs ? [ "out" ], ...
   }: stdenv.mkDerivation {
-    name = "${name}-${version}";
-    version = "${version}";
+    pname = pname;
+    version = version;
     src = src;
+    outputs = outputs;
     buildInputs = [ undmg unzip ];
     sourceRoot = sourceRoot;
     phases = [ "unpackPhase" "installPhase" ];
@@ -101,4 +102,21 @@
       ];
     };
   };
+  launchdAgent = pkgs: { enable ? true, name, script ? "", config }:
+    (let
+      cmd = if script != "" then pkgs.writeScript "${name}-start" ''
+        #! ${pkgs.stdenv.shell}
+
+        ${script}
+      '' else null;
+      argsObj = if cmd != null then { ProgramArguments = ["${cmd}"]; } else {};
+    in {
+      launchd.agents.${name} = {
+        enable = enable;
+        config = {
+          StandardOutPath = "/tmp/${name}.out.log";
+          StandardErrorPath = "/tmp/${name}.err.log";
+        } // config // argsObj;
+      };
+    });
 }

@@ -3,7 +3,7 @@
 
 (import ../../../lib/funcs.nix).mkApplication rec {
   inherit stdenv undmg unzip lib;
-  name = "Firefox";
+  pname = "Firefox";
   version = "92.0";
   src = fetchurl {
     name = "Firefox-${version}.dmg";

@@ -7,6 +7,13 @@ This repository uses [nix](https://nixos.org) and [home-manager](https://github.
 Clone this repository into `~/.config/nixpkgs` (on Linux) or `~/.nixpkgs` (on Darwin). Create a `home.nix` or `darwin-configuration.nix` file and import the correct module
 from `machine`
 
+## Encryption
+
+Some proprietary firmware is required for linux to work properly on a t2 macbook. Broadcom licensing
+prohibits redistribution of the wifi and bluetooth firmware. I've encrypted the firmware package to
+avoid any legal issues from storing firmware ripped from my macbook in a publicly accessible git repo.
+These files are encrypted with git-crypt. To decrypt, run `gpg --decrypt local.key.asc | git-crypt unlock -`.
+
 ## Known Issues
 Sometimes on macos in zsh, darwin-rebuild will fail with an error due to the
 NIX_PATH. This is most likely because nix-darwin sets up the NIX_PATH in
@@ -41,3 +48,6 @@ fi
 This will work because zsh.shellInit is run in /etc/zshenv after nix-darwin sets up
 NIX_PATH, and zsh.interactiveShellInit is run in /etc/static/zshrc, which is executed
 after the daemon script resets NIX_PATH.
+
+## References & Interesting nix dotfiles
++ https://github.com/solomon-b/nixos-config
