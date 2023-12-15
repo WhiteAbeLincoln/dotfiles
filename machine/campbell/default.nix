@@ -4,10 +4,17 @@
   imports = [
     ../../packages/nur
     ../../role/dev.nix
+    ../../program/emacs
     ../../modules/windows/winget
   ];
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
+
+  home.packages = [
+    pkgs.rnix-lsp
+  ];
+  programs.texlive.enable = true;
+  programs.texlive.extraPackages = tpkgs: { inherit (tpkgs) scheme-full; };
 
   # Home Manager needs a bit of information about you and the
   # paths it should manage.

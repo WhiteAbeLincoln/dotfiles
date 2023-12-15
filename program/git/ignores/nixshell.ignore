@@ -1,3 +1,4 @@
 shell.nix
 .direnv
 .envrc
+.env
