@@ -1,9 +1,8 @@
-{ pkgs, ... }:
+{ ... }:
 
 {
   programs.starship = {
     enable = true;
-    enableZshIntegration = true;
     settings = {
       format = "$all";
       right_format = "$time";

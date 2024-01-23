@@ -6,7 +6,7 @@ with lib;
   imports = [
     ../program/git
     ../program/vim
-    ../program/zsh
+    ../program/fish
     ../program/direnv
     ../program/tmux
     ../program/starship
@@ -14,10 +14,10 @@ with lib;
 
   home.packages = [
     pkgs.haskellPackages.ShellCheck
-    (pkgs.writeShellScriptBin "nixFlakes" ''
-      exec ${pkgs.nixUnstable}/bin/nix --experimental-features "nix-command flakes" "$@"
-    '')
   ];
+  nix = {
+    settings.experimental-features = ["nix-command" "flakes"];
+  };
   programs.jq.enable = true;
   programs.ssh.enable = true;
   programs.ssh.extraConfig = mkIf pkgs.stdenv.isDarwin ''
@@ -25,6 +25,5 @@ with lib;
     AddKeysToAgent yes
     UseKeychain yes
   '';
-  programs.neovim.enable = true;
   programs.keychain.enable = pkgs.stdenv.isLinux;
 }
