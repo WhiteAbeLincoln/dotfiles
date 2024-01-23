@@ -4,20 +4,39 @@
   imports = [
     ../../packages/nur
     ../../role/dev.nix
+    ../../program/emacs
     ../../modules/windows/winget
   ];
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
+
+  home.packages = [
+    pkgs.rnix-lsp
+  ];
+  programs.texlive.enable = true;
+  programs.texlive.extraPackages = tpkgs: { inherit (tpkgs) scheme-full; };
 
   # Home Manager needs a bit of information about you and the
   # paths it should manage.
   home.username = "awhite";
   home.homeDirectory = "/home/awhite";
   home.file.WinHome.source = config.lib.file.mkOutOfStoreSymlink "/mnt/c/Users/awhite";
+  # ensures our wsl-git will work
+  # make sure you've set the windows environment variables
+  # BASH_ENV: ~/.bash_env_noninteractive
+  # WSLENV: BASH_ENV/u
+  home.file.".bash_env_noninteractive".text = ''
+  if [ -e /home/awhite/.nix-profile/etc/profile.d/nix.sh ]; then
+    . /home/awhite/.nix-profile/etc/profile.d/nix.sh
+  fi
+  '';
 
   programs.git = {
     # use gitFull so that we get git-svn
-    package = pkgs.gitFull;
+    # rhel based distros have configs expecting a patched openssh which supports gssapi
+    # the gitFull package uses a nix openssh build instead of the global one, so we must
+    # override with the patched version https://github.com/NixOS/nixpkgs/issues/160527
+    package = pkgs.gitFull.override { openssh = pkgs.openssh_gssapi; };
     userEmail = pkgs.lib.mkForce "awhite@campbellsci.com";
     extraConfig.svn.rmdir = true;
     ignoreFiles = [

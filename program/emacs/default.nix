@@ -4,12 +4,15 @@
   imports = [ ./module.nix ];
   custom.programs.spacemacs = {
     enable = true;
-    rev = "51686e5f1206d57a86d9d33a62ed02c9aa9c7e8b";
-    rcfile.source = ./spacemacs-new;
-    package = if pkgs.stdenv.isDarwin then pkgs.emacsMacport else pkgs.emacs;
+    rev = "8f7019340ec38c2cd70df37739a0adf77ff1e788";
+    # rcfile.source = ./spacemacs-new;
+    package = if pkgs.stdenv.isDarwin then pkgs.emacsMacport else pkgs.emacs29;
   };
   home.packages = [
+    # pygmentize is needed by minted
     pkgs.python310Packages.pygments
+    # texi2dvi is needed by minted for syntax highlighting
+    pkgs.texinfo
   ];
   # services.emacs.enable = pkgs.stdenv.isLinux;
   # home.file.".emacs.d" = {

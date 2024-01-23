@@ -31,6 +31,7 @@
   extraConfig = {
     init.defaultBranch = "trunk";
     pull.rebase = false;
+    log.date = "local";
   };
   ignoreFiles = [
     ./ignores/vscode.ignore
