@@ -136,29 +136,13 @@ install_nix() {
     return 0
   fi
 
-  if iswsl; then
-    echo "Installing singleuser nix."
-  else
-    echo "Installing multiuser nix."
-  fi
-
+  echo "Installing nix using the Determinate Systems installer."
   prompt || {
     printf '%s\n' "Cancelling install..."
     exit 0
   }
 
-  execute eval 'curl -L https://nixos.org/nix/install > /tmp/install-nix'
-  # install nix
-  if iswsl; then
-    execute sh /tmp/install-nix --no-daemon
-  elif islinux; then
-    execute sh /tmp/install-nix --daemon
-  elif isdarwin; then
-    execute sh /tmp/install-nix
-  else
-    printf >&2 '%s\n' "System $OSTYPE not supported"
-    exit 1
-  fi
+  execute eval 'curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install'
   printf '%s\n' "Restart your shell and rerun this script."
   exit 0
 }

@@ -20,7 +20,7 @@ with lib;
   };
   programs.jq.enable = true;
   programs.ssh.enable = true;
-  programs.ssh.extraConfig = mkIf pkgs.stdenv.isDarwin ''
+  programs.ssh.extraConfig = ''
     IgnoreUnknown AddKeysToAgent,UseKeychain
     AddKeysToAgent yes
     UseKeychain yes

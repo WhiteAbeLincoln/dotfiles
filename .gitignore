@@ -8,3 +8,4 @@ salt_dotfiles.key
 current-theme.nix
 !lib/
 darwin-configuration.nix
+result
