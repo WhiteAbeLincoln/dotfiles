@@ -1,1 +1,1 @@
-machine/globalhawk/wireguard_private_key filter=git-crypt diff=git-crypt
+machine/globalhawk/secrets.nix filter=git-crypt diff=git-crypt

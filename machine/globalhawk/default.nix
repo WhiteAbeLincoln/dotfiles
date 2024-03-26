@@ -2,10 +2,11 @@
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running `nixos-help`).
 
-{ config, pkgs, ... }:
+{ config, pkgs, myUserName, ... }:
 
 let
-  myUserName = "abe";
+  lib = pkgs.lib;
+  secrets = import ./secrets.nix;
   mkMediaFs = uuid: fsType: {
     device = "/dev/disk/by-uuid/" + uuid;
     fsType = fsType;
@@ -16,17 +17,20 @@ let
       "x-systemd.automount"
     ];
   };
-  linuxPkgs = pkgs.linuxPackages_latest;
+  linuxPkgs = pkgs.linuxKernel.packages.linux_6_7;
 in
 {
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
-      <home-manager/nixos>
+      # <home-manager/nixos>
       ../../program/plex
       ../../program/calibre-web
+      ../../program/immich
+      ./disks.nix
     ];
 
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
   nixpkgs.config.allowUnfree = true;
 
   # {{{ Boot & System
@@ -40,6 +44,7 @@ in
   boot.loader.efi.efiSysMountPoint = "/boot";
   boot.tmp.useTmpfs = true;
   boot.loader.systemd-boot.configurationLimit = 6;
+
   system.autoUpgrade.enable = true;
   system.autoUpgrade.allowReboot = true;
   nix.gc = {
@@ -53,12 +58,12 @@ in
   #   RuntimeDirectoryInodesMax=1048576
   # '';
   powerManagement.enable = false;
-  systemd.sleep.extraConfig = ''
-    AllowSuspend=no
-    AllowHibernation=no
-    AllowSuspendThenHibernate=no
-    AllowHybridSleep=no
-  '';
+  # systemd.sleep.extraConfig = ''
+  #   AllowSuspend=no
+  #   AllowHibernation=no
+  #   AllowSuspendThenHibernate=no
+  #   AllowHybridSleep=no
+  # '';
   # }}}
 
   # {{{ Users
@@ -70,15 +75,15 @@ in
     createHome = false;
     uid = 994;
   };
-  programs.zsh.enable = true;
+  programs.fish.enable = true;
   users.users.${myUserName} = {
     isNormalUser = true;
     extraGroups = [ "networkmanager" "wheel" "_media" ]; # Enable ‘sudo’ for the user.
     packages = with pkgs; [ firefox vscode.fhs ];
-    shell = pkgs.zsh;
+    shell = pkgs.fish;
   };
-  home-manager.useGlobalPkgs = true;
-  home-manager.users.${myUserName} = import ./home.nix;
+  # home-manager.useGlobalPkgs = true;
+  # home-manager.users.${myUserName} = import ./home.nix;
 
   users.users.calibre-web.extraGroups = ["_media"];
   # }}}
@@ -86,14 +91,19 @@ in
   # {{{ Networking, TZ, Locale
   networking.hostName = "globalhawk"; # Define your hostname.
   # Pick only one of the below networking options.
-  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
-  networking.networkmanager.enable = true;  # Easiest to use and most distros use this by default.
+  networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
+  networking.networkmanager.enable = false;  # Easiest to use and most distros use this by default.
+  networking.wireless.networks = {
+    Sorensen = {
+      psk = secrets.sorensen_psk;
+    };
+  };
 
   # Open ports in the firewall.
   # networking.firewall.allowedTCPPorts = [ ... ];
   # networking.firewall.allowedUDPPorts = [ ... ];
   # Or disable the firewall altogether.
-  networking.firewall.enable = false;
+  networking.firewall.enable = true;
 
   # Set your time zone.
   time.timeZone = "America/Denver";
@@ -113,23 +123,27 @@ in
 
   # {{{ Hardware
   # Enable sound.
-  sound.enable = true;
-  hardware.pulseaudio.enable = true;
+  # sound.enable = true;
+  hardware.pulseaudio.enable = false;
+  security.rtkit.enable = true;
+  services.pipewire = {
+    enable = true;
+    alsa.enable = true;
+    alsa.support32Bit = true;
+    pulse.enable = true;
+    # If you want to use JACK applications, uncomment this
+    #jack.enable = true;
+
+    # use the example session manager (no others are packaged yet so this is enabled by default,
+    # no need to redefine it in your config for now)
+    #media-session.enable = true;
+  };
 
   # add the external hard drives
   fileSystems = {
-    "/data/Media" = mkMediaFs "dc06f3b9-1f0e-4f63-9917-adcc11f2bb7f" "ext4";
+    "/data/OldMedia" = mkMediaFs "dc06f3b9-1f0e-4f63-9917-adcc11f2bb7f" "ext4";
     # "/data/disk2" = mkMediaFs "2104153c-21fa-3549-b27e-d9e9eb6944ff" "hfsplus";
   };
-  # and ensure the correct permissions
-  # doesn't actually need to be a tmpfile, despite the name
-  systemd.tmpfiles.rules = [
-    # user rwx, group rwx, other rx
-    "d /data/Media 0775 _media _media -"
-    # ensure new files are created with the correct permissions using ACL
-    "A /data/Media - - - - group:_media:rwx"
-    "A /data/Media/books - - - - group:calibre-web:rwx"
-  ];
 
   # enable hardware video acceleration
   nixpkgs.config.packageOverrides = pkgs: {
@@ -155,6 +169,7 @@ in
     git-crypt
     tmux
     calibre
+    vlc
   ];
 
   # {{{ Services
@@ -162,6 +177,19 @@ in
 
   # Enable CUPS to print documents.
   # services.printing.enable = true;
+
+  programs.nix-ld.enable = true;
+
+  services.immich = {
+    enable = true;
+    immichVersion = "v1.99.0";
+    uploadDir = "/data/Media/immich/photos";
+    backupDir = "/data/Media/immich/backups";
+    dbPassword = secrets.photoprism_pass;
+    externalLibraries = {
+      existingPhotos = "/data/Media/photos";
+    };
+  };
 
   # Enable the OpenSSH daemon.
   services.openssh.enable = true;
@@ -274,7 +302,7 @@ in
         TZ = config.time.timeZone;
         VPN_TYPE = "wireguard";
         VPN_SERVICE_PROVIDER = "mullvad";
-        WIREGUARD_PRIVATE_KEY = (builtins.readFile ./wireguard_private_key);
+        WIREGUARD_PRIVATE_KEY = secrets.wireguard_private_key;
         WIREGUARD_ADDRESSES = "10.67.246.222/32";
         SERVER_CITIES = "stockholm,amsterdam";
       };
@@ -397,7 +425,15 @@ in
    #  };
   };
 
-  networking.firewall.allowedTCPPorts = [ 7878 8989 9091 51413 9117 ];
+  networking.firewall.allowedTCPPorts = [
+    7878
+    8989
+    9091
+    51413
+    9117
+    config.services.photoprism.port
+    8083
+  ];
   networking.firewall.allowedUDPPorts = [ 51413 ];
 
   # }}}
