@@ -186,6 +186,7 @@ in
       };
       immich_machine_learning = recursiveMerge [
         {
+          hostname = "immich-machine-learning";
           image = "ghcr.io/immich-app/immich-machine-learning:${machineLearningTag}";
           autoStart = true;
           environment = environment;

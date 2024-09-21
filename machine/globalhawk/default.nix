@@ -182,13 +182,10 @@ in
 
   services.immich = {
     enable = true;
-    immichVersion = "v1.99.0";
+    immichVersion = "v1.115.0";
     uploadDir = "/data/Media/immich/photos";
     backupDir = "/data/Media/immich/backups";
-    dbPassword = secrets.photoprism_pass;
-    externalLibraries = {
-      existingPhotos = "/data/Media/photos";
-    };
+    dbPassword = secrets.immich_pass;
   };
 
   # Enable the OpenSSH daemon.
@@ -285,6 +282,7 @@ in
   # using systemd.tmpfiles.rules
 
   virtualisation.docker.enable = true;
+  users.extraGroups.docker.members = [ myUserName ];
   # podman is having issues resolving containers by name
   virtualisation.oci-containers.backend = "docker";
   virtualisation.oci-containers.containers = {
