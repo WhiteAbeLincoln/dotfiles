@@ -39,7 +39,7 @@ in {
         home.activation.spacemacs-setup =
           lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           if ! [ -e ~/.emacs.d ]; then
-            $DRY_RUN_CMD git \
+            $DRY_RUN_CMD "${pkgs.git}/bin/git" \
               clone $VERBOSE_ARG \
               -b ${escapeShellArg cfg.branch} \
               ${escapeShellArg cfg.repo} \
@@ -51,7 +51,7 @@ in {
               mv ~/.emacs.d/private "$temp"
             fi
 
-            $DRY_RUN_CMD git \
+            $DRY_RUN_CMD "${pkgs.git}/bin/git" \
               clone $VERBOSE_ARG \
               -b ${escapeShellArg cfg.branch} \
               ${escapeShellArg cfg.repo} \
@@ -63,19 +63,19 @@ in {
               rm -r "$temp"
             fi
           fi
-          $DRY_RUN_CMD git \
+          $DRY_RUN_CMD "${pkgs.git}/bin/git" \
             --git-dir ~/.emacs.d/.git \
             --work-tree ~/.emacs.d \
             fetch $VERBOSE_ARG \
             origin \
             ${escapeShellArg cfg.branch}
-          $DRY_RUN_CMD git \
+          $DRY_RUN_CMD "${pkgs.git}/bin/git" \
             --git-dir ~/.emacs.d/.git \
             --work-tree ~/.emacs.d \
             update-ref \
             refs/heads/${escapeShellArg cfg.branch} \
             ${escapeShellArg cfg.rev}
-          $DRY_RUN_CMD git \
+          $DRY_RUN_CMD "${pkgs.git}/bin/git" \
             --git-dir ~/.emacs.d/.git \
             --work-tree ~/.emacs.d \
             checkout \
