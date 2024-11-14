@@ -19,7 +19,7 @@ in {
       type = types.str;
     };
     rcfile = mkOption {
-      type = types.nullOr ((import ../../lib/types.nix { inherit lib; }).file);
+      type = types.nullOr lib.mine.types.file;
       default = null;
     };
     package = mkOption {

@@ -1,4 +1,4 @@
-{
+{ ... }: {
   # install system apps in /Applications/Nix Apps by copying so Spotlight can index
   # also can do the same for home manager apps
   # adapted from nicknovitski https://github.com/nix-community/home-manager/issues/1341#issuecomment-778820334

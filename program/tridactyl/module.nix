@@ -20,7 +20,7 @@ in
         };
         enableNative = mkEnableOption "enableNative";
         tridactylrc = mkOption {
-          type = types.nullOr ((import ../../lib/types.nix { inherit lib; }).file);
+          type = types.nullOr lib.mine.types.file;
           default = null;
         };
       };
