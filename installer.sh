@@ -41,6 +41,12 @@ prompt() {
 }
 
 execute() {
+  if [ "$1" = "eval" ]; then
+    EVAL="1"
+    shift
+  else
+    EVAL="0"
+  fi
   printf '\e[37m%s\e[0m\n' "COMMAND: $*"
 
   if [ $INTERACTIVE -eq 1 ]; then
@@ -54,7 +60,11 @@ execute() {
     return 0
   fi
 
-  "$@"
+  if [ "$EVAL" = "1" ]; then
+    eval "$1"
+  else
+    "$@"
+  fi
 }
 
 islinux() {
@@ -77,59 +87,6 @@ nixinstalled() {
   [ -d /nix ]
 }
 
-BASIC_DARWIN_CONFIG='{ config, pkgs, ... }:\n\n{ imports = [ ./simple-darwin.nix ]; }\n'
-
-install_nixdarwin() {
-  echo "Installing nix-darwin"
-  prompt || {
-    printf '%s\n' "Skipping nix-darwin install..."
-    return 0
-  }
-
-  execute eval "printf '%b\n' '$BASIC_DARWIN_CONFIG' > '$HOME/.nixpkgs/darwin-configuration.nix'"
-  execute sudo mv /etc/nix/nix.conf /etc/nix/nix.conf.old
-
-  # install nix-darwin
-  execute nix-build https://github.com/LnL7/nix-darwin/archive/master.tar.gz -A installer
-  execute ./result/bin/darwin-installer
-
-  printf '%s\n' "Remember to open a new shell, edit ~/.nixpkgs/darwin-configuration.nix and run darwin-rebuild switch"
-}
-
-install_homemanager() {
-  if [ -z "$HOME_VER" ] && [ -n "$host_dir" ]; then
-    # this matches a line like `home.stateVersion = "23.11";`, accounting for spaces.
-    # It doesn't handle the expression being split over multiple lines, using different quotes
-    # or using an attrset instead of straight assignment (e.g. `home = { stateVersion = "23.11"; };`)
-    HOME_VER="$(sed -n 's/.*home\.stateVersion[[:blank:]]\{0,1\}=[[:blank:]]\{0,1\}"\(.*\)"[[:blank:]]\{0,1\};/\1/p' "$SCRIPT_DIR/machine/$host_dir/home.nix")"
-  fi
-  if [ -z "$HOME_VER" ]; then
-    HOME_VER="master"
-  else
-    HOME_VER="release-$HOME_VER"
-  fi
-
-  echo "Installing home-manager $HOME_VER"
-  prompt || {
-    printf '%s\n' "Skipping home-manager install..."
-    return 0
-  }
-
-  # install system home-manager if we are in nixos or macos
-  if isdarwin || isnixos; then
-    printf '%s\n' "Installing system home-manager"
-    execute sudo -i nix-channel --add "https://github.com/nix-community/home-manager/archive/$HOME_VER.tar.gz" home-manager
-    execute sudo -i nix-channel --update
-  else
-    printf '%s\n' "Installing standalone home-manager"
-    execute nix-channel --add "https://github.com/nix-community/home-manager/archive/$HOME_VER.tar.gz" home-manager
-    execute nix-channel --update
-
-    export NIX_PATH="$HOME/.nix-defexpr/channels:/nix/var/nix/profiles/per-user/root/channels${NIX_PATH:+:$NIX_PATH}"
-    execute nix-shell "<home-manager>" -A install
-  fi
-}
-
 install_nix() {
   if nixinstalled; then
     printf '%s\n' "Nix is already installed. Skipping..."
@@ -145,6 +102,40 @@ install_nix() {
   execute eval 'curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install'
   printf '%s\n' "Restart your shell and rerun this script."
   exit 0
+}
+
+install_brew() {
+  if command -v brew >/dev/null 2>&1; then
+    echo "Homebrew is already installed. Skipping..."
+    return 0
+  fi
+
+  if ! [ -f "/opt/homebrew/bin/brew" ]; then
+    echo "Installing homebrew"
+    prompt || {
+      printf '%s\n' "Cancelling install..."
+      return 0
+    }
+
+    # shellcheck disable=SC2016
+    execute eval '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+  fi
+  # shellcheck disable=SC2016
+  execute eval 'eval "$(/opt/homebrew/bin/brew shellenv)"'
+}
+
+install_darwin() {
+  install_brew
+
+  if ! [ -f "$SCRIPT_DIR/machine/$(hostname -s)/default.nix" ]; then
+    echo "Missing nix-darwin machine configuration at $SCRIPT_DIR/machine/$(hostname -s)"
+    exit 1
+  fi
+
+  echo "Installing nix-darwin flake with config from machine/$(hostname -s)"
+  if prompt; then
+    execute nix run nix-darwin -- switch --flake "$SCRIPT_DIR"
+  fi
 }
 
 bootstrap_nixos() {
@@ -188,16 +179,13 @@ bootstrap_nixos() {
 }
 
 do_install() {
-  execute pushd /tmp
-
   if isnixos; then
     bootstrap_nixos
   else
     install_nix
   fi
-  install_homemanager
   if isdarwin; then
-    install_nixdarwin
+    install_darwin
   fi
 }
 
@@ -275,12 +263,31 @@ do_uninstall() {
   fi
 }
 
+do_switch() {
+  if isdarwin; then
+    execute darwin-rebuild switch --flake "$SCRIPT_DIR" "$@"
+  elif isnixos; then
+    execute nixos-rebuild switch --flake "$SCRIPT_DIR" "$@"
+  else
+    execute home-manager
+  fi
+}
+
+do_build() {
+  if isdarwin; then
+    execute darwin-rebuild build --flake "$SCRIPT_DIR" "$@"
+  elif isnixos; then
+    execute nixos-rebuild build --flake "$SCRIPT_DIR" "$@"
+  else
+    execute home-manager
+  fi
+}
+
 show_help() {
-  echo "installer.sh [-h|--help] [--dry-run] [--home-ver <VERSION>] (install | uninstall)"
+  echo "installer.sh [-h|--help] [--dry-run] [--home-ver <VERSION>] (install | uninstall | switch | build)"
 }
 
 ACTION=
-HOME_VER=
 
 while :; do
   case $1 in
@@ -296,15 +303,17 @@ while :; do
       INTERACTIVE=1
       echo "---Interactive---"
       ;;
-    --home-ver)
-      shift
-      HOME_VER="$1"
-      ;;
     install)
       ACTION="install"
       ;;
     uninstall)
       ACTION="uninstall"
+      ;;
+    switch)
+      ACTION="switch"
+      ;;
+    build)
+      ACTION="build"
       ;;
     *)
       break
@@ -317,6 +326,10 @@ if [ "$ACTION" = "install" ]; then
   do_install
 elif [ "$ACTION" = "uninstall" ]; then
   do_uninstall
+elif [ "$ACTION" = "switch" ]; then
+  do_switch "$@"
+elif [ "$ACTION" = "build" ]; then
+  do_build "$@"
 else
   show_help
   exit 1

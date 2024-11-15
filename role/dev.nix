@@ -15,9 +15,6 @@ with lib;
   home.packages = [
     pkgs.haskellPackages.ShellCheck
   ];
-  nix = {
-    settings.experimental-features = ["nix-command" "flakes"];
-  };
   programs.jq.enable = true;
   programs.ssh.enable = true;
   programs.ssh.extraConfig = ''

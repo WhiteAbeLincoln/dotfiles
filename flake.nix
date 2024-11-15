@@ -7,6 +7,10 @@
       url = "github:nix-community/home-manager/release-24.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    darwin = {
+      url = "github:lnl7/nix-darwin";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     flake-utils.url = "github:numtide/flake-utils";
   };
 
@@ -15,6 +19,7 @@
     nixpkgs,
     home-manager,
     flake-utils,
+    darwin,
     ...
   } @ inputs: let
     # from https://github.com/bangedorrunt/nix/blob/f5a8a5d2f023f7d6558b0ce7051ff5e258860f55/flake.nix#L60
@@ -69,6 +74,30 @@
         }] ++ mods;
       };
     };
+    darwinCfg = { machine, user, system ? "aarch64-darwin", ... } @ args: {
+      ${machine} = darwin.lib.darwinSystem {
+        system = system;
+        specialArgs = { inherit inputs; myUserName = user; };
+        modules = [
+          baseModule
+          { nixpkgs.hostPlatform = system; }
+          ./modules/darwin/default.nix
+          ./machine/${machine}/default.nix
+          home-manager.darwinModules.home-manager
+          {
+            home-manager.useGlobalPkgs = true;
+            home-manager.useUserPackages = true;
+            home-manager.users.${user} = {...} @ params: {
+              imports = [./machine/${machine}/home.nix];
+
+              programs.home-manager.enable = true;
+              home.homeDirectory = "/Users/${user}";
+            };
+            home-manager.extraSpecialArgs = extraSpecialArgs args;
+          }
+        ];
+      };
+    };
     nixosCfg = {
       machine,
       user,
@@ -77,7 +106,7 @@
     } @ args: {
       ${machine} = nixpkgs.lib.nixosSystem {
         system = system;
-        specialArgs = {myUserName = user;};
+        specialArgs = { inherit inputs; myUserName = user; };
         modules = [
           baseModule
           ./machine/${machine}/default.nix
@@ -91,14 +120,16 @@
               programs.home-manager.enable = true;
               home.homeDirectory = "/home/${user}";
             };
-            extraSpecialArgs = extraSpecialArgs (args // {isNixOS = true;});
+            home-manager.extraSpecialArgs = extraSpecialArgs (args // {isNixOS = true;});
           }
         ];
       };
     };
 
-    nixosCfgs = cfgs: nixpkgs.lib.mergeAttrsList (map nixosCfg cfgs);
-    hmCfgs = cfgs: nixpkgs.lib.mergeAttrsList (map hmCfg cfgs);
+    mkCfgs = fn: cfgs: nixpkgs.lib.mergeAttrsList (map fn cfgs);
+    nixosCfgs = mkCfgs nixosCfg;
+    darwinCfgs = mkCfgs darwinCfg;
+    hmCfgs = mkCfgs hmCfg;
 
     flakeCfg = fn:
       flake-utils.lib.eachDefaultSystem (system: (fn {
@@ -113,6 +144,12 @@
       nixosConfigurations = nixosCfgs [
         {
           machine = "globalhawk";
+          user = "abe";
+        }
+      ];
+      darwinConfigurations = darwinCfgs [
+        {
+          machine = "nighthawk";
           user = "abe";
         }
       ];

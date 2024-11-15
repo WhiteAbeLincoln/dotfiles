@@ -47,51 +47,47 @@
       remapCapsLockToEscape = true;
     };
 
-    activationScripts.applications.text = let
-      apps = config.system.build.applications;
-      home = config.users.users.abe.home;
-    in ''
-      echo "setting up ~/Applications/Nix Apps..." >&2
+    # activationScripts.applications.text = let
+    #   apps = config.system.build.applications;
+    #   home = config.users.users.abe.home;
+    # in ''
+    #   echo "setting up ~/Applications/Nix Apps..." >&2
 
-      if [ ! -e ${home}/Applications/Nix\ Apps -o -L ${home}/Applications/Nix\ Apps ]; then
-        ln -sfn ${apps}/Applications ${home}/Applications/Nix\ Apps
-      else
-        echo "warning: ${home}/Applications and ${home}/Applications/Nix Apps are directories, skipping App linking..." >&2
-      fi
-    '';
+    #   if [ ! -e ${home}/Applications/Nix\ Apps -o -L ${home}/Applications/Nix\ Apps ]; then
+    #     ln -sfn ${apps}/Applications ${home}/Applications/Nix\ Apps
+    #   else
+    #     echo "warning: ${home}/Applications and ${home}/Applications/Nix Apps are directories, skipping App linking..." >&2
+    #   fi
+    # '';
   };
 
-  environment.systemPackages =
-    [ pkgs.vim ];
-  environment.variables.EDITOR = "vim";
-  programs.zsh.shellInit = ''
-  if [ -x /usr/libexec/path_helper ]; then
-    function () {
-      local OLDP="$PATH"
-      eval "$(/usr/libexec/path_helper -s)"
-      export PATH="$OLDP:$PATH"
-      typeset -U path
-    }
-  fi
-  export OLD_NIX_PATH="$NIX_PATH";
-  '';
-  programs.zsh.interactiveShellInit = ''
-  if [ -n "$OLD_NIX_PATH" ]; then
-    if [ "$OLD_NIX_PATH" != "$NIX_PATH" ]; then
-      NIX_PATH="$OLD_NIX_PATH"
-      echo Reset NIX_PATH
-    fi
-    unset OLD_NIX_PATH
-  fi
-  '';
+  # programs.zsh.shellInit = ''
+  # if [ -x /usr/libexec/path_helper ]; then
+  #   function () {
+  #     local OLDP="$PATH"
+  #     eval "$(/usr/libexec/path_helper -s)"
+  #     export PATH="$OLDP:$PATH"
+  #     typeset -U path
+  #   }
+  # fi
+  # export OLD_NIX_PATH="$NIX_PATH";
+  # '';
+  # programs.zsh.interactiveShellInit = ''
+  # if [ -n "$OLD_NIX_PATH" ]; then
+  #   if [ "$OLD_NIX_PATH" != "$NIX_PATH" ]; then
+  #     NIX_PATH="$OLD_NIX_PATH"
+  #     echo Reset NIX_PATH
+  #   fi
+  #   unset OLD_NIX_PATH
+  # fi
+  # '';
 
   services.nix-daemon.enable = true;
   nix.configureBuildUsers = true;
 
   programs.zsh.enable = true;
 
-  fonts.fontDir.enable = true;
-  fonts.fonts = [ pkgs.cascadia-code ];
+  fonts.packages = [ pkgs.cascadia-code ];
 
   security.pam.enableSudoTouchIdAuth = true;
 }
