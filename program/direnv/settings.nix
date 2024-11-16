@@ -1,3 +1,0 @@
-{
-  nix-direnv.enable = true;
-}

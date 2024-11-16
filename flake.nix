@@ -28,23 +28,32 @@
     # NOTE merge with `home-manager.lib` otherwise build will fail.
     # My guess is `lib` will override system lib, so some/all attributes of
     # system lib will be _undefined_, thus build error!
-    mkLib = nixpkgs:
+    mkLib = hm: nixpkgs:
       nixpkgs.lib.extend
-      (self: super: {mine = import ./lib {lib = self;};} // home-manager.lib);
-    lib = mkLib inputs.nixpkgs;
+      (self: super: {mine = import ./lib {lib = self;};} // hm);
 
     baseModule = {...}: {
       system.configurationRevision = nixpkgs.lib.mkIf (self ? rev) self.rev;
       nix.settings.experimental-features = ["nix-command" "flakes"];
       nix.registry.nixpkgs.flake = nixpkgs;
     };
-    extraSpecialArgs = {
+
+    specialArgs = {
+      user,
       isNixOS ? false,
       isWSL ? false,
+      hm ? {},
       ...
-    }: {
+    }: let
+      lib = mkLib hm inputs.nixpkgs;
+    in {
+      myUserName = user;
+      isHM = builtins.hasAttr "hm" lib;
       inherit lib inputs isNixOS isWSL;
     };
+
+    extraSpecialArgs = args: specialArgs (args // {hm = home-manager.lib;});
+
     hmCfg = {
       machine,
       user,
@@ -52,8 +61,7 @@
       system ? "x86_64-linux",
       modules ? null,
       ...
-    } @ args:
-    let
+    } @ args: let
       machineDir =
         if dir != null
         then dir
@@ -62,25 +70,33 @@
         if modules != null
         then modules
         else [./machine/${machineDir}/home.nix];
-    in
-    {
+    in {
       "${user}@${machine}" = home-manager.lib.homeManagerConfiguration {
         pkgs = nixpkgs.legacyPackages.${system};
         extraSpecialArgs = extraSpecialArgs args;
-        modules = [{
-          home.stateVersion = nixpkgs.lib.mkDefault "24.05";
-          home.username = nixpkgs.lib.mkDefault user;
-          home.homeDirectory = nixpkgs.lib.mkDefault /home/${user};
-        }] ++ mods;
+        modules =
+          [
+            {
+              home.stateVersion = nixpkgs.lib.mkDefault "24.05";
+              home.username = nixpkgs.lib.mkDefault user;
+              home.homeDirectory = nixpkgs.lib.mkDefault /home/${user};
+            }
+          ]
+          ++ mods;
       };
     };
-    darwinCfg = { machine, user, system ? "aarch64-darwin", ... } @ args: {
+    darwinCfg = {
+      machine,
+      user,
+      system ? "aarch64-darwin",
+      ...
+    } @ args: {
       ${machine} = darwin.lib.darwinSystem {
         system = system;
-        specialArgs = { inherit inputs; myUserName = user; };
+        specialArgs = specialArgs args;
         modules = [
           baseModule
-          { nixpkgs.hostPlatform = system; }
+          {nixpkgs.hostPlatform = system;}
           ./modules/darwin/default.nix
           ./machine/${machine}/default.nix
           home-manager.darwinModules.home-manager
@@ -106,7 +122,7 @@
     } @ args: {
       ${machine} = nixpkgs.lib.nixosSystem {
         system = system;
-        specialArgs = { inherit inputs; myUserName = user; };
+        specialArgs = specialArgs args;
         modules = [
           baseModule
           ./machine/${machine}/default.nix
@@ -160,13 +176,13 @@
           dir = "campbell";
           isWSL = true;
         }
-        ({
+        {
           machine = "trace";
           user = "trace";
           modules = [
             (args: builtins.trace (builtins.attrNames args) {})
           ];
-        })
+        }
       ];
     };
 }

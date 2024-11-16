@@ -1,3 +1,4 @@
+# ENVIRONMENTS: nix-darwin, home-manager
 { pkgs, ... }:
 
 {

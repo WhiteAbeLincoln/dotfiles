@@ -3,6 +3,7 @@
 {
   imports = [
     ../../role/darwin.nix
+    ../../program/direnv
   ];
 
   environment.systemPackages = [
@@ -19,6 +20,8 @@
   homebrew.enable = true;
   homebrew.brews = [
   ];
+
+  programs.fish.enable = true;
 
   system.stateVersion = 5;
 }
