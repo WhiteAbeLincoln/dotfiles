@@ -269,7 +269,7 @@ do_switch() {
   elif isnixos; then
     execute nixos-rebuild switch --flake "$SCRIPT_DIR" "$@"
   else
-    execute home-manager
+    execute home-manager switch --flake "$SCRIPT_DIR" "$@"
   fi
 }
 

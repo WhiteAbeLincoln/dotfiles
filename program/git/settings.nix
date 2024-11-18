@@ -32,6 +32,7 @@
     init.defaultBranch = "trunk";
     pull.rebase = false;
     log.date = "local";
+    push.autoSetupRemote = true;
   };
   ignoreFiles = [
     ./ignores/vscode.ignore
