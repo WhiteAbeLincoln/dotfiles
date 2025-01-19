@@ -2,7 +2,7 @@
 
 with lib;
 let
-  cfg = config.services.immich;
+  cfg = config.services.immich-custom;
   machineLearningTag = if cfg.mlAcceleration == "cpu" then cfg.immichVersion else "${cfg.immichVersion}-${cfg.mlAcceleration}";
   environment = {
     UPLOAD_LOCATION = cfg.uploadDir;
@@ -77,7 +77,7 @@ let
 in
 {
   options = {
-    services.immich = {
+    services.immich-custom = {
       enable = mkEnableOption "immich";
       externalLibraries = mkOption {
         type = types.attrsOf types.str;
@@ -135,12 +135,12 @@ in
     virtualisation.oci-containers.containers = {
       immich_server = {
         image = "ghcr.io/immich-app/immich-server:${cfg.immichVersion}";
-        cmd = [ "start.sh" "immich" ];
+        # cmd = [ "start.sh" "immich" ];
         volumes = [
           "${cfg.uploadDir}:/usr/src/app/upload"
           "/etc/localtime:/etc/localtime:ro"
         ] ++ libraryVolumes;
-        ports = [ "${toString cfg.port}:3001" ];
+        ports = [ "${toString cfg.port}:2283" ];
         autoStart = true;
         environment = environment;
         dependsOn = [
@@ -149,24 +149,24 @@ in
         ];
         extraOptions = [ "--network=immich-bridge" ];
       };
-      immich_microservices = recursiveMerge [
-        {
-          image = "ghcr.io/immich-app/immich-server:${cfg.immichVersion}";
-          cmd = [ "start.sh" "microservices" ];
-          volumes = [
-            "${cfg.uploadDir}:/usr/src/app/upload"
-            "/etc/localtime:/etc/localtime:ro"
-          ] ++ libraryVolumes;
-          autoStart = true;
-          environment = environment;
-          dependsOn = [
-            "immich_redis"
-            "immich_postgres"
-          ];
-          extraOptions = [ "--network=immich-bridge" ];
-        }
-        transcodingCfg.${cfg.transcoding}
-      ];
+      # immich_microservices = recursiveMerge [
+      #   {
+      #     image = "ghcr.io/immich-app/immich-server:${cfg.immichVersion}";
+      #     cmd = [ "start.sh" "microservices" ];
+      #     volumes = [
+      #       "${cfg.uploadDir}:/usr/src/app/upload"
+      #       "/etc/localtime:/etc/localtime:ro"
+      #     ] ++ libraryVolumes;
+      #     autoStart = true;
+      #     environment = environment;
+      #     dependsOn = [
+      #       "immich_redis"
+      #       "immich_postgres"
+      #     ];
+      #     extraOptions = [ "--network=immich-bridge" ];
+      #   }
+      #   transcodingCfg.${cfg.transcoding}
+      # ];
       immich_db_dumper = {
         image = "prodrigestivill/postgres-backup-local";
         environment = environment // {

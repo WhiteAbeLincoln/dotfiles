@@ -17,7 +17,7 @@ let
       "x-systemd.automount"
     ];
   };
-  linuxPkgs = pkgs.linuxKernel.packages.linux_6_7;
+  linuxPkgs = pkgs.linuxKernel.packages.linux_6_12;
 in
 {
   imports =
@@ -27,7 +27,9 @@ in
       ../../program/plex
       ../../program/calibre-web
       ../../program/immich
+      ../../program/homebridge
       ./disks.nix
+      # ./backup.nix
     ];
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
@@ -103,7 +105,7 @@ in
   # networking.firewall.allowedTCPPorts = [ ... ];
   # networking.firewall.allowedUDPPorts = [ ... ];
   # Or disable the firewall altogether.
-  networking.firewall.enable = true;
+  networking.firewall.enable = false;
 
   # Set your time zone.
   time.timeZone = "America/Denver";
@@ -149,7 +151,7 @@ in
   nixpkgs.config.packageOverrides = pkgs: {
     vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
   };
-  hardware.opengl = {
+  hardware.graphics = {
     enable = true;
     extraPackages = with pkgs; [
       intel-media-driver # LIBVA_DRIVER_NAME=iHD
@@ -180,12 +182,22 @@ in
 
   programs.nix-ld.enable = true;
 
-  services.immich = {
+  # services.restic-b2 = {
+  #   enable = true;
+  # };
+
+  services.immich-custom = {
     enable = true;
-    immichVersion = "v1.115.0";
+    immichVersion = "v1.124.2";
     uploadDir = "/data/Media/immich/photos";
     backupDir = "/data/Media/immich/backups";
     dbPassword = secrets.immich_pass;
+  };
+
+  services.homebridge = {
+    enable = true;
+    cfgDir = "/data/Media/docker-services/homebridge";
+    # user = "${toString config.users.users._media.uid}:${toString config.users.groups._media.gid}";
   };
 
   # Enable the OpenSSH daemon.
@@ -194,14 +206,14 @@ in
   # Enable the X11 windowing system.
   services.xserver = {
     enable = true;
-    displayManager.sddm.enable = true;
     desktopManager.plasma5.enable = true;
     # Enable touchpad support (enabled default in most desktopManager).
     # libinput.enable = true;
     # Configure keymap in X11
-    layout = "us";
-    xkbOptions = "caps:swapescape";
+    xkb.layout = "us";
+    xkb.options = "caps:swapescape";
   };
+  services.displayManager.sddm.enable = true;
 
   # Remote Desktop
   services.xrdp.enable = true;
@@ -216,7 +228,7 @@ in
     enable = true;
     ipv4 = true;
     ipv6 = true;
-    nssmdns = true;
+    nssmdns4 = true;
     publish = {
       enable = true;
       userServices = true;
@@ -228,39 +240,39 @@ in
 
   services.samba-wsdd.enable = true;
 
-  services.samba = {
-    enable = true;
-    openFirewall =  true;
-    nsswins = true;
-    securityType = "user";
-    extraConfig = ''
-      workgroup = WORKGROUP
-      server string = ${config.networking.hostName}
-      netbios name = ${config.networking.hostName}
-      security = user
-      hosts allow = 192.168.1. 192.168.0. 127.0.0.1 localhost
-      hosts deny = 0.0.0.0/0
-      guest account = nobody
-      map to guest = bad user
-      follow symlinks = yes
-      wide links = yes
-      unix extensions = no
-    '';
-    shares = {
-      Media = {
-        path = "/data/Media";
-        browseable = "yes";
-        "read only" = "yes";
-        "guest ok" = "yes";
-        "create mask" = "0644";
-        "directory mask" = "0755";
-        "force user" = "samba";
-        "force group" = "media";
-        "write list" = myUserName;
-        "read list" = "${myUserName}, guest, nobody";
-      };
-    };
-  };
+  # services.samba = {
+  #   enable = true;
+  #   openFirewall =  true;
+  #   nsswins = true;
+  #   securityType = "user";
+  #   extraConfig = ''
+  #     workgroup = WORKGROUP
+  #     server string = ${config.networking.hostName}
+  #     netbios name = ${config.networking.hostName}
+  #     security = user
+  #     hosts allow = 192.168.1. 192.168.0. 127.0.0.1 localhost
+  #     hosts deny = 0.0.0.0/0
+  #     guest account = nobody
+  #     map to guest = bad user
+  #     follow symlinks = yes
+  #     wide links = yes
+  #     unix extensions = no
+  #   '';
+  #   shares = {
+  #     Media = {
+  #       path = "/data/Media";
+  #       browseable = "yes";
+  #       "read only" = "yes";
+  #       "guest ok" = "yes";
+  #       "create mask" = "0644";
+  #       "directory mask" = "0755";
+  #       "force user" = "samba";
+  #       "force group" = "media";
+  #       "write list" = myUserName;
+  #       "read list" = "${myUserName}, guest, nobody";
+  #     };
+  #   };
+  # };
 
   # ensure that the torrent network is created
   systemd.services.init-torrent-network = {
@@ -424,6 +436,7 @@ in
   };
 
   networking.firewall.allowedTCPPorts = [
+    8080
     7878
     8989
     9091
