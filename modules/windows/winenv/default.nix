@@ -123,8 +123,14 @@ in
             dry_run_arg=""
           fi
 
-          local ps_file
-          ps_file="$(/usr/bin/wslpath -w ${escapeShellArg setEnvVarScript})"
+          # campbell has a remote-signed powershell policy, so we
+          # can't execute through the \\wsl.localhost\ path
+          # since that's considered to be a network share
+          # instead, copy the script to the windows filesystem
+          mkdir -p "$(/usr/bin/wslpath -a 'C:\HomeManagerTmp')"
+          rm -rf "$(/usr/bin/wslpath -a 'C:\HomeManagerTmp\WinEnv')"
+          mkdir -p "$(/usr/bin/wslpath -a 'C:\HomeManagerTmp\WinEnv')"
+          cp "${escapeShellArg setEnvVarScript}" "$(/usr/bin/wslpath -a 'C:\HomeManagerTmp\WinEnv\ps-set-env.ps1')"
 
           local xml_path
           xml_path="$(/usr/bin/wslpath -w "$1")"
@@ -134,7 +140,7 @@ in
 
           shift
 
-          "$ps_path" -ExecutionPolicy Bypass -File "$ps_file" $verbose_arg $dry_run_arg -XmlPath "$xml_path" "$@"
+          "$ps_path" -ExecutionPolicy Bypass -File 'C:\HomeManagerTmp\WinEnv\ps-set-env.ps1' $verbose_arg $dry_run_arg -XmlPath "$xml_path" "$@"
         }
 
         function cleanOldWinEnv() {
