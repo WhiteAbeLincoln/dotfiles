@@ -22,15 +22,6 @@ in
     interactiveShellInit = ''
       set -g fish_key_bindings fish_vi_key_bindings # use vim-style keys
     '';
-    shellInit = ''
-      # Nix
-      if test -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish'
-        source '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish'
-      end
-      # End Nix
-
-      fish_add_path -m ${homeBin} ${perUserBin} ${systemBin}
-    '';
   } // (lib.optionalAttrs isHM {
     plugins = [
       {
