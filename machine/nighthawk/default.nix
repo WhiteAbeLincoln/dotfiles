@@ -1,4 +1,4 @@
-{ pkgs, myUserName, ... }:
+{ pkgs, myUserName, lib, config, ... }:
 
 {
   imports = [
@@ -8,7 +8,9 @@
 
   environment.systemPackages = [
     pkgs.vim
-    pkgs.bitwarden-cli
+    # pkgs.bitwarden-cli
+    pkgs.moonlight-qt
+    pkgs.wezterm.terminfo
   ];
   environment.variables.EDITOR = "vim";
 
@@ -19,6 +21,8 @@
 
   homebrew.enable = true;
   homebrew.brews = [
+    # the nix packaged version fails to build, missing perl dependency for the gyp bindings
+    "bitwarden-cli"
   ];
 
   programs.fish.enable = true;

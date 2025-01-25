@@ -1,6 +1,17 @@
 # ENVIRONMENTS: nix-darwin, home-manager
-{ pkgs, lib, isHM, ... }:
+{ pkgs, lib, isHM, config, myUserName, ... }:
 
+let
+  # fish doesn't add these paths correctly in darwin
+  # they're added to the end of the path instead of the beginning
+  # fish_add_path won't add them if they don't exist so this is safe
+  # on other systems
+  homeBin = if isHM
+    then "${config.home.homeDirectory}/.nix-profile/bin"
+    else "";
+  perUserBin = "/etc/profiles/per-user/${myUserName}/bin";
+  systemBin = "/run/current-system/sw/bin";
+in
 {
   programs.fish = {
     enable = true;
@@ -17,6 +28,8 @@
         source '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish'
       end
       # End Nix
+
+      fish_add_path -m ${homeBin} ${perUserBin} ${systemBin}
     '';
   } // (lib.optionalAttrs isHM {
     plugins = [

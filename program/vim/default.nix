@@ -3,11 +3,10 @@
 with lib;
 
 {
-  imports = [ ./module.nix ];
-
-  programs.vim-custom = {
+  programs.neovim = {
     enable = true;
-    settings.background = "dark";
+    coc.enable = true;
+    defaultEditor = true;
     plugins = with pkgs.vimPlugins; [
       vim-polyglot
       vim-commentary
@@ -17,11 +16,9 @@ with lib;
       auto-pairs
       colorizer
     ];
-    package = mkIf pkgs.stdenv.isDarwin (pkgs.vim_configurable.override {
-      # python = pkgs.python3;
-      guiSupport = "no";
-      darwinSupport = true;
-    });
+    viAlias = true;
+    vimAlias = true;
+    vimdiffAlias = true;
     extraConfig = ''
     syntax on
     filetype plugin indent on

@@ -6,7 +6,7 @@
     enable = true;
     rev = "8f7019340ec38c2cd70df37739a0adf77ff1e788";
     rcfile.source = ./spacemacs-new;
-    package = if pkgs.stdenv.isDarwin then pkgs.emacsMacport else pkgs.emacs29;
+    package = if pkgs.stdenv.isDarwin then pkgs.emacs-macport else pkgs.emacs29;
   };
   home.packages = [
     # pygmentize is needed by minted
