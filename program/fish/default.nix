@@ -17,7 +17,7 @@ in
     enable = true;
     shellAliases = if pkgs.stdenv.isLinux then {
       pbcopy = "${pkgs.xclip}/bin/xclip -i -selection clipboard";
-      pbpaste = "${pkgs.xclip}/bin/xclip -i -selection clipboard";
+      pbpaste = "${pkgs.xclip}/bin/xclip -o -selection clipboard";
     } else {};
     interactiveShellInit = ''
       set -g fish_key_bindings fish_vi_key_bindings # use vim-style keys
