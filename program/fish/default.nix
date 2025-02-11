@@ -1,17 +1,6 @@
 # ENVIRONMENTS: nix-darwin, home-manager
 { pkgs, lib, isHM, config, myUserName, ... }:
 
-let
-  # fish doesn't add these paths correctly in darwin
-  # they're added to the end of the path instead of the beginning
-  # fish_add_path won't add them if they don't exist so this is safe
-  # on other systems
-  homeBin = if isHM
-    then "${config.home.homeDirectory}/.nix-profile/bin"
-    else "";
-  perUserBin = "/etc/profiles/per-user/${myUserName}/bin";
-  systemBin = "/run/current-system/sw/bin";
-in
 {
   programs.fish = {
     enable = true;
@@ -20,10 +9,14 @@ in
       pbpaste = "${pkgs.xclip}/bin/xclip -o -selection clipboard";
     } else {};
     shellInit = ''
-      if ! set -q NIX_PROFILES && [ -e "/nix/var/nix/profiles/default/etc/profile.d/nix.fish" ]
-        source /nix/var/nix/profiles/default/etc/profile.d/nix.fish
+      # Nix
+      if ! type -q nix && test -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish'
+        source '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish'
+        set --export __ETC_PROFILE_NIX_SOURCED 1
       end
+      # End Nix
     '';
+
     interactiveShellInit = ''
       set -g fish_key_bindings fish_vi_key_bindings # use vim-style keys
     '';
