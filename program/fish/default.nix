@@ -19,6 +19,11 @@ in
       pbcopy = "${pkgs.xclip}/bin/xclip -i -selection clipboard";
       pbpaste = "${pkgs.xclip}/bin/xclip -o -selection clipboard";
     } else {};
+    shellInit = ''
+      if ! set -q NIX_PROFILES && [ -e "/nix/var/nix/profiles/default/etc/profile.d/nix.fish" ]
+        source /nix/var/nix/profiles/default/etc/profile.d/nix.fish
+      end
+    '';
     interactiveShellInit = ''
       set -g fish_key_bindings fish_vi_key_bindings # use vim-style keys
     '';
