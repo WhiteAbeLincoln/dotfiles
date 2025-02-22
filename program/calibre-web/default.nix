@@ -10,7 +10,7 @@
     listen.ip = "0.0.0.0";
     options = {
       enableBookUploading = true;
-      calibreLibrary = /data/Media/books;
+      calibreLibrary = "/data/Media/books";
     };
   };
 }

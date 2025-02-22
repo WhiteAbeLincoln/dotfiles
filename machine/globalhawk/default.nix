@@ -160,7 +160,7 @@ in
       libvdpau-va-gl
     ];
   };
-  # }}} 
+  # }}}
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
@@ -318,16 +318,15 @@ in
       };
       ports = [
         "8000:8000" # vpn control server
-        "51413:51413/udp" # transmission listening port
-        "51413:51413/tcp" # transmission listening port
-        "9091:9091" # transmission web-ui
-        "9117:9117" # Jackett
+        "6881:6881/udp" # qbittorrent listening port
+        "6881:6881/tcp" # qbittorrent listening port
+        "9091:9091" # qbittorrent web-ui
       ];
     };
-    jackett = {
-      image = "linuxserver/jackett:latest";
+    prowlarr = {
+      image = "lscr.io/linuxserver/prowlarr:latest";
       extraOptions = [
-        "--network=container:vpn"
+        "--network=torrent"
         # "--health-cmd" "curl https://am.i.mullvad.net/connected | grep -q 'You are connected'"
         # "--health-start-period="
         # "--health-startup-cmd" "curl localhost:8000/v1/publicip/ip"
@@ -339,13 +338,12 @@ in
         PGID = (toString config.users.groups._media.gid);
       };
       volumes = [
-        "/data/Media/docker-services/torrent-config/jackett:/config"
-        "/data/Media/torrents/queue:/downloads"
+        "/data/Media/docker-services/torrent-config/prowlarr:/config"
       ];
-      dependsOn = ["vpn"];
+      ports = ["9696:9696"];
     };
-    transmission = {
-      image = "linuxserver/transmission:latest";
+    qbittorrent = {
+      image = "lscr.io/linuxserver/qbittorrent:latest";
       extraOptions = [
         # "--restart=unless-stopped"
         "--network=container:vpn"
@@ -356,15 +354,19 @@ in
         TZ = config.time.timeZone;
         PUID = (toString config.users.users._media.uid);
         PGID = (toString config.users.groups._media.gid);
+        WEBUI_PORT = "9091";
+        TORRENTING_PORT = "6881";
       };
       volumes = [
-        "/data/Media/docker-services/torrent-config/transmission:/config"
-        "/data/Media:/data"
+        "/data/Media/docker-services/torrent-config/qbittorrent:/config"
+        # make sure that the mapped path in the container matches what radarr and sonarr expect
+        # https://wiki.servarr.com/radarr/system#docker-bad-remote-path-mapping
+        "/data/Media/torrents/downloads:/data/torrents/downloads"
       ];
       dependsOn = ["vpn"];
     };
     radarr = {
-      image = "linuxserver/radarr:latest";
+      image = "lscr.io/linuxserver/radarr:latest";
       extraOptions = [
         "--network=torrent"
         "--label=autoheal=true"
@@ -381,7 +383,7 @@ in
       ports = [ "7878:7878" ];
     };
     sonarr = {
-      image = "linuxserver/sonarr:latest";
+      image = "lscr.io/linuxserver/sonarr:latest";
       extraOptions = [
         "--network=torrent"
         "--label=autoheal=true"
@@ -440,12 +442,12 @@ in
     7878
     8989
     9091
-    51413
-    9117
+    9696
+    6881
     config.services.photoprism.port
     8083
   ];
-  networking.firewall.allowedUDPPorts = [ 51413 ];
+  networking.firewall.allowedUDPPorts = [ 6881 ];
 
   # }}}
 

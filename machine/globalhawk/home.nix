@@ -5,9 +5,9 @@
     ../../role/dev.nix
   ];
 
-  home.sessionVariables = {
-    EDITOR = "vim";
-  };
+  # home.sessionVariables = {
+  #   EDITOR = "vim";
+  # };
 
   home.stateVersion = "23.11";
 }
