@@ -1,7 +1,7 @@
 { config, pkgs, ... }:
 
 let
-  secrets = import ./secrets.nix;
+  secrets = import ../../secrets/common.nix;
 in
 {
   boot.supportedFilesystems = ["zfs"];

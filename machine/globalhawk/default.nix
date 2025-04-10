@@ -6,7 +6,7 @@
 
 let
   lib = pkgs.lib;
-  secrets = import ./secrets.nix;
+  secrets = (import ../../secrets/common.nix) // (import ../../secrets/globalhawk.nix);
   mkMediaFs = uuid: fsType: {
     device = "/dev/disk/by-uuid/" + uuid;
     fsType = fsType;

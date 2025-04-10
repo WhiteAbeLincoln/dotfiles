@@ -2,7 +2,7 @@
 
 with lib;
 let
-  secrets = import ./secrets.nix;
+  secrets = import ../../secrets/globalhawk.nix;
   cfg = config.services.restic-b2;
   getMount = pool: ''
     getPoolMount() {

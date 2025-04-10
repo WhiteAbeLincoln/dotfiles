@@ -1,5 +1,8 @@
-{ config, pkgs, ... }:
+{ config, pkgs, pkgs-unstable, ... }:
 
+let
+  secrets = import ../../secrets/common.nix;
+in
 {
   imports = [
     ../../program/git
@@ -39,7 +42,18 @@
     pkgs.git
     pkgs.openssh_gssapi
     pkgs.amazon-ecr-credential-helper
+    pkgs.bitwarden-cli
+    pkgs.git-crypt
   ];
+
+  programs.rbw = {
+    enable = true;
+    package = pkgs-unstable.rbw;
+    settings = {
+      email = secrets.bw_email;
+      pinentry = pkgs.pinentry-curses;
+    };
+  };
 
   programs.ssh.enable = true;
   programs.keychain.enable = pkgs.stdenv.isLinux;

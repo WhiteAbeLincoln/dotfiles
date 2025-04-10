@@ -27,6 +27,12 @@
       git commit --quiet --no-verify -m "temp for stash-working" &&
       git stash push -m "$(git show --format='%h %s' -s HEAD~1)" "$@" &&
       git reset --quiet --soft HEAD~1; }; f'';
+    switch-remote = ''!f() {
+      ( git switch -c "$1" &&
+      git branch --set-upstream-to "origin/$1" &&
+      git fetch origin &&
+      git reset --hard "origin/$1" ) || ( git switch - && git branch -D "$1" )
+    }; f'';
   };
   extraConfig = {
     init.defaultBranch = "trunk";

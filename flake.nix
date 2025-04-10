@@ -3,6 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     home-manager = {
       url = "github:nix-community/home-manager/release-24.11";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -17,6 +18,7 @@
   outputs = {
     self,
     nixpkgs,
+    nixpkgs-unstable,
     home-manager,
     flake-utils,
     darwin,
@@ -43,12 +45,14 @@
       isNixOS ? false,
       isWSL ? false,
       hm ? {},
+      system ? "x86_64-linux",
       ...
     }: let
       lib = mkLib hm inputs.nixpkgs;
     in {
       myUserName = user;
       isHM = builtins.hasAttr "hm" lib;
+      pkgs-unstable = nixpkgs-unstable.legacyPackages.${system};
       inherit lib inputs isNixOS isWSL;
     };
 
