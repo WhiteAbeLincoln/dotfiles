@@ -18,6 +18,13 @@ let
     ];
   };
   linuxPkgs = pkgs.linuxKernel.packages.linux_6_12;
+  vuetorrent = pkgs.callPackage (
+    { fetchzip }:
+    fetchzip {
+      url = "https://github.com/VueTorrent/VueTorrent/releases/download/v2.24.2/vuetorrent.zip";
+      sha256 = "sha256-kjNeOk5Yyum5uSqn7EZHL6HOSfkEucr0BnGNVSTaOK4=";
+    }
+  ) {};
 in
 {
   imports =
@@ -93,11 +100,11 @@ in
   # {{{ Networking, TZ, Locale
   networking.hostName = "globalhawk"; # Define your hostname.
   # Pick only one of the below networking options.
-  networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
   networking.networkmanager.enable = false;  # Easiest to use and most distros use this by default.
-  networking.wireless.networks = {
-    Sorensen = {
-      psk = secrets.sorensen_psk;
+  networking.wireless = {
+    enable = true;  # Enables wireless support via wpa_supplicant.
+    networks = {
+      pokestop.psk = secrets.pokestop_psk;
     };
   };
 
@@ -172,6 +179,7 @@ in
     tmux
     calibre
     vlc
+    vuetorrent
   ];
 
   # {{{ Services
@@ -297,7 +305,8 @@ in
   users.extraGroups.docker.members = [ myUserName ];
   # podman is having issues resolving containers by name
   virtualisation.oci-containers.backend = "docker";
-  virtualisation.oci-containers.containers = {
+  virtualisation.oci-containers.containers =
+  {
     # https://gist.github.com/1player/dbdafdd197e1623f5831108fc0cc973a
     vpn = {
       image = "qmcgaw/gluetun";
@@ -359,6 +368,7 @@ in
       };
       volumes = [
         "/data/Media/docker-services/torrent-config/qbittorrent:/config"
+        "${vuetorrent}:/vuetorrent"
         # make sure that the mapped path in the container matches what radarr and sonarr expect
         # https://wiki.servarr.com/radarr/system#docker-bad-remote-path-mapping
         "/data/Media/torrents/downloads:/data/torrents/downloads"
