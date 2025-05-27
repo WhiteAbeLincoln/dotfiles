@@ -2,10 +2,10 @@
   description = "Nix Dotfiles Flake";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     home-manager = {
-      url = "github:nix-community/home-manager/release-24.11";
+      url = "github:nix-community/home-manager/release-25.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     darwin = {
@@ -52,7 +52,13 @@
     in {
       myUserName = user;
       isHM = builtins.hasAttr "hm" lib;
-      pkgs-unstable = nixpkgs-unstable.legacyPackages.${system};
+      pkgs-unstable = import nixpkgs-unstable {
+        inherit system;
+        config = {
+          allowUnfree = true;
+          allowUnfreePredicate = (_: true);
+        };
+      };
       inherit lib inputs isNixOS isWSL;
     };
 
@@ -76,7 +82,13 @@
         else [./machine/${machineDir}/home.nix];
     in {
       "${user}@${machine}" = home-manager.lib.homeManagerConfiguration {
-        pkgs = nixpkgs.legacyPackages.${system};
+        pkgs = import nixpkgs {
+          inherit system;
+          config = {
+            allowUnfree = true;
+            allowUnfreePredicate = (_: true);
+          };
+        };
         extraSpecialArgs = extraSpecialArgs args;
         modules =
           [
@@ -157,8 +169,9 @@
         pkgs = nixpkgs.legacyPackages.${system};
       }));
   in
-    (flakeCfg ({pkgs, ...}: {
+    (flakeCfg ({pkgs, system, ...}: {
       formatter = pkgs.alejandra;
+      defaultPackage = home-manager.defaultPackage.${system};
     }))
     // {
       nixosConfigurations = nixosCfgs [

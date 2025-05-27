@@ -1,4 +1,4 @@
-{ config, pkgs, pkgs-unstable, ... }:
+{ config, pkgs, ... }:
 
 let
   secrets = import ../../secrets/common.nix;
@@ -10,7 +10,7 @@ in
     ../../program/fish
     ../../program/direnv
     ../../program/starship
-    ../../program/emacs
+    # ../../program/emacs
     ../../modules/windows/winenv
     # ../../modules/windows/winget
   ];
@@ -27,10 +27,6 @@ in
   # changes in each release.
   home.stateVersion = "23.11";
 
-  # Home Manager needs a bit of information about you and the
-  # paths it should manage.
-  home.username = "awhite";
-  home.homeDirectory = "/home/${config.home.username}";
   home.sessionVariables = {
     AWS_PROFILE = "m2i";
   };
@@ -48,7 +44,7 @@ in
 
   programs.rbw = {
     enable = true;
-    package = pkgs-unstable.rbw;
+    package = pkgs.rbw;
     settings = {
       email = secrets.bw_email;
       pinentry = pkgs.pinentry-curses;
@@ -78,15 +74,15 @@ in
     #   };
     # };
   };
-  programs.texlive = {
-    enable = true;
-    extraPackages = tpkgs: {
-      inherit (tpkgs) scheme-full;
-    };
-  };
+  # programs.texlive = {
+    # enable = true;
+    # extraPackages = tpkgs: {
+      # inherit (tpkgs) scheme-full;
+    # };
+  # };
 
   windows.environment = {
-    enable = true;
+    enable = false;
     variables = rec {
       BASH_ENV = "~/.bash_env_noninteractive";
       KOMOREBI_CONFIG_HOME = "%APPDATA%\\komorebi";
