@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, pkgs-unstable, ... }:
 
 {
   # importing this conditionally causes recursion issues
@@ -8,6 +8,7 @@
   services.plex = {
     enable = true;
     openFirewall = true;
+    package = pkgs-unstable.plex;
     extraScanners = [
       (pkgs.fetchFromGitHub {
         owner = "ZeroQI";

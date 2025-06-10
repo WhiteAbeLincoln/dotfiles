@@ -194,6 +194,7 @@ in
   #   enable = true;
   # };
 
+  services.flatpak.enable = true;
   services.immich-custom = {
     enable = true;
     immichVersion = "v1.124.2";
@@ -248,39 +249,38 @@ in
 
   services.samba-wsdd.enable = true;
 
-  # services.samba = {
-  #   enable = true;
-  #   openFirewall =  true;
-  #   nsswins = true;
-  #   securityType = "user";
-  #   extraConfig = ''
-  #     workgroup = WORKGROUP
-  #     server string = ${config.networking.hostName}
-  #     netbios name = ${config.networking.hostName}
-  #     security = user
-  #     hosts allow = 192.168.1. 192.168.0. 127.0.0.1 localhost
-  #     hosts deny = 0.0.0.0/0
-  #     guest account = nobody
-  #     map to guest = bad user
-  #     follow symlinks = yes
-  #     wide links = yes
-  #     unix extensions = no
-  #   '';
-  #   shares = {
-  #     Media = {
-  #       path = "/data/Media";
-  #       browseable = "yes";
-  #       "read only" = "yes";
-  #       "guest ok" = "yes";
-  #       "create mask" = "0644";
-  #       "directory mask" = "0755";
-  #       "force user" = "samba";
-  #       "force group" = "media";
-  #       "write list" = myUserName;
-  #       "read list" = "${myUserName}, guest, nobody";
-  #     };
-  #   };
-  # };
+  services.samba = {
+    enable = true;
+    openFirewall =  true;
+    nsswins = true;
+    settings = {
+      global = {
+        workgroup = "WORKGROUP";
+        "server string" = config.networking.hostName;
+        "netbios name" = config.networking.hostName;
+        security = "user";
+        # "hosts allow" = ["192.168.1." "192.168.0." "10.0.0." "127.0.0.1" "localhost"];
+        # "hosts deny" = ["0.0.0.0/0"];
+        "guest account" = "nobody";
+        "map to guest" = "bad user";
+        "follow symlinks" = "yes";
+        "wide links" = "yes";
+        "unix extensions" = "no";
+      };
+      Media = {
+        path = "/data/Media";
+        browseable = "yes";
+        "read only" = "yes";
+        "guest ok" = "yes";
+        "create mask" = "0644";
+        "directory mask" = "0755";
+        "force user" = "_media";
+        "force group" = "_media";
+        "write list" = myUserName;
+        "read list" = "${myUserName}, guest, nobody";
+      };
+    };
+  };
 
   # ensure that the torrent network is created
   systemd.services.init-torrent-network = {

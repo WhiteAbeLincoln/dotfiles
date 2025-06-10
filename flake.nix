@@ -166,7 +166,7 @@
     flakeCfg = fn:
       flake-utils.lib.eachDefaultSystem (system: (fn {
         inherit system;
-        pkgs = nixpkgs.legacyPackages.${system};
+        pkgs = import nixpkgs { inherit system; config.allowUnfree = true; };
       }));
   in
     (flakeCfg ({pkgs, system, ...}: {
