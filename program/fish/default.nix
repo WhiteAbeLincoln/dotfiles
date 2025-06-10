@@ -8,6 +8,7 @@
       pbcopy = "${pkgs.xclip}/bin/xclip -i -selection clipboard";
       pbpaste = "${pkgs.xclip}/bin/xclip -o -selection clipboard";
     } else {};
+    generateCompletions = true;
     shellInit = ''
       # Nix
       if ! type -q nix && test -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish'
@@ -15,6 +16,7 @@
         set --export __ETC_PROFILE_NIX_SOURCED 1
       end
       # End Nix
+      fish_add_path -m ~/.local/bin
     '';
     loginShellInit = ''
       set PPID (echo (ps --pid %self -o ppid --no-headers) | xargs)

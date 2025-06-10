@@ -11,8 +11,6 @@ in
     ../../program/direnv
     ../../program/starship
     # ../../program/emacs
-    ../../modules/windows/winenv
-    # ../../modules/windows/winget
   ];
 
   # Let Home Manager install and manage itself.
@@ -80,6 +78,7 @@ in
       # inherit (tpkgs) scheme-full;
     # };
   # };
+  virtualisation.docker.rootless.enable = true;
 
   windows.environment = {
     enable = false;
