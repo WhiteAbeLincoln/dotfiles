@@ -1,6 +1,4 @@
-{ pkgs, ... }:
-
-{
+{pkgs, ...}: {
   programs.kitty = {
     enable = true;
     settings = {
@@ -13,7 +11,10 @@
       clipboard_control = "write-clipboard write-primary read-clipboard read-primary";
       macos_quit_when_last_window_closed = pkgs.stdenv.isDarwin;
       enabled_layouts = "splits,fat,tall,vertical,horizontal,grid,stack";
-      kitty_mod = if pkgs.stdenv.isDarwin then "super+shift" else "ctrl+shift";
+      kitty_mod =
+        if pkgs.stdenv.isDarwin
+        then "super+shift"
+        else "ctrl+shift";
       window_padding_width = 4;
     };
     keybindings = {
@@ -30,9 +31,9 @@
       "ctrl+f>r" = "layout_action rotate";
       "kitty_mod+space" = "next_layout";
     };
-#     extraConfig = ''# Fig Kitty Integration: Enabled
-# watcher ''${HOME}/.fig/tools/kitty-integration
-# # End of Fig Kitty Integration'';
+    #     extraConfig = ''# Fig Kitty Integration: Enabled
+    # watcher ''${HOME}/.fig/tools/kitty-integration
+    # # End of Fig Kitty Integration'';
   };
   xdg.configFile."kitty/zoom_toggle.py".source = ./kittens/zoom_toggle.py;
 }

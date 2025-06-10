@@ -1,7 +1,7 @@
-{ pkgs, ... }:
-
-{
-  programs.vscode = {
-    enable = true;
-  } // ((import ./settings.nix) pkgs);
+{pkgs, ...}: {
+  programs.vscode =
+    {
+      enable = true;
+    }
+    // ((import ./settings.nix) pkgs);
 }

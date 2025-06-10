@@ -1,3 +1,3 @@
 self: super: {
-  spotify = super.callPackage ./default.nix { };
+  spotify = super.callPackage ./default.nix {};
 }

@@ -1,6 +1,4 @@
-pkgs:
-
-{
+pkgs: {
   customPaneNavigationAndResize = true;
   clock24 = true;
   escapeTime = 0; # fix for laggy escape key in vim

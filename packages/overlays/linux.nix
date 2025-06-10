@@ -1,5 +1,5 @@
 [
-  (self: super: { 
-    abes-xmonad = import ../xmonad { pkgs = super; };
+  (self: super: {
+    abes-xmonad = import ../xmonad {pkgs = super;};
   })
 ]

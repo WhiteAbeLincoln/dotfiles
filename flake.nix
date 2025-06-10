@@ -17,37 +17,44 @@
 
   # unfortunately, outputs must be a function and not a thunk
   # otherwise this could be cleaner
-  outputs = inputs: import ./make-cfg.nix {
-    flake = {pkgs, system, inputs, ...}: {
-      formatter = pkgs.alejandra;
-      defaultPackage = inputs.home-manager.defaultPackage.${system};
-    };
-    nixos = [
-      {
-        machine = "globalhawk";
-        user = "abe";
-      }
-    ];
-    darwin = [
-      {
-        machine = "nighthawk";
-        user = "abe";
-      }
-    ];
-    home = [
-      {
-        machine = "4ZTHR73";
-        user = "awhite";
-        dir = "campbell";
-        isWSL = true;
-      }
-      {
-        machine = "trace";
-        user = "trace";
-        modules = [
-          (args: builtins.trace (builtins.attrNames args) {})
-        ];
-      }
-    ];
-  } inputs;
+  outputs = inputs:
+    import ./make-cfg.nix {
+      flake = {
+        pkgs,
+        system,
+        inputs,
+        ...
+      }: {
+        formatter = pkgs.alejandra;
+        defaultPackage = inputs.home-manager.defaultPackage.${system};
+      };
+      nixos = [
+        {
+          machine = "globalhawk";
+          user = "abe";
+        }
+      ];
+      darwin = [
+        {
+          machine = "nighthawk";
+          user = "abe";
+        }
+      ];
+      home = [
+        {
+          machine = "4ZTHR73";
+          user = "awhite";
+          dir = "campbell";
+          isWSL = true;
+        }
+        {
+          machine = "trace";
+          user = "trace";
+          modules = [
+            (args: builtins.trace (builtins.attrNames args) {})
+          ];
+        }
+      ];
+    }
+    inputs;
 }

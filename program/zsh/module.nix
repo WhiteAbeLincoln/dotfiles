@@ -1,22 +1,23 @@
-{ config, lib, pkgs, ... }:
-
-with lib;
-
-let
-
-cfg = config.programs.zsh;
-relToDotDir = file: (optionalString (cfg.dotDir != null) (cfg.dotDir + "/")) + file;
-figInitText = ''
-. "$HOME/.fig/shell/zshrc.pre.zsh"
-'';
-figExitText = ''
-. "$HOME/.fig/shell/zshrc.post.zsh"
-'';
-withFig = text: if cfg.fig then (figInitText + text + figExitText) else text;
-
-in
-
 {
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+with lib; let
+  cfg = config.programs.zsh;
+  relToDotDir = file: (optionalString (cfg.dotDir != null) (cfg.dotDir + "/")) + file;
+  figInitText = ''
+    . "$HOME/.fig/shell/zshrc.pre.zsh"
+  '';
+  figExitText = ''
+    . "$HOME/.fig/shell/zshrc.post.zsh"
+  '';
+  withFig = text:
+    if cfg.fig
+    then (figInitText + text + figExitText)
+    else text;
+in {
   options = {
     programs.zsh.fig = mkOption {
       default = false;
@@ -34,7 +35,7 @@ in
       hostname # some systems require this (rhel based)
     ];
     home.sessionVariables = {
-      ZPLUG_INSTDIR="${pkgs.zplug}";
+      ZPLUG_INSTDIR = "${pkgs.zplug}";
     };
     home.file = {
       "${relToDotDir ".zaliases"}".source = ./files/zaliases;
@@ -46,5 +47,4 @@ in
       "${relToDotDir ".zshrc.post"}".text = "${cfg.initExtra}";
     };
   };
-
 }

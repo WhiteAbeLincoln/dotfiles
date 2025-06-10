@@ -1,4 +1,4 @@
-{ ... }: {
+{...}: {
   # install system apps in /Applications/Nix Apps by copying so Spotlight can index
   # also can do the same for home manager apps
   # adapted from nicknovitski https://github.com/nix-community/home-manager/issues/1341#issuecomment-778820334
@@ -79,44 +79,71 @@
     done
   '';
   mkApplication = {
-    pname, appname ? pname, version, src, description, homepage,
-    installPhase ? (path: ''cp -pR * ${path}''), sourceRoot ? ".",
-    lib, stdenv, undmg, unzip, outputs ? [ "out" ], ...
-  }: stdenv.mkDerivation {
-    pname = pname;
-    version = version;
-    src = src;
-    outputs = outputs;
-    buildInputs = [ undmg unzip ];
-    sourceRoot = sourceRoot;
-    phases = [ "unpackPhase" "installPhase" ];
-    installPhase = ''
-      mkdir -p "$out/Applications/${appname}.app"
-    '' + (installPhase "$out/Applications/${appname}.app");
-    meta = with lib; {
-      description = description;
-      homepage = homepage;
-      platforms = platforms.darwin;
-      maintainers = [
-        "Abraham White <abelincoln.white@gmail.com>"
-      ];
+    pname,
+    appname ? pname,
+    version,
+    src,
+    description,
+    homepage,
+    installPhase ? (path: ''cp -pR * ${path}''),
+    sourceRoot ? ".",
+    lib,
+    stdenv,
+    undmg,
+    unzip,
+    outputs ? ["out"],
+    ...
+  }:
+    stdenv.mkDerivation {
+      pname = pname;
+      version = version;
+      src = src;
+      outputs = outputs;
+      buildInputs = [undmg unzip];
+      sourceRoot = sourceRoot;
+      phases = ["unpackPhase" "installPhase"];
+      installPhase =
+        ''
+          mkdir -p "$out/Applications/${appname}.app"
+        ''
+        + (installPhase "$out/Applications/${appname}.app");
+      meta = with lib; {
+        description = description;
+        homepage = homepage;
+        platforms = platforms.darwin;
+        maintainers = [
+          "Abraham White <abelincoln.white@gmail.com>"
+        ];
+      };
     };
-  };
-  launchdAgent = pkgs: { enable ? true, name, script ? "", config }:
-    (let
-      cmd = if script != "" then pkgs.writeScript "${name}-start" ''
-        #! ${pkgs.stdenv.shell}
+  launchdAgent = pkgs: {
+    enable ? true,
+    name,
+    script ? "",
+    config,
+  }: (let
+    cmd =
+      if script != ""
+      then
+        pkgs.writeScript "${name}-start" ''
+          #! ${pkgs.stdenv.shell}
 
-        ${script}
-      '' else null;
-      argsObj = if cmd != null then { ProgramArguments = ["${cmd}"]; } else {};
-    in {
-      launchd.agents.${name} = {
-        enable = enable;
-        config = {
+          ${script}
+        ''
+      else null;
+    argsObj =
+      if cmd != null
+      then {ProgramArguments = ["${cmd}"];}
+      else {};
+  in {
+    launchd.agents.${name} = {
+      enable = enable;
+      config =
+        {
           StandardOutPath = "/tmp/${name}.out.log";
           StandardErrorPath = "/tmp/${name}.err.log";
-        } // config // argsObj;
-      };
-    });
+        }
+        // config // argsObj;
+    };
+  });
 }

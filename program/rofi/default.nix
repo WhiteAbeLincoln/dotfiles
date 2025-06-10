@@ -1,7 +1,7 @@
-{ pkgs, ... }:
-
-{
-  programs.rofi = {
-    enable = true;
-  } // (import ./settings.nix);
+{pkgs, ...}: {
+  programs.rofi =
+    {
+      enable = true;
+    }
+    // (import ./settings.nix);
 }

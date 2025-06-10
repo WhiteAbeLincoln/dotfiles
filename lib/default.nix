@@ -16,5 +16,6 @@ with lib; let
   mine = makeExtensible _lib;
 in
   mine
-  # .extend (self: super:
-  #   foldr (a: b: a // b) {} (attrValues super))
+# .extend (self: super:
+#   foldr (a: b: a // b) {} (attrValues super))
+

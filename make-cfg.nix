@@ -4,8 +4,7 @@
   nixos ? [],
   darwin ? [],
   home ? [],
-}:
-{
+}: {
   self,
   nixpkgs,
   nixpkgs-unstable,
@@ -13,8 +12,7 @@
   flake-utils,
   # darwin,
   ...
-} @ inputs:
-let
+} @ inputs: let
   # from https://github.com/bangedorrunt/nix/blob/f5a8a5d2f023f7d6558b0ce7051ff5e258860f55/flake.nix#L60
   # Extend nixpkgs.lib with custom lib and HM lib
   # Custom `./lib` will exposed as `lib.mine`
@@ -35,7 +33,7 @@ let
       inherit system;
       config = {
         allowUnfree = true;
-        allowUnfreePredicate = (_: true);
+        allowUnfreePredicate = _: true;
       };
     };
 
@@ -59,16 +57,33 @@ let
   extraSpecialArgs = args: specialArgs (args // {hm = home-manager.lib;});
 
   hmSystemModules = extraArgs:
-    [./modules/hm] ++ (if extraArgs.isWSL then [./modules/windows] else []);
+    [./modules/hm]
+    ++ (
+      if extraArgs.isWSL
+      then [./modules/windows]
+      else []
+    );
 
-  baseHmModule = machineDir: { myUserName, lib, isDarwin, ... }: let
-    machineModule = (if machineDir == "" then [] else [./machine/${machineDir}/home.nix]);
+  baseHmModule = machineDir: {
+    myUserName,
+    lib,
+    isDarwin,
+    ...
+  }: let
+    machineModule =
+      if machineDir == ""
+      then []
+      else [./machine/${machineDir}/home.nix];
   in {
     imports = machineModule;
     programs.home-manager.enable = true;
     home.stateVersion = lib.mkDefault "25.05";
     home.username = lib.mkDefault myUserName;
-    home.homeDirectory = lib.mkDefault (if isDarwin then "/Users/${myUserName}" else "/home/${myUserName}");
+    home.homeDirectory = lib.mkDefault (
+      if isDarwin
+      then "/Users/${myUserName}"
+      else "/home/${myUserName}"
+    );
   };
 
   systemCfg = {
@@ -91,21 +106,24 @@ let
       if dir != null
       then dir
       else machine;
-    machineModule = (if machineDir == "" then [] else [./machine/${machineDir}/default.nix]);
+    machineModule =
+      if machineDir == ""
+      then []
+      else [./machine/${machineDir}/default.nix];
   in {
     ${machine} = mkSystem (let
       extraSpecialArgs = extraSpecialArgs args;
-    in
-    {
+    in {
       inherit system;
       specialArgs = specialArgs args;
-      modules = [
-        flakeModule
-        {
-          system.configurationRevision = nixpkgs.lib.mkIf (self ? rev) self.rev;
-          nixpkgs.hostPlatform = system;
-        }
-      ]
+      modules =
+        [
+          flakeModule
+          {
+            system.configurationRevision = nixpkgs.lib.mkIf (self ? rev) self.rev;
+            nixpkgs.hostPlatform = system;
+          }
+        ]
         ++ systemModules
         ++ machineModule
         ++ modules
@@ -142,10 +160,11 @@ let
     "${user}@${machine}" = home-manager.lib.homeManagerConfiguration {
       pkgs = mkPkgs inputs.nixpkgs system;
       extraSpecialArgs = extraArgs;
-      modules = [
-        flakeModule
-        ({ pkgs, ... }: { nix.package = pkgs.nix; })
-      ]
+      modules =
+        [
+          flakeModule
+          ({pkgs, ...}: {nix.package = pkgs.nix;})
+        ]
         ++ modules
         ++ (hmSystemModules extraArgs)
         ++ [(baseHmModule machineDir)];
@@ -174,8 +193,10 @@ let
       pkgs = mkPkgs inputs.nixpkgs system;
       pkgs-unstable = mkPkgs inputs.nixpkgs-unstable system;
     }));
-in (flakeCfg flake) // {
-  nixosConfigurations = nixpkgs.lib.mergeAttrsList (map nixosCfg nixos);
-  darwinConfigurations = nixpkgs.lib.mergeAttrsList (map darwinCfg darwin);
-  homeConfigurations = nixpkgs.lib.mergeAttrsList (map homeCfg home);
-}
+in
+  (flakeCfg flake)
+  // {
+    nixosConfigurations = nixpkgs.lib.mergeAttrsList (map nixosCfg nixos);
+    darwinConfigurations = nixpkgs.lib.mergeAttrsList (map darwinCfg darwin);
+    homeConfigurations = nixpkgs.lib.mergeAttrsList (map homeCfg home);
+  }

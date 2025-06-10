@@ -1,6 +1,8 @@
-{ config, pkgs, ... }:
-
 {
+  config,
+  pkgs,
+  ...
+}: {
   system = {
     defaults-writer = {
       "com.apple.dock" = {
@@ -87,7 +89,7 @@
 
   programs.zsh.enable = true;
 
-  fonts.packages = [ pkgs.cascadia-code ];
+  fonts.packages = [pkgs.cascadia-code];
 
   security.pam.enableSudoTouchIdAuth = true;
 }

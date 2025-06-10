@@ -1,3 +1,3 @@
 self: super: {
-  chromium = super.callPackage ./default.nix { };
+  chromium = super.callPackage ./default.nix {};
 }

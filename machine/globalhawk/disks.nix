@@ -1,9 +1,10 @@
-{ config, pkgs, ... }:
-
-let
-  secrets = import ../../secrets/common.nix;
-in
 {
+  config,
+  pkgs,
+  ...
+}: let
+  secrets = import ../../secrets/common.nix;
+in {
   boot.supportedFilesystems = ["zfs"];
   boot.zfs.forceImportRoot = false;
   # boot.kernelPackages = config.boot.zfs.package.latestCompatibleLinuxPackages;
@@ -62,7 +63,7 @@ in
 
   services.zfs.zed.settings = {
     ZED_DEBUG_LOG = "/tmp/zed.debug.log";
-    ZED_EMAIL_ADDR = [ "root" ];
+    ZED_EMAIL_ADDR = ["root"];
     ZED_EMAIL_PROG = "${pkgs.msmtp}/bin/msmtp";
     ZED_EMAIL_OPTS = "@ADDRESS@";
 

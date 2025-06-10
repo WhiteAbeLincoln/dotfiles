@@ -1,10 +1,12 @@
 # Edit this configuration file to define what should be installed on
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running `nixos-help`).
-
-{ config, pkgs, myUserName, ... }:
-
-let
+{
+  config,
+  pkgs,
+  myUserName,
+  ...
+}: let
   lib = pkgs.lib;
   secrets = (import ../../secrets/common.nix) // (import ../../secrets/globalhawk.nix);
   mkMediaFs = uuid: fsType: {
@@ -19,27 +21,26 @@ let
   };
   linuxPkgs = pkgs.linuxKernel.packages.linux_6_12;
   vuetorrent = pkgs.callPackage (
-    { fetchzip }:
-    fetchzip {
-      url = "https://github.com/VueTorrent/VueTorrent/releases/download/v2.24.2/vuetorrent.zip";
-      sha256 = "sha256-kjNeOk5Yyum5uSqn7EZHL6HOSfkEucr0BnGNVSTaOK4=";
-    }
+    {fetchzip}:
+      fetchzip {
+        url = "https://github.com/VueTorrent/VueTorrent/releases/download/v2.24.2/vuetorrent.zip";
+        sha256 = "sha256-kjNeOk5Yyum5uSqn7EZHL6HOSfkEucr0BnGNVSTaOK4=";
+      }
   ) {};
-in
-{
-  imports =
-    [ # Include the results of the hardware scan.
-      ./hardware-configuration.nix
-      # <home-manager/nixos>
-      ../../program/plex
-      ../../program/calibre-web
-      ../../program/immich
-      ../../program/homebridge
-      ./disks.nix
-      # ./backup.nix
-    ];
+in {
+  imports = [
+    # Include the results of the hardware scan.
+    ./hardware-configuration.nix
+    # <home-manager/nixos>
+    ../../program/plex
+    ../../program/calibre-web
+    ../../program/immich
+    ../../program/homebridge
+    ./disks.nix
+    # ./backup.nix
+  ];
 
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  nix.settings.experimental-features = ["nix-command" "flakes"];
   nixpkgs.config.allowUnfree = true;
 
   # {{{ Boot & System
@@ -77,7 +78,7 @@ in
 
   # {{{ Users
   # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.groups._media = { gid = 994; };
+  users.groups._media = {gid = 994;};
   users.users._media = {
     isSystemUser = true;
     group = "_media";
@@ -87,8 +88,8 @@ in
   programs.fish.enable = true;
   users.users.${myUserName} = {
     isNormalUser = true;
-    extraGroups = [ "networkmanager" "wheel" "_media" ]; # Enable ‘sudo’ for the user.
-    packages = with pkgs; [ firefox vscode.fhs ];
+    extraGroups = ["networkmanager" "wheel" "_media"]; # Enable ‘sudo’ for the user.
+    packages = with pkgs; [firefox vscode.fhs];
     shell = pkgs.fish;
   };
   # home-manager.useGlobalPkgs = true;
@@ -100,9 +101,9 @@ in
   # {{{ Networking, TZ, Locale
   networking.hostName = "globalhawk"; # Define your hostname.
   # Pick only one of the below networking options.
-  networking.networkmanager.enable = false;  # Easiest to use and most distros use this by default.
+  networking.networkmanager.enable = false; # Easiest to use and most distros use this by default.
   networking.wireless = {
-    enable = true;  # Enables wireless support via wpa_supplicant.
+    enable = true; # Enables wireless support via wpa_supplicant.
     networks = {
       pokestop.psk = secrets.pokestop_psk;
     };
@@ -156,13 +157,13 @@ in
 
   # enable hardware video acceleration
   nixpkgs.config.packageOverrides = pkgs: {
-    vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
+    vaapiIntel = pkgs.vaapiIntel.override {enableHybridCodec = true;};
   };
   hardware.graphics = {
     enable = true;
     extraPackages = with pkgs; [
       intel-media-driver # LIBVA_DRIVER_NAME=iHD
-      vaapiIntel         # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
+      vaapiIntel # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
       vaapiVdpau
       libvdpau-va-gl
     ];
@@ -251,7 +252,7 @@ in
 
   services.samba = {
     enable = true;
-    openFirewall =  true;
+    openFirewall = true;
     nsswins = true;
     settings = {
       global = {
@@ -285,8 +286,8 @@ in
   # ensure that the torrent network is created
   systemd.services.init-torrent-network = {
     description = "Create the network bridge for torrent.";
-    after = [ "network.target" ];
-    wantedBy = [ "multi-user.target" ];
+    after = ["network.target"];
+    wantedBy = ["multi-user.target"];
     serviceConfig.Type = "oneshot";
     script = ''
       check=$(${pkgs.docker}/bin/docker network ls | grep "torrent" || true)
@@ -302,11 +303,10 @@ in
   # using systemd.tmpfiles.rules
 
   virtualisation.docker.enable = true;
-  users.extraGroups.docker.members = [ myUserName ];
+  users.extraGroups.docker.members = [myUserName];
   # podman is having issues resolving containers by name
   virtualisation.oci-containers.backend = "docker";
-  virtualisation.oci-containers.containers =
-  {
+  virtualisation.oci-containers.containers = {
     # https://gist.github.com/1player/dbdafdd197e1623f5831108fc0cc973a
     vpn = {
       image = "qmcgaw/gluetun";
@@ -343,8 +343,8 @@ in
       ];
       environment = {
         TZ = config.time.timeZone;
-        PUID = (toString config.users.users._media.uid);
-        PGID = (toString config.users.groups._media.gid);
+        PUID = toString config.users.users._media.uid;
+        PGID = toString config.users.groups._media.gid;
       };
       volumes = [
         "/data/Media/docker-services/torrent-config/prowlarr:/config"
@@ -361,8 +361,8 @@ in
       ];
       environment = {
         TZ = config.time.timeZone;
-        PUID = (toString config.users.users._media.uid);
-        PGID = (toString config.users.groups._media.gid);
+        PUID = toString config.users.users._media.uid;
+        PGID = toString config.users.groups._media.gid;
         WEBUI_PORT = "9091";
         TORRENTING_PORT = "6881";
       };
@@ -383,14 +383,14 @@ in
       ];
       environment = {
         TZ = config.time.timeZone;
-        PUID = (toString config.users.users._media.uid);
-        PGID = (toString config.users.groups._media.gid);
+        PUID = toString config.users.users._media.uid;
+        PGID = toString config.users.groups._media.gid;
       };
       volumes = [
         "/data/Media/docker-services/torrent-config/radarr:/config"
         "/data/Media:/data"
       ];
-      ports = [ "7878:7878" ];
+      ports = ["7878:7878"];
     };
     sonarr = {
       image = "lscr.io/linuxserver/sonarr:latest";
@@ -400,14 +400,14 @@ in
       ];
       environment = {
         TZ = config.time.timeZone;
-        PUID = (toString config.users.users._media.uid);
-        PGID = (toString config.users.groups._media.gid);
+        PUID = toString config.users.users._media.uid;
+        PGID = toString config.users.groups._media.gid;
       };
       volumes = [
         "/data/Media/docker-services/torrent-config/sonarr:/config"
         "/data/Media:/data"
       ];
-      ports = [ "8989:8989" ];
+      ports = ["8989:8989"];
     };
     # minecraft-tina = {
     #   image = "itzg/minecraft-server";
@@ -435,16 +435,16 @@ in
     #     MEMORY = "";
     #     JVM_XX_OPTS = "-XX:MaxRAMPercentage=75";
 
-     #    EXAMPLE_COMMAND_BLOCK = "true";
-     #    DIFFICULTY = "normal";
-     #    VIEW_DISTANCE = "18";
-     #    SIMULATION_DISTANCE = "7";
-     #    LOG_TIMESTAMP = "true";
-     #    SNOOPER_ENABLED = "false";
-     #    SPAWN_PROTECTION = "0";
-     #    ALLOW_FLIGHT = "TRUE";
-     #  };
-   #  };
+    #    EXAMPLE_COMMAND_BLOCK = "true";
+    #    DIFFICULTY = "normal";
+    #    VIEW_DISTANCE = "18";
+    #    SIMULATION_DISTANCE = "7";
+    #    LOG_TIMESTAMP = "true";
+    #    SNOOPER_ENABLED = "false";
+    #    SPAWN_PROTECTION = "0";
+    #    ALLOW_FLIGHT = "TRUE";
+    #  };
+    #  };
   };
 
   networking.firewall.allowedTCPPorts = [
@@ -457,7 +457,7 @@ in
     config.services.photoprism.port
     8083
   ];
-  networking.firewall.allowedUDPPorts = [ 6881 ];
+  networking.firewall.allowedUDPPorts = [6881];
 
   # }}}
 
@@ -468,7 +468,6 @@ in
   #   enable = true;
   #   enableSSHSupport = true;
   # };
-
 
   # Copy the NixOS configuration file and link it from the resulting system
   # (/run/current-system/configuration.nix). This is useful in case you
@@ -483,5 +482,5 @@ in
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
   system.stateVersion = "23.11"; # Did you read the comment?
 }
-
 # vim:ft=nix foldmethod=marker foldlevel=0
+

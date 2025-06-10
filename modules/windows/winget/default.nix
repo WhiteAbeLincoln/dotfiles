@@ -1,8 +1,10 @@
-{ config, lib, pkgs, ... }:
-
-with lib;
-
-let
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+with lib; let
   cfg = config.winget;
 
   cfgObj = types.submodule {
@@ -42,8 +44,7 @@ let
       };
     };
   });
-in
-{
+in {
   options.winget = {
     enable = mkEnableOption ''
       Configures windows using <command>winget</command>.
@@ -51,23 +52,20 @@ in
       Note that enabling this option does not install winget. See the Microsoft
       website for installation instructions: https://docs.microsoft.com/en-us/windows/package-manager/.
     '';
-
   };
 
-  config =
-    let
-      exec = ''
-      '';
-    in
-      mkMerge [
-        { home.activation.addWinEnv = hm.dag.entryAfter ["writeBoundary"] exec; }
-        (mkIf cfg.enable (let
-
-          # schema = lib.optionalString (cfg.config-schema != "") "# yaml-language-server: $schema=${cfg.config-schema}\n";
-          # cfgText = lib.toYAML pkgs.configuration;
-          # cfgFile = if cfgText == "" then null else pkgs.writeText "hm-config.dsc.yaml" (schema + cfgText);
-        in {
-          home.extraBuilderCommands = lib.optionalString (cfgText != "") ''ln -s ${cfgFile} $out/hm-config.dsc.yaml'';
-        }))
-      ];
+  config = let
+    exec = ''
+    '';
+  in
+    mkMerge [
+      {home.activation.addWinEnv = hm.dag.entryAfter ["writeBoundary"] exec;}
+      (mkIf cfg.enable (let
+        # schema = lib.optionalString (cfg.config-schema != "") "# yaml-language-server: $schema=${cfg.config-schema}\n";
+        # cfgText = lib.toYAML pkgs.configuration;
+        # cfgFile = if cfgText == "" then null else pkgs.writeText "hm-config.dsc.yaml" (schema + cfgText);
+      in {
+        home.extraBuilderCommands = lib.optionalString (cfgText != "") ''ln -s ${cfgFile} $out/hm-config.dsc.yaml'';
+      }))
+    ];
 }

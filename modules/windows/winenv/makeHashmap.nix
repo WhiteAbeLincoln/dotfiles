@@ -1,25 +1,21 @@
-{ lib, ... }:
-
-let
-  toXmlPropertyVal = val:
-    let
-      arrVal = if builtins.typeOf val == "string" then [val] else val;
-      finalVal = lib.strings.concatStringsSep ";" arrVal;
-    in
-      ''<S N="Value">${lib.strings.escapeXML val}</S>'';
-  toXmlKeyVal = key: val:
-  ''
+{lib, ...}: let
+  toXmlPropertyVal = val: let
+    arrVal =
+      if builtins.typeOf val == "string"
+      then [val]
+      else val;
+    finalVal = lib.strings.concatStringsSep ";" arrVal;
+  in ''<S N="Value">${lib.strings.escapeXML val}</S>'';
+  toXmlKeyVal = key: val: ''
     <En>
       <S N="Key">${lib.strings.escapeXML key}</S>
       ${toXmlPropertyVal val}
     </En>
   '';
-  toPsHashmap = vars:
-  let
+  toPsHashmap = vars: let
     properties = lib.mapAttrsToList toXmlKeyVal vars;
     propStr = lib.strings.concatStringsSep "\n      " properties;
-  in
-    ''
+  in ''
     <Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04">
       <Obj RefId="0">
         <TN RefId="0">
@@ -31,6 +27,6 @@ let
         </DCT>
       </Obj>
     </Objs>
-    '';
+  '';
 in
   toPsHashmap

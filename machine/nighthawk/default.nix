@@ -1,6 +1,10 @@
-{ pkgs, myUserName, lib, config, ... }:
-
 {
+  pkgs,
+  myUserName,
+  lib,
+  config,
+  ...
+}: {
   imports = [
     ../../role/darwin.nix
     ../../program/direnv

@@ -1,8 +1,9 @@
-{ pkgs, lib, ...  }:
-
-with lib;
-
 {
+  pkgs,
+  lib,
+  ...
+}:
+with lib; {
   imports = [
     ../program/git
     ../program/vim

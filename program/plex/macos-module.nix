@@ -1,12 +1,13 @@
-args@{ config, pkgs, lib, ... }:
-
-with lib;
-
-let
+args @ {
+  config,
+  pkgs,
+  lib,
+  ...
+}:
+with lib; let
   cfg = config.services.plex;
   myLib = ((import ../../lib) args).lib.awhite;
-in
-{
+in {
   options = {
     services.plex = {
       enable = mkEnableOption (lib.mdDoc "Plex Media Server");
@@ -105,12 +106,12 @@ in
 
   config = mkIf cfg.enable (
     lib.mkMerge [
-      { home.packages = [ cfg.package ]; }
+      {home.packages = [cfg.package];}
       (myLib.launchdAgent {
         name = "plex";
         enable = true;
         config = {
-          ProgramArguments = [ "${cfg.package}/plex-run-script" ];
+          ProgramArguments = ["${cfg.package}/plex-run-script"];
           KeepAlive = true;
           RunAtLoad = true;
           EnvironmentVariables = {

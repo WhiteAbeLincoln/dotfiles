@@ -1,8 +1,11 @@
-{ config, options, lib, pkgs, ... }:
-
-with lib;
-
-let
+{
+  config,
+  options,
+  lib,
+  pkgs,
+  ...
+}:
+with lib; let
   cfg = config.home-theme;
   opts = options;
   forceSet = builtins.mapAttrs (name: value: mkForce value);
@@ -13,9 +16,24 @@ let
   vscodeAttrs = ["extensions"];
   vimAttrs = ["settings" "extraConfig"];
 
-  mapColorScheme = value: if value == "light" then 0 else if value == "dark" then 1 else 2;
-  mapDensity = value: if value == "normal" then 0 else if value == "compact" then 1 else 2;
-  mapTheme = value: if value == "light" then "firefox-compact-light@mozilla.org" else if value == "dark" then "firefox-compact-dark@mozilla.org" else "default-theme@mozilla.org";
+  mapColorScheme = value:
+    if value == "light"
+    then 0
+    else if value == "dark"
+    then 1
+    else 2;
+  mapDensity = value:
+    if value == "normal"
+    then 0
+    else if value == "compact"
+    then 1
+    else 2;
+  mapTheme = value:
+    if value == "light"
+    then "firefox-compact-light@mozilla.org"
+    else if value == "dark"
+    then "firefox-compact-dark@mozilla.org"
+    else "default-theme@mozilla.org";
   programOverridesDefault = {
     rofi = "rofi";
     termite = "termite";
@@ -24,8 +42,7 @@ let
     vim = "vim";
     firefox = "firefox";
   };
-in
-{
+in {
   options.home-theme = {
     enable = mkEnableOption "home-theme";
     programOverrides = mkOption {
@@ -59,7 +76,7 @@ in
         };
       };
     };
-    rofi = builtins.removeAttrs opts.programs.rofi [ "enable" "package" "terminal" "configPath" ];
+    rofi = builtins.removeAttrs opts.programs.rofi ["enable" "package" "terminal" "configPath"];
     termite = getAttrs termiteAttrs opts.programs.termite;
     zathura = getAttrs zathuraAttrs opts.programs.zathura;
     vscode = mkOption {
@@ -70,10 +87,10 @@ in
             default = null;
             type = types.nullOr (types.submodule {
               options = {
-                name = mkOption { type = types.str; };
-                publisher = mkOption { type = types.str; };
-                version = mkOption { type = types.str; };
-                sha256 = mkOption { type = types.str; };
+                name = mkOption {type = types.str;};
+                publisher = mkOption {type = types.str;};
+                version = mkOption {type = types.str;};
+                sha256 = mkOption {type = types.str;};
               };
             });
           };
@@ -84,12 +101,14 @@ in
         };
       });
     };
-    vim = {
-      themePlugin = mkOption {
-        description = "function taking pkgs and returning a package";
-        default = null;
-      };
-    } // (getAttrs vimAttrs opts.programs.vim);
+    vim =
+      {
+        themePlugin = mkOption {
+          description = "function taking pkgs and returning a package";
+          default = null;
+        };
+      }
+      // (getAttrs vimAttrs opts.programs.vim);
     firefox = mkOption {
       default = {};
       type = types.attrsOf (types.submodule {
@@ -136,27 +155,32 @@ in
         };
         programs.${overrides.termite} = mkThemeOverride "termite";
         programs.${overrides.vscode} = mkIf (cfg.vscode != null) {
-          extensions = mkIf (cfg.vscode.themeExtension != null) [ (pkgs.vscode-utils.extensionFromVscodeMarketplace cfg.vscode.themeExtension) ];
+          extensions = mkIf (cfg.vscode.themeExtension != null) [(pkgs.vscode-utils.extensionFromVscodeMarketplace cfg.vscode.themeExtension)];
           userSettings = mkIf (cfg.vscode.theme != "") {
             "workbench.colorTheme" = cfg.vscode.theme;
           };
         };
         programs.${overrides.vim} = mkIf (cfg ? vim) {
-          plugins = mkIf (cfg.vim ? themePlugin && cfg.vim.themePlugin != null) [ (cfg.vim.themePlugin pkgs) ];
+          plugins = mkIf (cfg.vim ? themePlugin && cfg.vim.themePlugin != null) [(cfg.vim.themePlugin pkgs)];
           settings = forceSet cfg.vim.settings;
           extraConfig = mkAfter cfg.vim.extraConfig;
         };
-        programs.${overrides.firefox}.profiles = builtins.mapAttrs (name: value: {
-          settings = forceSet {
-            "devtools.theme" = if value.color-scheme == "no-preference" then "light" else value.color-scheme;
-            "extensions.activeThemeID" = mapTheme value.color-scheme;
-            "ui.systemUsesDarkTheme" = mapColorScheme value.color-scheme;
-            "browser.in-content.dark-mode" = value.color-scheme == "dark";
-            "browser.uidensity" = mapDensity value.density;
-            "toolkit.legacyUserProfileCustomizations.stylesheets" = value.userChrome != "";
-          };
-          userChrome = mkIf (value.userChrome != "") (mkForce value.userChrome);
-        }) cfg.firefox;
+        programs.${overrides.firefox}.profiles =
+          builtins.mapAttrs (name: value: {
+            settings = forceSet {
+              "devtools.theme" =
+                if value.color-scheme == "no-preference"
+                then "light"
+                else value.color-scheme;
+              "extensions.activeThemeID" = mapTheme value.color-scheme;
+              "ui.systemUsesDarkTheme" = mapColorScheme value.color-scheme;
+              "browser.in-content.dark-mode" = value.color-scheme == "dark";
+              "browser.uidensity" = mapDensity value.density;
+              "toolkit.legacyUserProfileCustomizations.stylesheets" = value.userChrome != "";
+            };
+            userChrome = mkIf (value.userChrome != "") (mkForce value.userChrome);
+          })
+          cfg.firefox;
       }
       # (mkIf (cfg.firefox != {}) (
       #   let

@@ -1,9 +1,11 @@
-{ config, lib, pkgs, ... }:
-
-with lib;
-let
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+with lib; let
   cfg = config.custom.programs.spacemacs;
-
 in {
   options.custom.programs.spacemacs = {
     enable = mkEnableOption "spacemacs";
@@ -29,15 +31,14 @@ in {
     };
   };
 
-  config = mkIf cfg.enable(
-    mkMerge ([
+  config = mkIf cfg.enable (
+    mkMerge [
       {
         programs.emacs = {
           enable = true;
           package = cfg.package;
         };
-        home.activation.spacemacs-setup =
-          lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        home.activation.spacemacs-setup = lib.hm.dag.entryAfter ["writeBoundary"] ''
           if ! [ -e ~/.emacs.d ]; then
             $DRY_RUN_CMD "${pkgs.git}/bin/git" \
               clone $VERBOSE_ARG \
@@ -80,11 +81,11 @@ in {
             --work-tree ~/.emacs.d \
             checkout \
             ${escapeShellArg cfg.branch}
-          '';
+        '';
       }
       (mkIf (cfg.rcfile != null) {
         home.file.".spacemacs" = cfg.rcfile;
       })
-    ])
-  ) ;
+    ]
+  );
 }

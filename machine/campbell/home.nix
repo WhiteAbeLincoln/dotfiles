@@ -1,9 +1,10 @@
-{ config, pkgs, ... }:
-
-let
-  secrets = import ../../secrets/common.nix;
-in
 {
+  config,
+  pkgs,
+  ...
+}: let
+  secrets = import ../../secrets/common.nix;
+in {
   imports = [
     ../../program/git
     ../../program/vim
@@ -51,13 +52,13 @@ in
 
   programs.ssh.enable = true;
   programs.keychain.enable = pkgs.stdenv.isLinux;
-  programs.keychain.keys = [ "id_ed25519" ];
+  programs.keychain.keys = ["id_ed25519"];
 
   programs.git = {
     # rhel based distros have configs expecting a patched openssh which supports gssapi
     # the gitFull package uses a nix openssh build instead of the global one, so we must
     # override with the patched version https://github.com/NixOS/nixpkgs/issues/160527
-    package = pkgs.git.override { openssh = pkgs.openssh_gssapi; };
+    package = pkgs.git.override {openssh = pkgs.openssh_gssapi;};
     userEmail = pkgs.lib.mkForce "awhite@campbellsci.com";
     ignoreFiles = [
       # we don't want to check in nix things for campbell projects
@@ -73,10 +74,10 @@ in
     # };
   };
   # programs.texlive = {
-    # enable = true;
-    # extraPackages = tpkgs: {
-      # inherit (tpkgs) scheme-full;
-    # };
+  # enable = true;
+  # extraPackages = tpkgs: {
+  # inherit (tpkgs) scheme-full;
+  # };
   # };
   virtualisation.docker.rootless.enable = true;
 
@@ -88,7 +89,7 @@ in
       WHKD_CONFIG_HOME = KOMOREBI_CONFIG_HOME;
     };
     wslenv = {
-      BASH_ENV = { for-wsl = true; };
+      BASH_ENV = {for-wsl = true;};
     };
   };
 }

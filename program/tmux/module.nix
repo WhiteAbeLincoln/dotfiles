@@ -1,13 +1,18 @@
-{ config, lib, pkgs, ... }:
-
-with lib;
-
-let
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+with lib; let
   package-name = "tmux-custom";
 
   cfg = config.programs.${package-name};
 
-  pluginName = p: if types.package.check p then p.pname else p.plugin.pname;
+  pluginName = p:
+    if types.package.check p
+    then p.pname
+    else p.plugin.pname;
 
   pluginModule = types.submodule {
     options = {
@@ -24,13 +29,16 @@ let
     };
   };
 
-  defaultKeyMode  = "emacs";
-  defaultResize   = 5;
+  defaultKeyMode = "emacs";
+  defaultResize = 5;
   defaultShortcut = "b";
   defaultTerminal = "screen";
-  defaultShell    = null;
+  defaultShell = null;
 
-  boolToStr = value: if value then "on" else "off";
+  boolToStr = value:
+    if value
+    then "on"
+    else "off";
 
   tmuxConf = ''
     ${optionalString cfg.sensibleOnTop ''
@@ -76,24 +84,29 @@ let
       bind-key x kill-pane
     ''}
     setw -g aggressive-resize ${boolToStr cfg.aggressiveResize}
-    setw -g clock-mode-style  ${if cfg.clock24 then "24" else "12"}
+    setw -g clock-mode-style  ${
+      if cfg.clock24
+      then "24"
+      else "12"
+    }
     set  -s escape-time       ${toString cfg.escapeTime}
     set  -g history-limit     ${toString cfg.historyLimit}
   '';
 
   configPlugins = {
-    assertions = [(
-      let
-        hasBadPluginName = p: !(hasPrefix "tmuxplugin" (pluginName p));
-        badPlugins = filter hasBadPluginName cfg.plugins;
-      in
-        {
+    assertions = [
+      (
+        let
+          hasBadPluginName = p: !(hasPrefix "tmuxplugin" (pluginName p));
+          badPlugins = filter hasBadPluginName cfg.plugins;
+        in {
           assertion = badPlugins == [];
           message =
             "Invalid tmux plugin (not prefixed with \"tmuxplugins\"): "
             + concatMapStringsSep ", " pluginName badPlugins;
         }
-    )];
+      )
+    ];
 
     home.file.".tmux.conf".text = ''
       # ============================================= #
@@ -108,13 +121,12 @@ let
             then p.rtp
             else p.plugin.rtp
           }
-      '') cfg.plugins)}
+        '')
+        cfg.plugins)}
       # ============================================= #
     '';
   };
-in
-
-{
+in {
   options = {
     programs.${package-name} = {
       aggressiveResize = mkOption {
@@ -165,7 +177,7 @@ in
         description = ''
           Time in milliseconds for which tmux waits after an escape is
           input.
-       '';
+        '';
       };
 
       extraConfig = mkOption {
@@ -187,7 +199,7 @@ in
       keyMode = mkOption {
         default = defaultKeyMode;
         example = "vi";
-        type = types.enum [ "emacs" "vi" ];
+        type = types.enum ["emacs" "vi"];
         description = "VI or Emacs style shortcuts.";
       };
 
@@ -271,13 +283,13 @@ in
       plugins = mkOption {
         type = with types;
           listOf (either package pluginModule)
-          // { description = "list of plugin packages or submodules"; };
+          // {description = "list of plugin packages or submodules";};
         description = ''
           List of tmux plugins to be included at the end of your tmux
           configuration. The sensible plugin, however, is defaulted to
           run at the top of your configuration.
         '';
-        default = [ ];
+        default = [];
         example = literalExample ''
           with pkgs; [
             tmuxPlugins.cpu
@@ -299,11 +311,12 @@ in
   };
 
   config = mkIf cfg.enable (
-    mkMerge ([
+    mkMerge [
       {
-        home.packages = [ cfg.package ]
+        home.packages =
+          [cfg.package]
           ++ optional cfg.tmuxinator.enable pkgs.tmuxinator
-          ++ optional cfg.tmuxp.enable      pkgs.tmuxp;
+          ++ optional cfg.tmuxp.enable pkgs.tmuxp;
       }
       (mkIf cfg.secureSocket {
         home.sessionVariables = {
@@ -312,9 +325,9 @@ in
       })
 
       # config file ~/.tmux.conf
-      { home.file.".tmux.conf".text = mkBefore tmuxConf; }
+      {home.file.".tmux.conf".text = mkBefore tmuxConf;}
       (mkIf (cfg.plugins != []) configPlugins)
-      { home.file.".tmux.conf".text = mkAfter cfg.extraConfig; }
-    ])
+      {home.file.".tmux.conf".text = mkAfter cfg.extraConfig;}
+    ]
   );
 }

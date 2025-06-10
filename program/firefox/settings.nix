@@ -1,6 +1,8 @@
-{pkgs, config, ...}:
-
 {
+  pkgs,
+  config,
+  ...
+}: {
   extensions = with pkgs.nur.repos.rycee.firefox-addons; [
     multi-account-containers
     temporary-containers

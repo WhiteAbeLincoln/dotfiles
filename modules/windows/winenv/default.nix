@@ -1,10 +1,12 @@
-{ config, lib, pkgs, ... }:
-
-with lib;
-
-let
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+with lib; let
   cfg = config.windows.environment;
-  toPsHashmap = import ./makeHashmap.nix { lib = lib; };
+  toPsHashmap = import ./makeHashmap.nix {lib = lib;};
   setEnvVarScript = pkgs.writeText "ps-set-env.ps1" ''
     param(
       [Parameter()]
@@ -37,13 +39,20 @@ let
     for-wsl = "u";
     for-win = "w";
   };
-  mkWslEnvFlags = flags: lib.concatStrings (lib.mapAttrsToList (key: flag: if flag then flagMap.${key} else "") flags);
-  mkWslEnvVar = key: flags:
-    let
-      flagStr = mkWslEnvFlags flags;
-      finalFlagStr = if flagStr == "" then "" else "/" + flagStr;
-    in
-      key + finalFlagStr;
+  mkWslEnvFlags = flags:
+    lib.concatStrings (lib.mapAttrsToList (key: flag:
+      if flag
+      then flagMap.${key}
+      else "")
+    flags);
+  mkWslEnvVar = key: flags: let
+    flagStr = mkWslEnvFlags flags;
+    finalFlagStr =
+      if flagStr == ""
+      then ""
+      else "/" + flagStr;
+  in
+    key + finalFlagStr;
   flagsType = types.submodule {
     options = {
       path = mkOption {
@@ -76,8 +85,7 @@ let
       };
     };
   };
-in
-{
+in {
   options.windows.environment = {
     enable = mkEnableOption ''
       Allows managing windows environment variables.
@@ -99,87 +107,95 @@ in
       type = types.attrsOf flagsType;
       default = {};
       example = {
-        GOPATH = { path-list = true; };
-        USERPROFILE = { for-win = true; };
-        SOMEVAR = { for-win = true; path = true; };
+        GOPATH = {path-list = true;};
+        USERPROFILE = {for-win = true;};
+        SOMEVAR = {
+          for-win = true;
+          path = true;
+        };
       };
     };
   };
 
-  config =
-    let
-      exec = ''
-        function runPsScript() {
-          local dry_run_arg
-          local verbose_arg
-          if [[ -v VERBOSE ]]; then
-            verbose_arg="-Verbose"
-          else
-            verbose_arg=""
-          fi
-          if [[ -v DRY_RUN ]]; then
-            dry_run_arg="-DryRun"
-          else
-            dry_run_arg=""
-          fi
+  config = let
+    exec = ''
+      function runPsScript() {
+        local dry_run_arg
+        local verbose_arg
+        if [[ -v VERBOSE ]]; then
+          verbose_arg="-Verbose"
+        else
+          verbose_arg=""
+        fi
+        if [[ -v DRY_RUN ]]; then
+          dry_run_arg="-DryRun"
+        else
+          dry_run_arg=""
+        fi
 
-          # campbell has a remote-signed powershell policy, so we
-          # can't execute through the \\wsl.localhost\ path
-          # since that's considered to be a network share
-          # instead, copy the script to the windows filesystem
-          mkdir -p "$(/usr/bin/wslpath -a 'C:\HomeManagerTmp')"
-          rm -rf "$(/usr/bin/wslpath -a 'C:\HomeManagerTmp\WinEnv')"
-          mkdir -p "$(/usr/bin/wslpath -a 'C:\HomeManagerTmp\WinEnv')"
-          cp "${escapeShellArg setEnvVarScript}" "$(/usr/bin/wslpath -a 'C:\HomeManagerTmp\WinEnv\ps-set-env.ps1')"
+        # campbell has a remote-signed powershell policy, so we
+        # can't execute through the \\wsl.localhost\ path
+        # since that's considered to be a network share
+        # instead, copy the script to the windows filesystem
+        mkdir -p "$(/usr/bin/wslpath -a 'C:\HomeManagerTmp')"
+        rm -rf "$(/usr/bin/wslpath -a 'C:\HomeManagerTmp\WinEnv')"
+        mkdir -p "$(/usr/bin/wslpath -a 'C:\HomeManagerTmp\WinEnv')"
+        cp "${escapeShellArg setEnvVarScript}" "$(/usr/bin/wslpath -a 'C:\HomeManagerTmp\WinEnv\ps-set-env.ps1')"
 
-          local xml_path
-          xml_path="$(/usr/bin/wslpath -w "$1")"
+        local xml_path
+        xml_path="$(/usr/bin/wslpath -w "$1")"
 
-          local ps_path
-          ps_path="$(/usr/bin/wslpath -a 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe')"
+        local ps_path
+        ps_path="$(/usr/bin/wslpath -a 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe')"
 
-          shift
+        shift
 
-          "$ps_path" -ExecutionPolicy Bypass -File 'C:\HomeManagerTmp\WinEnv\ps-set-env.ps1' $verbose_arg $dry_run_arg -XmlPath "$xml_path" "$@"
-        }
+        "$ps_path" -ExecutionPolicy Bypass -File 'C:\HomeManagerTmp\WinEnv\ps-set-env.ps1' $verbose_arg $dry_run_arg -XmlPath "$xml_path" "$@"
+      }
 
-        function cleanOldWinEnv() {
-          if [[ ! -v oldGenPath || ! -e "$oldGenPath/hm-winenv.xml" || "$oldGenPath" == "$newGenPath" ]] ; then
-            return
-          fi
+      function cleanOldWinEnv() {
+        if [[ ! -v oldGenPath || ! -e "$oldGenPath/hm-winenv.xml" || "$oldGenPath" == "$newGenPath" ]] ; then
+          return
+        fi
 
-          if [[ -v VERBOSE ]]; then
-            echo "Clearing old windows env vars"
-          fi
+        if [[ -v VERBOSE ]]; then
+          echo "Clearing old windows env vars"
+        fi
 
-          runPsScript "$oldGenPath/hm-winenv.xml" -Clear
-        }
+        runPsScript "$oldGenPath/hm-winenv.xml" -Clear
+      }
 
-        function makeNewWinEnv() {
-          if [[ ! -v newGenPath || ! -e "$newGenPath/hm-winenv.xml" || "$oldGenPath" == "$newGenPath" ]] ; then
-            return
-          fi
+      function makeNewWinEnv() {
+        if [[ ! -v newGenPath || ! -e "$newGenPath/hm-winenv.xml" || "$oldGenPath" == "$newGenPath" ]] ; then
+          return
+        fi
 
-          if [[ -v VERBOSE ]]; then
-            echo "Adding new windows env vars"
-          fi
+        if [[ -v VERBOSE ]]; then
+          echo "Adding new windows env vars"
+        fi
 
-          runPsScript "$newGenPath/hm-winenv.xml"
-        }
+        runPsScript "$newGenPath/hm-winenv.xml"
+      }
 
-        cleanOldWinEnv
-        makeNewWinEnv
-      '';
-    in
-      mkMerge [
-        { home.activation.addWinEnv = hm.dag.entryAfter ["writeBoundary"] exec; }
-        (mkIf cfg.enable (let
-          wslenvVar = lib.concatStringsSep ":" (lib.mapAttrsToList mkWslEnvVar cfg.wslenv);
-          vars = lib.mergeAttrs (lib.optionalAttrs (wslenvVar != "") { WSLENV = wslenvVar; }) cfg.variables;
-          varmapText = if vars == {} then "" else toPsHashmap vars;
-          varmapFile = if varmapText == "" then null else pkgs.writeText "hm-winenv.xml" varmapText;
-        in {
-          home.extraBuilderCommands = lib.optionalString (varmapText != "") ''ln -s ${varmapFile} $out/hm-winenv.xml'';
-        }))
-      ];
+      cleanOldWinEnv
+      makeNewWinEnv
+    '';
+  in
+    mkMerge [
+      {home.activation.addWinEnv = hm.dag.entryAfter ["writeBoundary"] exec;}
+      (mkIf cfg.enable (let
+        wslenvVar = lib.concatStringsSep ":" (lib.mapAttrsToList mkWslEnvVar cfg.wslenv);
+        vars = lib.mergeAttrs (lib.optionalAttrs (wslenvVar != "") {WSLENV = wslenvVar;}) cfg.variables;
+        varmapText =
+          if vars == {}
+          then ""
+          else toPsHashmap vars;
+        varmapFile =
+          if varmapText == ""
+          then null
+          else pkgs.writeText "hm-winenv.xml" varmapText;
+      in {
+        home.extraBuilderCommands = lib.optionalString (varmapText != "") ''ln -s ${varmapFile} $out/hm-winenv.xml'';
+      }))
+    ];
 }

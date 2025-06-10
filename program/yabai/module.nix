@@ -1,27 +1,32 @@
-{ config, lib, pkgs, ... }:
-
-with lib;
-
-let
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+with lib; let
   cfg = config.services.yabai-custom;
 
   toYabaiConfig = opts:
     concatStringsSep "\n" (mapAttrsToList
-      (p: v: "yabai -m config ${p} ${toString v}") opts);
+      (p: v: "yabai -m config ${p} ${toString v}")
+      opts);
 
-  configFile = mkIf (cfg.config != {} || cfg.extraConfig != "" || cfg.bigSurScriptingAddition)
+  configFile =
+    mkIf (cfg.config != {} || cfg.extraConfig != "" || cfg.bigSurScriptingAddition)
     "${pkgs.writeScript "yabairc" (
       (optionalString cfg.bigSurScriptingAddition ''
         sudo yabai --load-sa
         yabai -m signal --add event=dock_did_restart action="sudo yabai --load-sa"
       '')
-      + (if (cfg.config != {})
-       then "${toYabaiConfig cfg.config}"
-       else "")
-      + optionalString (cfg.extraConfig != "") ("\n" + cfg.extraConfig + "\n"))}";
-in
-
-{
+      + (
+        if (cfg.config != {})
+        then "${toYabaiConfig cfg.config}"
+        else ""
+      )
+      + optionalString (cfg.extraConfig != "") ("\n" + cfg.extraConfig + "\n")
+    )}";
+in {
   options = with types; {
     services.yabai-custom.enable = mkOption {
       type = bool;
@@ -84,11 +89,12 @@ in
 
   config = mkMerge [
     (mkIf (cfg.enable) {
-      environment.systemPackages = [ cfg.package ];
+      environment.systemPackages = [cfg.package];
 
       launchd.user.agents.yabai = {
-        serviceConfig.ProgramArguments = [ "${cfg.package}/bin/yabai" ]
-                                         ++ optionals (cfg.config != {} || cfg.extraConfig != "") [ "-c" configFile ];
+        serviceConfig.ProgramArguments =
+          ["${cfg.package}/bin/yabai"]
+          ++ optionals (cfg.config != {} || cfg.extraConfig != "") ["-c" configFile];
         serviceConfig.StandardOutPath = "/tmp/yabai.out.log";
         serviceConfig.StandardErrorPath = "/tmp/yabai.err.log";
         serviceConfig.KeepAlive = true;
@@ -105,7 +111,7 @@ in
     (mkIf (cfg.bigSurScriptingAddition) {
       environment.etc = {
         "sudoers.d/10-yabai-sa".text = ''
-        %staff ALL = (root) NOPASSWD: ${cfg.package}/bin/yabai --load-sa
+          %staff ALL = (root) NOPASSWD: ${cfg.package}/bin/yabai --load-sa
         '';
       };
     })

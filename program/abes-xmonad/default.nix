@@ -1,7 +1,7 @@
-{ pkgs, ... }:
-
-{
-  programs.abes-xmonad = {
-    enable = true;
-  } // (import ./settings.nix pkgs);
+{pkgs, ...}: {
+  programs.abes-xmonad =
+    {
+      enable = true;
+    }
+    // (import ./settings.nix pkgs);
 }

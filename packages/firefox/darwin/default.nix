@@ -1,6 +1,10 @@
-
-{ stdenv, fetchurl, undmg, unzip, lib }:
-
+{
+  stdenv,
+  fetchurl,
+  undmg,
+  unzip,
+  lib,
+}:
 (import ../../../lib/funcs.nix).mkApplication rec {
   inherit stdenv undmg unzip lib;
   pname = "Firefox";

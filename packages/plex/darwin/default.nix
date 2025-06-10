@@ -1,10 +1,9 @@
-{ stdenv
-, writeScript
-, plexRaw
-, runCommandLocal
-}:
-
-let
+{
+  stdenv,
+  writeScript,
+  plexRaw,
+  runCommandLocal,
+}: let
   wrapperScript = writeScript "plex-run-script" ''
     #!${stdenv.shell}
 

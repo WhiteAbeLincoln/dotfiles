@@ -1,5 +1,10 @@
-{ stdenv, fetchurl, undmg, unzip, lib }:
-
+{
+  stdenv,
+  fetchurl,
+  undmg,
+  unzip,
+  lib,
+}:
 (import ../../../lib/funcs.nix).mkApplication rec {
   # updating - go to https://chromiumdash.appspot.com/releases?platform=Mac
   # find latest version number for stable

@@ -1,5 +1,4 @@
-theme:
-{
+theme: {
   themeExtension = {
     name = "gruvbox";
     publisher = "jdinhlife";

@@ -1,6 +1,10 @@
 # ENVIRONMENTS: nix-darwin, home-manager
-{ pkgs, lib, isHM, ... }:
-
+{
+  pkgs,
+  lib,
+  isHM,
+  ...
+}:
 {
   programs.direnv = {
     enable = true;

@@ -1,5 +1,11 @@
-{ stdenv, fetchurl, undmg, unzip, lib, writeScript }:
-
+{
+  stdenv,
+  fetchurl,
+  undmg,
+  unzip,
+  lib,
+  writeScript,
+}:
 (import ../../../lib/funcs.nix).mkApplication rec {
   inherit stdenv undmg unzip lib;
   pname = "Plex Media Server";

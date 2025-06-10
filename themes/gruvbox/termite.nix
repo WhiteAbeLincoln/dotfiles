@@ -1,6 +1,16 @@
-{ bg, fg, color0, gray, reds, greens, yellows, blues, purples, aquas, contrasts }:
-
 {
+  bg,
+  fg,
+  color0,
+  gray,
+  reds,
+  greens,
+  yellows,
+  blues,
+  purples,
+  aquas,
+  contrasts,
+}: {
   backgroundColor = bg;
   foregroundColor = fg;
   foregroundBoldColor = fg;

@@ -1,10 +1,12 @@
-{ config, lib, pkgs, ... }:
-
-with lib;
-let
-  cfg = config.services.homebridge;
-in
 {
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+with lib; let
+  cfg = config.services.homebridge;
+in {
   options = {
     services.homebridge = {
       enable = mkEnableOption "homebridge";
@@ -25,10 +27,12 @@ in
     };
   };
   config = mkIf cfg.enable {
-    networking.firewall.allowedTCPPorts = [
-      8581
-      51082 
-    ] ++ cfg.additionalPorts;
+    networking.firewall.allowedTCPPorts =
+      [
+        8581
+        51082
+      ]
+      ++ cfg.additionalPorts;
     virtualisation.oci-containers.containers = {
       homebridge = {
         image = "homebridge/homebridge";
@@ -37,9 +41,9 @@ in
           "${cfg.cfgDir}:/homebridge"
           "/etc/localtime:/etc/localtime:ro"
         ];
-        environment = { TZ = config.time.timeZone; };
+        environment = {TZ = config.time.timeZone;};
         autoStart = true;
-        extraOptions = [ "--network=host" ];
+        extraOptions = ["--network=host"];
       };
     };
   };

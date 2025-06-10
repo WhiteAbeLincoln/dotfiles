@@ -1,8 +1,5 @@
-{ lib, ... }:
-
-with lib;
-
-{
+{lib, ...}:
+with lib; {
   file = types.submodule {
     options = {
       text = mkOption {

@@ -1,6 +1,4 @@
-{ pkgs, ... } @ args:
-
-{
+{pkgs, ...} @ args: {
   imports = [
     ./module.nix
   ];
