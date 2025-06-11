@@ -18,7 +18,7 @@
   # unfortunately, outputs must be a function and not a thunk
   # otherwise this could be cleaner
   outputs = inputs:
-    import ./make-cfg.nix {
+    import ./make-cfg.nix inputs {
       flake = {
         pkgs,
         system,
@@ -55,6 +55,5 @@
           ];
         }
       ];
-    }
-    inputs;
+    };
 }

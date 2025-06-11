@@ -58,8 +58,8 @@ in {
     home.packages = [cfg.package];
     # environment.systemPackages = [ cfg.package ];
 
-    systemd.user.sessionVariables = lib.mkIf cfg.setSocketVariable {
-      DOCKER_HOST = "unix://$XDG_RUNTIME_DIR/docker.sock";
+    home.sessionVariables = lib.mkIf cfg.setSocketVariable {
+      DOCKER_HOST = "unix://\${XDG_RUNTIME_DIR}docker.sock";
     };
 
     # Taken from https://github.com/moby/moby/blob/master/contrib/dockerd-rootless-setuptool.sh

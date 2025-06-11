@@ -1,10 +1,4 @@
 {
-  libPath ? ./lib,
-  flake ? ({...}: {}),
-  nixos ? [],
-  darwin ? [],
-  home ? [],
-}: {
   self,
   nixpkgs,
   nixpkgs-unstable,
@@ -12,7 +6,13 @@
   flake-utils,
   # darwin,
   ...
-} @ inputs: let
+} @ inputs: {
+  libPath ? ./lib,
+  flake ? ({...}: {}),
+  nixos ? [],
+  darwin ? [],
+  home ? [],
+}: let
   # from https://github.com/bangedorrunt/nix/blob/f5a8a5d2f023f7d6558b0ce7051ff5e258860f55/flake.nix#L60
   # Extend nixpkgs.lib with custom lib and HM lib
   # Custom `./lib` will exposed as `lib.mine`
@@ -28,13 +28,19 @@
     nix.registry.nixpkgs.flake = nixpkgs;
   };
 
-  mkPkgs = nixpkgs: system:
+  mkPkgs = {
+    nixpkgs,
+    system,
+    config ? {},
+  }:
     import nixpkgs {
       inherit system;
-      config = {
-        allowUnfree = true;
-        allowUnfreePredicate = _: true;
-      };
+      config =
+        {
+          allowUnfree = true;
+          allowUnfreePredicate = _: true;
+        }
+        // config;
     };
 
   specialArgs = {
@@ -44,13 +50,18 @@
     isWSL ? false,
     isDarwin ? false,
     hm ? {},
+    nixpkgsCfg ? {},
     ...
   }: let
     lib = mkLib hm inputs.nixpkgs;
   in {
     myUserName = user;
     isHM = builtins.hasAttr "hm" lib;
-    pkgs-unstable = mkPkgs inputs.nixpkgs-unstable system;
+    pkgs-unstable = mkPkgs {
+      nixpkgs = inputs.nixpkgs-unstable;
+      system = system;
+      config = nixpkgsCfg;
+    };
     inherit lib inputs isNixOS isWSL isDarwin;
   };
 
@@ -98,6 +109,7 @@
       system = defSystem;
       dir = null;
       modules = [];
+      nixpkgsCfg = {};
     };
     args = defs // argsIn;
     inherit (args) user machine system dir modules;
@@ -113,8 +125,14 @@
   in {
     ${machine} = mkSystem (let
       extraSpecialArgs = extraSpecialArgs args;
+      pkgs = mkPkgs {
+        nixpkgs = inputs.nixpkgs;
+        system = system;
+        config = args.nixpkgsCfg;
+      };
     in {
       inherit system;
+      pkgs = pkgs;
       specialArgs = specialArgs args;
       modules =
         [
@@ -135,6 +153,7 @@
             home-manager.useUserPackages = true;
             home-manager.extraSpecialArgs = extraSpecialArgs;
             home-manager.users.${user} = baseHmModule machineDir;
+            environment.systemPackages = [pkgs.alejandra];
           }
         ];
     });
@@ -147,6 +166,7 @@
       system = "x86_64-linux";
       dir = null;
       modules = [];
+      nixpkgsCfg = {};
     };
     args = defs // argsIn;
     inherit (args) user machine system dir modules;
@@ -156,14 +176,22 @@
       if dir != null
       then dir
       else machine;
+    pkgs = mkPkgs {
+      nixpkgs = inputs.nixpkgs;
+      system = system;
+      config = args.nixpkgsCfg;
+    };
   in {
     "${user}@${machine}" = home-manager.lib.homeManagerConfiguration {
-      pkgs = mkPkgs inputs.nixpkgs system;
+      pkgs = pkgs;
       extraSpecialArgs = extraArgs;
       modules =
         [
           flakeModule
-          ({pkgs, ...}: {nix.package = pkgs.nix;})
+          ({pkgs, ...}: {
+            nix.package = pkgs.nix;
+            home.packages = [pkgs.alejandra];
+          })
         ]
         ++ modules
         ++ (hmSystemModules extraArgs)
@@ -190,8 +218,14 @@
   flakeCfg = fn:
     flake-utils.lib.eachDefaultSystem (system: (fn {
       inherit system inputs;
-      pkgs = mkPkgs inputs.nixpkgs system;
-      pkgs-unstable = mkPkgs inputs.nixpkgs-unstable system;
+      pkgs = mkPkgs {
+        system = system;
+        nixpkgs = inputs.nixpkgs;
+      };
+      pkgs-unstable = mkPkgs {
+        system = system;
+        nixpkgs = inputs.nixpkgs-unstable;
+      };
     }));
 in
   (flakeCfg flake)
