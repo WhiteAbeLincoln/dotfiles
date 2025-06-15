@@ -7,7 +7,6 @@
     };
   };
   userName = "Abraham White";
-  userEmail = "abelincoln.white@gmail.com";
   aliases = {
     aliases = ''! git config --get-regexp ^alias\. | sed -e s/^alias\.// -e s/\ /\ =\ /'';
     branches = "branch -a";
@@ -87,5 +86,21 @@
     ".Trash-*"
     ".nfs*"
     ".direnv/"
+  ];
+  includes = [
+    {
+      condition = "hasconfig:remote.*.url:git@github.com:WhiteAbeLincoln/**";
+      contents = {
+        user.email = "7330103+WhiteAbeLincoln@users.noreply.github.com";
+      };
+    }
+
+    {
+      condition = "hasconfig:remote.*.url:git@gitlab.com:WhiteAbeLincoln/**";
+      contents = {
+        user.email = "1769746-WhiteAbeLincoln@users.noreply.gitlab.com";
+        core.sshCommand = "ssh -i ~/.ssh/id_ed25519-gl-personal";
+      };
+    }
   ];
 }

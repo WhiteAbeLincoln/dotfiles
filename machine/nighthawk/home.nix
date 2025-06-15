@@ -5,12 +5,19 @@
     ../../program/fish
     ../../program/starship
     ../../program/wezterm
+    ../../program/emacs
   ];
 
   home.packages = [
     pkgs.haskellPackages.ShellCheck
   ];
 
+  programs.texlive = {
+    enable = true;
+    extraPackages = tpkgs: {
+      inherit (tpkgs) scheme-full;
+    };
+  };
   programs.jq.enable = true;
   programs.ssh.enable = true;
   programs.ssh.extraConfig = ''
