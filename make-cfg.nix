@@ -43,6 +43,12 @@
         // config;
     };
 
+  # packages that should be available in all systems
+  sysPkgs = pkgs: [
+    pkgs.alejandra
+    pkgs.nil
+  ];
+
   specialArgs = {
     user,
     system,
@@ -67,26 +73,35 @@
 
   extraSpecialArgs = args: specialArgs (args // {hm = home-manager.lib;});
 
-  hmSystemModules = extraArgs:
+  hmSystemModules = {isWSL, ...}:
     [./modules/hm]
     ++ (
-      if extraArgs.isWSL
+      if isWSL
       then [./modules/windows]
       else []
     );
 
+  # we must pass in sysModules as an argument
+  # instead of computing inside the HM module,
+  # because that would cause issues with conditinally importing modules
+  # if we generate the list before the module is evaluated then we don't have
+  # the same issues
   baseHmModule = machineDir: {
     myUserName,
     lib,
     isDarwin,
+    isWSL,
     ...
   }: let
+    sysModules = hmSystemModules {
+      isWSL = isWSL;
+    };
     machineModule =
       if machineDir == ""
       then []
       else [./machine/${machineDir}/home.nix];
   in {
-    imports = machineModule;
+    imports = machineModule ++ sysModules;
     programs.home-manager.enable = true;
     home.stateVersion = lib.mkDefault "25.05";
     home.username = lib.mkDefault myUserName;
@@ -124,7 +139,7 @@
       else [./machine/${machineDir}/default.nix];
   in {
     ${machine} = mkSystem (let
-      extraSpecialArgs = extraSpecialArgs args;
+      extraArgs = extraSpecialArgs args;
       pkgs = mkPkgs {
         nixpkgs = inputs.nixpkgs;
         system = system;
@@ -145,15 +160,14 @@
         ++ systemModules
         ++ machineModule
         ++ modules
-        ++ (hmSystemModules extraSpecialArgs)
         ++ [
           hmModule
           {
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
-            home-manager.extraSpecialArgs = extraSpecialArgs;
+            home-manager.extraSpecialArgs = extraArgs;
             home-manager.users.${user} = baseHmModule machineDir;
-            environment.systemPackages = [pkgs.alejandra];
+            environment.systemPackages = sysPkgs pkgs;
           }
         ];
     });
@@ -190,11 +204,10 @@
           flakeModule
           ({pkgs, ...}: {
             nix.package = pkgs.nix;
-            home.packages = [pkgs.alejandra];
+            home.packages = sysPkgs pkgs;
           })
         ]
         ++ modules
-        ++ (hmSystemModules extraArgs)
         ++ [(baseHmModule machineDir)];
     };
   };
