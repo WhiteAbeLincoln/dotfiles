@@ -28,8 +28,7 @@
         fish_add_path -m ~/.local/bin
       '';
       loginShellInit = ''
-        set PPID (echo (ps --pid %self -o ppid --no-headers) | xargs)
-        if ps --pid $PPID | grep ssh
+        if ps -p %self -o command | sed -n '2p' | grep ssh
             tmux has-session -t remote; and tmux attach-session -t remote; or tmux new-session -s remote; and kill %self
             echo "tmux failed to start; using plain fish shell"
         end

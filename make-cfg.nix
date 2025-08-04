@@ -47,6 +47,7 @@
   sysPkgs = pkgs: [
     pkgs.alejandra
     pkgs.nil
+    pkgs.git-crypt
   ];
 
   specialArgs = {

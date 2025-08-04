@@ -59,7 +59,6 @@ in {
     # the gitFull package uses a nix openssh build instead of the global one, so we must
     # override with the patched version https://github.com/NixOS/nixpkgs/issues/160527
     package = pkgs.git.override {openssh = pkgs.openssh_gssapi;};
-    userEmail = pkgs.lib.mkForce "awhite@campbellsci.com";
     ignoreFiles = [
       # we don't want to check in nix things for campbell projects
       ../../program/git/ignores/nixshell.ignore

@@ -1,4 +1,6 @@
-{pkgs, ...}: {
+{pkgs, ...}: let
+  secrets = import ../../secrets/common.nix;
+in {
   imports = [
     ../../program/git
     ../../program/vim
@@ -10,6 +12,7 @@
 
   home.packages = [
     pkgs.haskellPackages.ShellCheck
+    pkgs.podman
   ];
 
   programs.texlive = {
@@ -28,6 +31,18 @@
   programs.keychain.enable = pkgs.stdenv.isLinux;
 
   programs.nix-index.enable = true;
+  programs.fish.shellAliases = {
+    docker = "podman";
+  };
+
+  programs.rbw = {
+    enable = true;
+    package = pkgs.rbw;
+    settings = {
+      email = secrets.bw_email;
+      pinentry = pkgs.pinentry-curses;
+    };
+  };
 
   home.stateVersion = "24.05";
 }

@@ -27,6 +27,11 @@
       }: {
         formatter = pkgs.alejandra;
         defaultPackage = inputs.home-manager.defaultPackage.${system};
+        packages = {
+          decrypt-secrets = pkgs.writeShellScriptBin "decrypt-secrets" ''
+            ${pkgs.gnupg}/bin/gpg --decrypt ${./local.key.asc} | ${pkgs.git-crypt}/bin/git-crypt unlock -
+          '';
+        };
       };
       nixos = [
         {

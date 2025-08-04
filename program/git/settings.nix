@@ -1,4 +1,6 @@
-{
+let
+  secrets = import ../../secrets/common.nix;
+in {
   delta = {
     enable = true;
     options = {
@@ -100,6 +102,13 @@
       contents = {
         user.email = "1769746-WhiteAbeLincoln@users.noreply.gitlab.com";
         core.sshCommand = "ssh -i ~/.ssh/id_ed25519-gl-personal";
+      };
+    }
+
+    {
+      condition = "hasconfig:remote.*.url:git@gitlab.com:cs-global/**";
+      contents = {
+        user.email = secrets.work_email;
       };
     }
   ];
