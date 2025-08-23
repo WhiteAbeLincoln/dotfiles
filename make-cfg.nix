@@ -23,11 +23,6 @@
     nixpkgs.lib.extend
     (self: super: {mine = import libPath {lib = self;};} // hm);
 
-  flakeModule = {
-    nix.settings.experimental-features = ["nix-command" "flakes"];
-    nix.registry.nixpkgs.flake = nixpkgs;
-  };
-
   mkPkgs = {
     nixpkgs,
     system,
@@ -152,7 +147,6 @@
       specialArgs = specialArgs args;
       modules =
         [
-          flakeModule
           {
             system.configurationRevision = nixpkgs.lib.mkIf (self ? rev) self.rev;
             nixpkgs.hostPlatform = system;
@@ -202,9 +196,7 @@
       extraSpecialArgs = extraArgs;
       modules =
         [
-          flakeModule
           ({pkgs, ...}: {
-            nix.package = pkgs.nix;
             home.packages = sysPkgs pkgs;
           })
         ]
@@ -225,6 +217,11 @@
     hmModule = home-manager.darwinModules.home-manager;
     defSystem = "aarch64-darwin";
     systemModules = [
+      # Add the determinate nix-darwin module
+      inputs.determinate.darwinModules.default
+      {
+        determinate-nix.customSettings = {};
+      }
       ./modules/darwin
     ];
   };

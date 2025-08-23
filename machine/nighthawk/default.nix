@@ -30,7 +30,6 @@
   ];
 
   programs.fish.enable = true;
-  nix.settings.trusted-users = ["root" myUserName];
 
   system.stateVersion = 5;
 }

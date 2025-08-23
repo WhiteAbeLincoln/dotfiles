@@ -1,9 +1,11 @@
 {
   config,
   pkgs,
+  myUserName,
   ...
 }: {
   system = {
+    primaryUser = myUserName;
     defaults-writer = {
       "com.apple.dock" = {
         show-recents = false;
@@ -84,12 +86,9 @@
   # fi
   # '';
 
-  services.nix-daemon.enable = true;
-  nix.configureBuildUsers = true;
-
   programs.zsh.enable = true;
 
   fonts.packages = [pkgs.cascadia-code];
 
-  security.pam.enableSudoTouchIdAuth = true;
+  security.pam.services.sudo_local.touchIdAuth = true;
 }
