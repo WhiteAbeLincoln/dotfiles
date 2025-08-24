@@ -17,6 +17,7 @@
     flake-utils.url = "https://flakehub.com/f/numtide/flake-utils/0.1.102";
     # https://github.com/DeterminateSystems/determinate?tab=readme-ov-file#nix-darwin
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/3.8.6";
+    # virby.url = "github:quinneden/virby-nix-darwin";
   };
 
   # unfortunately, outputs must be a function and not a thunk
@@ -61,6 +62,9 @@
         {
           machine = "nighthawk";
           user = "abe";
+          # modules = [
+          #   inputs.virby.darwinModules.default
+          # ];
         }
       ];
       home = [
