@@ -28,7 +28,7 @@
 
   # instead, I've copied the linux-builder from nix-darwin and modified it to work with determinate-nix
   determinate-nix.linux-builder = {
-    enable = true;
+    enable = false;
     ephemeral = true;
     config = {
       virtualisation = {
@@ -45,6 +45,6 @@
     # extra-trusted-public-keys = [
     #   "virby-nix-darwin.cachix.org-1:z9GiEZeBU5bEeoDQjyfHPMGPBaIQJOOvYOOjGMKIlLo="
     # ];
-    extra-trusted-users = ["@admin" myUserName];
+    extra-trusted-users = "@admin ${myUserName}";
   };
 }

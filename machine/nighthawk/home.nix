@@ -1,4 +1,8 @@
-{pkgs, ...}: let
+{
+  pkgs,
+  pkgs-unstable,
+  ...
+}: let
   secrets = import ../../secrets/common.nix;
 in {
   imports = [
@@ -7,7 +11,6 @@ in {
     ../../program/fish
     ../../program/starship
     ../../program/wezterm
-    ../../program/emacs
   ];
 
   home.packages = [
@@ -15,12 +18,12 @@ in {
     pkgs.podman
   ];
 
-  programs.texlive = {
-    enable = true;
-    extraPackages = tpkgs: {
-      inherit (tpkgs) scheme-full;
-    };
-  };
+  # programs.texlive = {
+  #   enable = true;
+  #   extraPackages = tpkgs: {
+  #     inherit (tpkgs) scheme-full;
+  #   };
+  # };
   programs.jq.enable = true;
   programs.ssh.enable = true;
   programs.ssh.extraConfig = ''
@@ -28,7 +31,6 @@ in {
     AddKeysToAgent yes
     UseKeychain yes
   '';
-  programs.keychain.enable = pkgs.stdenv.isLinux;
 
   programs.nix-index.enable = true;
   programs.fish.shellAliases = {
@@ -40,7 +42,7 @@ in {
     package = pkgs.rbw;
     settings = {
       email = secrets.bw_email;
-      pinentry = pkgs.pinentry-curses;
+      pinentry = pkgs.pinentry_mac;
     };
   };
 

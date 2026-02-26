@@ -88,6 +88,12 @@ in {
     ".Trash-*"
     ".nfs*"
     ".direnv/"
+    ".DS_Store"
+    ".Spotlight-V100"
+    ".Trashes"
+    "Thumbs.db"
+    "ehthumbs.db"
+    "Desktop.ini"
   ];
   includes = [
     {

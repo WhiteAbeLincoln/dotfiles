@@ -1,6 +1,7 @@
 {
   config,
   pkgs,
+  pkgs-unstable,
   ...
 }: let
   secrets = import ../../secrets/common.nix;
@@ -43,7 +44,7 @@ in {
 
   programs.rbw = {
     enable = true;
-    package = pkgs.rbw;
+    package = pkgs-unstable.rbw;
     settings = {
       email = secrets.bw_email;
       pinentry = pkgs.pinentry-curses;
