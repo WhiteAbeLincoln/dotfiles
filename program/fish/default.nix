@@ -1,6 +1,7 @@
 # ENVIRONMENTS: nix-darwin, home-manager
 {
   pkgs,
+  pkgs-unstable,
   lib,
   isHM,
   config,
@@ -10,6 +11,7 @@
   programs.fish =
     {
       enable = true;
+      package = pkgs-unstable.fish;
       shellAliases =
         if pkgs.stdenv.isLinux
         then {
