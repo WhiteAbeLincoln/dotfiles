@@ -17,6 +17,7 @@
     pkgs.wezterm.terminfo
   ];
   environment.variables.EDITOR = "vim";
+  environment.systemPath = ["/opt/homebrew/bin"];
 
   users.users.${myUserName} = {
     description = "Abraham White";

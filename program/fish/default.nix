@@ -26,6 +26,10 @@
         end
         # End Nix
         fish_add_path -m ~/.local/bin
+        # add homebrew if it exists, but don't error if it doesn't since it's only on darwin
+        if test -d /opt/homebrew/bin
+          fish_add_path -m /opt/homebrew/bin
+        end
       '';
       loginShellInit = ''
         if ps -p %self -o command | sed -n '2p' | grep ssh
