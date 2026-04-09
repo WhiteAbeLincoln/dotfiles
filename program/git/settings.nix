@@ -1,50 +1,49 @@
 let
   secrets = import ../../secrets/common.nix;
 in {
-  delta = {
-    enable = true;
-    options = {
-      number = true;
-      syntax-theme = "Github";
-    };
-  };
-  userName = "Abraham White";
-  aliases = {
-    aliases = ''! git config --get-regexp ^alias\. | sed -e s/^alias\.// -e s/\ /\ =\ /'';
-    branches = "branch -a";
-    commits = "log";
-    tags = "tag";
-    stashes = "stash list";
-    remotes = "remote -v";
-    unmerged = "diff --name-only --diff-filter=U";
-    unstage = "reset -q HEAD --";
-    discard = "checkout --";
-    uncommit = "reset --mixed HEAD~";
-    amend = "commit --amend";
-    nuke = "!git reset --hard HEAD && git clean -d -f";
-    graphd = "log --graph --abrev-commit --decorate --date=relative --all";
-    grapho = "log --graph --oneline --decorate --all";
-    stash-working = ''      !f() {
+  settings = {
+    user.name = "Abraham White";
+    alias = {
+      aliases = ''! git config --get-regexp ^alias\. | sed -e s/^alias\.// -e s/\ /\ =\ /'';
+      branches = "branch -a";
+      commits = "log";
+      tags = "tag";
+      stashes = "stash list";
+      remotes = "remote -v";
+      unmerged = "diff --name-only --diff-filter=U";
+      unstage = "reset -q HEAD --";
+      discard = "checkout --";
+      uncommit = "reset --mixed HEAD~";
+      amend = "commit --amend";
+      nuke = "!git reset --hard HEAD && git clean -d -f";
+      graphd = "log --graph --abrev-commit --decorate --date=relative --all";
+      grapho = "log --graph --oneline --decorate --all";
+      stash-working = ''      !f() {
             git commit --quiet --no-verify -m "temp for stash-working" &&
             git stash push -m "$(git show --format='%h %s' -s HEAD~1)" "$@" &&
             git reset --quiet --soft HEAD~1; }; f'';
-    switch-remote = ''      !f() {
+      switch-remote = ''      !f() {
             ( git switch -c "$1" &&
             git branch --set-upstream-to "origin/$1" &&
             git fetch origin &&
             git reset --hard "origin/$1" ) || ( git switch - && git branch -D "$1" )
           }; f'';
-  };
-  extraConfig = {
+    };
     init.defaultBranch = "trunk";
     pull.rebase = false;
     log.date = "local";
     push.autoSetupRemote = true;
+    url = {
+      "git@gitlab.com:cs-global/".insteadOf = "https://gitlab.com/cs-global/";
+    };
   };
   ignoreFiles = [
     ./ignores/vscode.ignore
   ];
   ignores = [
+    # claude local settings
+    "**/.claude/settings.local.json"
+    # emacs
     "*~"
     "\\#*\\#"
     "/.emacs.desktop"
@@ -64,7 +63,7 @@ in {
     ".cask"
     "dist/"
     "flycheck_*.el"
-    "/server/"
+    # "/server/"
     ".projectile"
     ".dir-locals.el"
     "[._]*.s[a-v][a-z]"
@@ -77,12 +76,13 @@ in {
     ".Python"
     "[Bb]in"
     "[Ii]nclude"
-    "[Ll]ib"
+    # "[Ll]ib"
     "[Ll]ib64"
-    "[Ll]ocal"
+    # "[Ll]ocal"
     "pyvenv.cfg"
     ".venv"
     "pip-selfcheck.json"
+    # system files
     ".fuse_hidden*"
     ".directory"
     ".Trash-*"
