@@ -26,11 +26,14 @@ in {
   # };
   programs.jq.enable = true;
   programs.ssh.enable = true;
-  programs.ssh.extraConfig = ''
-    IgnoreUnknown AddKeysToAgent,UseKeychain
-    AddKeysToAgent yes
-    UseKeychain yes
-  '';
+  programs.ssh.enableDefaultConfig = false;
+  programs.ssh.matchBlocks."*" = {
+    extraOptions = {
+      IgnoreUnknown = "AddKeysToAgent,UseKeychain";
+      AddKeysToAgent = "yes";
+      UseKeychain = "yes";
+    };
+  };
 
   programs.nix-index.enable = true;
   programs.fish.shellAliases = {
