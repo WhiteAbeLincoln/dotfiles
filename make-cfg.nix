@@ -219,9 +219,6 @@
     systemModules = [
       # Add the determinate nix-darwin module
       inputs.determinate.darwinModules.default
-      {
-        determinate-nix.customSettings = {};
-      }
       ./modules/darwin
     ];
   };

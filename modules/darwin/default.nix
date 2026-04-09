@@ -5,7 +5,6 @@
 }: {
   imports = [
     ./system-defaults/defaults-writer.nix
-    ./linux-builder
   ];
 
   # I'm using determinate nix, so we can't have nix-darwin manage
@@ -26,21 +25,7 @@
   #   # rosetta = true;
   # };
 
-  # instead, I've copied the linux-builder from nix-darwin and modified it to work with determinate-nix
-  determinate-nix.linux-builder = {
-    enable = false;
-    ephemeral = true;
-    config = {
-      virtualisation = {
-        darwin-builder = {
-          diskSize = 40 * 1024;
-          memorySize = 8 * 1024;
-        };
-        cores = 6;
-      };
-    };
-  };
-  determinate-nix.customSettings = {
+  determinateNix.customSettings = {
     # extra-substituters = ["https://virby-nix-darwin.cachix.org"];
     # extra-trusted-public-keys = [
     #   "virby-nix-darwin.cachix.org-1:z9GiEZeBU5bEeoDQjyfHPMGPBaIQJOOvYOOjGMKIlLo="
