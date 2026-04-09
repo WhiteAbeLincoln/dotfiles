@@ -3,15 +3,15 @@
 
   inputs = {
     # current stable nixpkgs
-    nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/*";
+    nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2511.*";
     # unstable nixpkgs
     nixpkgs-unstable.url = "https://flakehub.com/f/NixOS/nixpkgs/0.1";
     home-manager = {
-      url = "https://flakehub.com/f/nix-community/home-manager/0.2505.4807";
+      url = "https://flakehub.com/f/nix-community/home-manager/0.2511.*";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     darwin = {
-      url = "https://flakehub.com/f/nix-darwin/nix-darwin/0.2505.2185";
+      url = "https://flakehub.com/f/nix-darwin/nix-darwin/0.2511.*";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     flake-utils.url = "https://flakehub.com/f/numtide/flake-utils/0.1.102";
