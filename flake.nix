@@ -21,9 +21,6 @@
       url = "github:WhiteAbeLincoln/git-different";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # OpenAI Codex CLI - pinned to a release tag (rust-v*) to avoid
-    # picking up dev/alpha builds from main. Bump manually when upgrading.
-    codex.url = "github:openai/codex/rust-v0.118.0";
     # virby.url = "github:quinneden/virby-nix-darwin";
   };
 

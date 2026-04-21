@@ -34,10 +34,8 @@ in {
     # a modern alternative to curl https://github.com/ducaale/xh
     pkgs.xh
     pkgs.lazygit
-    # OpenAI codex cli - pulled from the upstream flake so we track their
-    # release cadence (nixpkgs unstable lags far enough behind that old
-    # versions get deprecated before they land).
-    inputs.codex.packages.${pkgs.system}.default
+    # OpenAI codex cli
+    pkgs.unstable.codex
   ];
 
   # programs.texlive = {
