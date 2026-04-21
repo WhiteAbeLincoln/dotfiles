@@ -1,10 +1,11 @@
 {
   pkgs,
-  myUserName,
   lib,
   config,
   ...
-}: {
+}: let
+  user = config.meta.user;
+in {
   imports = [
     ../../role/darwin.nix
     ../../program/direnv
@@ -19,9 +20,9 @@
   environment.variables.EDITOR = "vim";
   environment.systemPath = ["/opt/homebrew/bin"];
 
-  users.users.${myUserName} = {
+  users.users.${user} = {
     description = "Abraham White";
-    home = "/Users/${myUserName}";
+    home = "/Users/${user}";
   };
 
   homebrew.enable = true;

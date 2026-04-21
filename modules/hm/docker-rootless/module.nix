@@ -3,7 +3,6 @@
   config,
   lib,
   pkgs,
-  isHM,
   ...
 }: let
   cfg = config.virtualisation.docker.rootless;
@@ -54,7 +53,7 @@ in {
 
   ###### implementation
 
-  config = lib.mkIf (isHM && cfg.enable) {
+  config = lib.mkIf cfg.enable {
     home.packages = [cfg.package];
     # environment.systemPackages = [ cfg.package ];
 

@@ -1,11 +1,10 @@
 {
   config,
   pkgs,
-  myUserName,
   ...
 }: {
   system = {
-    primaryUser = myUserName;
+    primaryUser = config.meta.user;
     defaults-writer = {
       "com.apple.dock" = {
         show-recents = false;

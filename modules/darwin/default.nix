@@ -1,6 +1,6 @@
 {
+  config,
   pkgs,
-  myUserName,
   ...
 }: {
   imports = [
@@ -30,6 +30,6 @@
     # extra-trusted-public-keys = [
     #   "virby-nix-darwin.cachix.org-1:z9GiEZeBU5bEeoDQjyfHPMGPBaIQJOOvYOOjGMKIlLo="
     # ];
-    extra-trusted-users = "@admin ${myUserName}";
+    extra-trusted-users = "@admin ${config.meta.user}";
   };
 }

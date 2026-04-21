@@ -1,3 +1,6 @@
 {...}: {
-  imports = [./docker-rootless/module.nix];
+  imports = [
+    ./defaults.nix
+    ./docker-rootless/module.nix
+  ];
 }

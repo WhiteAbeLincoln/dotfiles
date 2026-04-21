@@ -1,8 +1,4 @@
-{
-  pkgs,
-  pkgs-unstable,
-  ...
-}: {
+{pkgs, ...}: {
   # importing this conditionally causes recursion issues
   # instead, macos machines will be required to import the module statically
   # imports = [./macos-module.nix];
@@ -10,7 +6,7 @@
   services.plex = {
     enable = true;
     openFirewall = true;
-    package = pkgs-unstable.plex;
+    package = pkgs.unstable.plex;
     extraScanners = [
       (pkgs.fetchFromGitHub {
         owner = "ZeroQI";

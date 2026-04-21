@@ -4,10 +4,10 @@
 {
   config,
   pkgs,
-  myUserName,
   ...
 }: let
   lib = pkgs.lib;
+  user = config.meta.user;
   secrets = (import ../../secrets/common.nix) // (import ../../secrets/globalhawk.nix);
   mkMediaFs = uuid: fsType: {
     device = "/dev/disk/by-uuid/" + uuid;
@@ -85,14 +85,14 @@ in {
     uid = 994;
   };
   programs.fish.enable = true;
-  users.users.${myUserName} = {
+  users.users.${user} = {
     isNormalUser = true;
     extraGroups = ["networkmanager" "wheel" "_media"]; # Enable ‘sudo’ for the user.
     packages = with pkgs; [firefox vscode.fhs];
     shell = pkgs.fish;
   };
   # home-manager.useGlobalPkgs = true;
-  # home-manager.users.${myUserName} = import ./home.nix;
+  # home-manager.users.${user} = import ./home.nix;
 
   users.users.calibre-web.extraGroups = ["_media"];
   # }}}
@@ -276,8 +276,8 @@ in {
         "directory mask" = "0755";
         "force user" = "_media";
         "force group" = "_media";
-        "write list" = myUserName;
-        "read list" = "${myUserName}, guest, nobody";
+        "write list" = user;
+        "read list" = "${user}, guest, nobody";
       };
     };
   };
@@ -302,7 +302,7 @@ in {
   # using systemd.tmpfiles.rules
 
   virtualisation.docker.enable = true;
-  users.extraGroups.docker.members = [myUserName];
+  users.extraGroups.docker.members = [user];
   # podman is having issues resolving containers by name
   virtualisation.oci-containers.backend = "docker";
   virtualisation.oci-containers.containers = {

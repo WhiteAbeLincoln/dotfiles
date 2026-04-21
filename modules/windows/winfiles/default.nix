@@ -1,4 +1,4 @@
-{ config, lib, pkgs, isWSL, modulesPath, ... }:
+{ config, lib, pkgs, modulesPath, ... }:
 
 let
   cfg = config.windows.file;
@@ -11,6 +11,6 @@ in
 
   };
 }
-lib.mkIf isWSL (
+lib.mkIf config.meta.isWSL (
 
 )
