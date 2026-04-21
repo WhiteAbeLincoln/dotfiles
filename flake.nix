@@ -17,6 +17,13 @@
     flake-utils.url = "https://flakehub.com/f/numtide/flake-utils/0.1.102";
     # https://github.com/DeterminateSystems/determinate?tab=readme-ov-file#nix-darwin
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/3.8.6";
+    git-different = {
+      url = "github:WhiteAbeLincoln/git-different";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    # OpenAI Codex CLI - pinned to a release tag (rust-v*) to avoid
+    # picking up dev/alpha builds from main. Bump manually when upgrading.
+    codex.url = "github:openai/codex/rust-v0.118.0";
     # virby.url = "github:quinneden/virby-nix-darwin";
   };
 

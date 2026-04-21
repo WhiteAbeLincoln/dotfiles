@@ -18,21 +18,22 @@ in {
       nuke = "!git reset --hard HEAD && git clean -d -f";
       graphd = "log --graph --abrev-commit --decorate --date=relative --all";
       grapho = "log --graph --oneline --decorate --all";
-      stash-working = ''      !f() {
-            git commit --quiet --no-verify -m "temp for stash-working" &&
-            git stash push -m "$(git show --format='%h %s' -s HEAD~1)" "$@" &&
-            git reset --quiet --soft HEAD~1; }; f'';
-      switch-remote = ''      !f() {
-            ( git switch -c "$1" &&
-            git branch --set-upstream-to "origin/$1" &&
-            git fetch origin &&
-            git reset --hard "origin/$1" ) || ( git switch - && git branch -D "$1" )
-          }; f'';
+      stash-working = ''        !f() {
+              git commit --quiet --no-verify -m "temp for stash-working" &&
+              git stash push -m "$(git show --format='%h %s' -s HEAD~1)" "$@" &&
+              git reset --quiet --soft HEAD~1; }; f'';
+      switch-remote = ''        !f() {
+              ( git switch -c "$1" &&
+              git branch --set-upstream-to "origin/$1" &&
+              git fetch origin &&
+              git reset --hard "origin/$1" ) || ( git switch - && git branch -D "$1" )
+            }; f'';
     };
     init.defaultBranch = "trunk";
     pull.rebase = false;
     log.date = "local";
     push.autoSetupRemote = true;
+    difftool.difftastic.cmd = ''difft "$MERGED" "$LOCAL" "abcdef1" "100644" "$REMOTE" "abcdef2" "100644"'';
     url = {
       "git@gitlab.com:cs-global/".insteadOf = "https://gitlab.com/cs-global/";
     };

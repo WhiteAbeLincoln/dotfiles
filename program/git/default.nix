@@ -13,6 +13,7 @@
     options = {
       number = true;
       syntax-theme = "Github";
+      true-color = "always";
     };
   };
 }

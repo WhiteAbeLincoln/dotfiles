@@ -1,6 +1,7 @@
 {
   pkgs,
   pkgs-unstable,
+  inputs,
   ...
 }: let
   secrets = import ../../secrets/common.nix;
@@ -14,8 +15,12 @@ in {
   ];
 
   home.packages = [
+    pkgs.diff2html-cli
     pkgs.haskellPackages.ShellCheck
     pkgs.podman
+    pkgs.docker-compose
+    pkgs.difftastic
+    inputs.git-different.packages.${pkgs.system}.default
     # cat replacement
     pkgs.bat
     # find alternative (not command line compatible)
@@ -30,8 +35,10 @@ in {
     # a modern alternative to curl https://github.com/ducaale/xh
     pkgs.xh
     pkgs.lazygit
-    # OpenAI codex cli
-    pkgs-unstable.codex
+    # OpenAI codex cli - pulled from the upstream flake so we track their
+    # release cadence (nixpkgs unstable lags far enough behind that old
+    # versions get deprecated before they land).
+    inputs.codex.packages.${pkgs.system}.default
   ];
 
   # programs.texlive = {
@@ -53,7 +60,7 @@ in {
 
   programs.nix-index.enable = true;
   programs.fish.shellAliases = {
-    docker = "podman";
+    # docker = "podman";
     cat = "bat --paging=never";
     ll = "eza -F -l --git --hyperlink";
     # start with depth 2 by default, luckily eza allows overriding
