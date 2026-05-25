@@ -16,8 +16,12 @@ in {
   home.packages = [
     pkgs.diff2html-cli
     pkgs.haskellPackages.ShellCheck
-    pkgs.podman
-    pkgs.docker-compose
+    # Lima-based Docker daemon for macOS — works with Tilt + kind where
+    # podman 5's Docker API compat layer falls down (BuildKit gRPC, kind
+    # load docker-image both fail on podman). Docker CLI is a separate
+    # package since pkgs.colima only provides the daemon manager.
+    pkgs.unstable.colima
+    pkgs.unstable.docker-client
     pkgs.difftastic
     inputs.git-different.packages.${pkgs.system}.default
     # cat replacement
@@ -36,6 +40,13 @@ in {
     pkgs.lazygit
     # OpenAI codex cli
     pkgs.unstable.codex
+    # Work stuff
+    pkgs.glab
+    pkgs.unstable.acli # atlassian cli, for Jira and Confluence management
+    # Markdown → Atlassian Document Format converter. Pipeline:
+    #   mdadf desc.md > /tmp/desc.adf.json
+    #   acli jira workitem edit --key STX-x --description-file /tmp/desc.adf.json --yes
+    pkgs.mdadf
   ];
 
   # programs.texlive = {

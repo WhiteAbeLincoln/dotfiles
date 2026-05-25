@@ -9,6 +9,7 @@
         config.allowUnfree = true;
       };
     })
+    (import ../../packages/mdadf/overlay.nix)
   ];
   nixpkgs.config.allowUnfree = true;
 }
