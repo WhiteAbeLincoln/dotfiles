@@ -35,12 +35,14 @@ in {
     ../../program/plex
     ../../program/calibre-web
     ../../program/immich
-    ../../program/homebridge
+    # TODO: homebridge has been added to nixos
+    # remove custom module
+    # ../../program/homebridge
     ./disks.nix
     # ./backup.nix
   ];
 
-  nixpkgs.config.allowUnfree = true;
+  nix.settings.experimental-features = ["nix-command" "flakes"];
 
   # {{{ Boot & System
   # upgrade the linux kernel to support our Intel AX101 wifi
@@ -131,9 +133,14 @@ in {
   # }}}
 
   # {{{ Hardware
+  # enable hardware video acceleration
+  nixpkgs.config.packageOverrides = pkgs: {
+      intel-vaapi-driver = pkgs.intel-vaapi-driver.override {enableHybridCodec = true;};
+  };
+
   # Enable sound.
   # sound.enable = true;
-  hardware.pulseaudio.enable = false;
+  services.pulseaudio.enable = false;
   security.rtkit.enable = true;
   services.pipewire = {
     enable = true;
@@ -154,16 +161,12 @@ in {
     # "/data/disk2" = mkMediaFs "2104153c-21fa-3549-b27e-d9e9eb6944ff" "hfsplus";
   };
 
-  # enable hardware video acceleration
-  nixpkgs.config.packageOverrides = pkgs: {
-    vaapiIntel = pkgs.vaapiIntel.override {enableHybridCodec = true;};
-  };
   hardware.graphics = {
     enable = true;
     extraPackages = with pkgs; [
       intel-media-driver # LIBVA_DRIVER_NAME=iHD
-      vaapiIntel # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
-      vaapiVdpau
+      intel-vaapi-driver # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
+      libva-vdpau-driver
       libvdpau-va-gl
     ];
   };
@@ -203,19 +206,19 @@ in {
     dbPassword = secrets.immich_pass;
   };
 
-  services.homebridge = {
-    enable = true;
-    cfgDir = "/data/Media/docker-services/homebridge";
-    # user = "${toString config.users.users._media.uid}:${toString config.users.groups._media.gid}";
-  };
+  # services.homebridge = {
+  #   enable = true;
+  #   cfgDir = "/data/Media/docker-services/homebridge";
+  #   # user = "${toString config.users.users._media.uid}:${toString config.users.groups._media.gid}";
+  # };
 
   # Enable the OpenSSH daemon.
   services.openssh.enable = true;
 
   # Enable the X11 windowing system.
+  services.desktopManager.plasma6.enable = true;
   services.xserver = {
     enable = true;
-    desktopManager.plasma5.enable = true;
     # Enable touchpad support (enabled default in most desktopManager).
     # libinput.enable = true;
     # Configure keymap in X11
@@ -321,7 +324,7 @@ in {
         VPN_TYPE = "wireguard";
         VPN_SERVICE_PROVIDER = "mullvad";
         WIREGUARD_PRIVATE_KEY = secrets.wireguard_private_key;
-        WIREGUARD_ADDRESSES = "10.67.246.222/32";
+        WIREGUARD_ADDRESSES = "10.69.148.156/32,fc00:bbbb:bbbb:bb01::6:949b/128";
         SERVER_CITIES = "stockholm,amsterdam";
       };
       ports = [
