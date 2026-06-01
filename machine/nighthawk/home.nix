@@ -58,12 +58,14 @@ in {
   programs.jq.enable = true;
   programs.ssh.enable = true;
   programs.ssh.enableDefaultConfig = false;
-  programs.ssh.matchBlocks."*" = {
-    extraOptions = {
-      IgnoreUnknown = "AddKeysToAgent,UseKeychain";
-      AddKeysToAgent = "yes";
-      UseKeychain = "yes";
-    };
+  # Default host block. As of home-manager 26.05, matchBlocks/extraOptions are
+  # deprecated in favour of `settings` keyed by host, with OpenSSH directive
+  # names used directly. IgnoreUnknown keeps older ssh from choking on the
+  # macOS-only UseKeychain directive.
+  programs.ssh.settings."*" = {
+    IgnoreUnknown = "AddKeysToAgent,UseKeychain";
+    AddKeysToAgent = "yes";
+    UseKeychain = "yes";
   };
 
   programs.nix-index.enable = true;

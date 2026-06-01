@@ -6,6 +6,10 @@
 with lib; {
   programs.neovim = {
     enable = true;
+    # Ruby/Python3 providers default to false as of stateVersion 26.05; none of
+    # the plugins below need them, so adopt the new default explicitly.
+    withRuby = false;
+    withPython3 = false;
     coc.enable = true;
     defaultEditor = true;
     plugins = with pkgs.vimPlugins; [

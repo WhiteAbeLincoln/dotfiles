@@ -12,6 +12,7 @@ in {
   ];
 
   environment.systemPackages = [
+    pkgs.git-crypt
     pkgs.vim
     # pkgs.bitwarden-cli
     pkgs.moonlight-qt

@@ -4,19 +4,19 @@
   inputs = {
     flake-parts.url = "github:hercules-ci/flake-parts";
     # current stable nixpkgs
-    nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2511.*";
+    nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2605.*";
     # unstable nixpkgs
     nixpkgs-unstable.url = "https://flakehub.com/f/NixOS/nixpkgs/0.1";
     home-manager = {
-      url = "https://flakehub.com/f/nix-community/home-manager/0.2511.*";
+      url = "https://flakehub.com/f/nix-community/home-manager/0.2605.*";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     darwin = {
-      url = "https://flakehub.com/f/nix-darwin/nix-darwin/0.2511.*";
+      url = "https://flakehub.com/f/nix-darwin/nix-darwin/0.2605.*";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     # https://github.com/DeterminateSystems/determinate?tab=readme-ov-file#nix-darwin
-    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/3.8.6";
+    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/3.21.0";
     git-different = {
       url = "github:WhiteAbeLincoln/git-different";
       inputs.nixpkgs.follows = "nixpkgs";
