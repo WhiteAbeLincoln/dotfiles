@@ -16,7 +16,6 @@ in {
     pkgs.vim
     # pkgs.bitwarden-cli
     pkgs.moonlight-qt
-    pkgs.wezterm.terminfo
   ];
   environment.variables.EDITOR = "vim";
   environment.systemPath = ["/opt/homebrew/bin"];
@@ -27,10 +26,7 @@ in {
   };
 
   homebrew.enable = true;
-  homebrew.brews = [
-    # the nix packaged version fails to build, missing perl dependency for the gyp bindings
-    "bitwarden-cli"
-  ];
+  homebrew.brews = [];
 
   programs.fish.enable = true;
 

@@ -10,10 +10,11 @@ in {
     ../../program/vim
     ../../program/fish
     ../../program/starship
-    ../../program/wezterm
+    ../../program/ai-agents
   ];
 
   home.packages = [
+    pkgs.nil
     pkgs.diff2html-cli
     pkgs.haskellPackages.ShellCheck
     # Lima-based Docker daemon for macOS — works with Tilt + kind where
@@ -29,6 +30,7 @@ in {
     # find alternative (not command line compatible)
     pkgs.fd
     pkgs.tmux
+    pkgs.zellij
     pkgs.imagemagick
     pkgs.ripgrep
     # ls replacement https://github.com/eza-community/eza
@@ -38,15 +40,8 @@ in {
     # a modern alternative to curl https://github.com/ducaale/xh
     pkgs.xh
     pkgs.lazygit
-    # OpenAI codex cli
-    pkgs.unstable.codex
     # Work stuff
     pkgs.glab
-    pkgs.unstable.acli # atlassian cli, for Jira and Confluence management
-    # Markdown → Atlassian Document Format converter. Pipeline:
-    #   mdadf desc.md > /tmp/desc.adf.json
-    #   acli jira workitem edit --key STX-x --description-file /tmp/desc.adf.json --yes
-    pkgs.mdadf
   ];
 
   # programs.texlive = {
