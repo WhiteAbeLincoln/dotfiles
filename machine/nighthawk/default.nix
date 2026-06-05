@@ -11,6 +11,10 @@ in {
     ../../program/direnv
   ];
 
+  networking.hostName = "nighthawk";
+  networking.localHostName = "nighthawk";
+  networking.computerName = "Abraham's MacBook Pro";
+
   environment.systemPackages = [
     pkgs.git-crypt
     pkgs.vim
