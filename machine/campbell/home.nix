@@ -60,8 +60,6 @@ in {
     # override with the patched version https://github.com/NixOS/nixpkgs/issues/160527
     package = pkgs.git.override {openssh = pkgs.openssh_gssapi;};
     ignoreFiles = [
-      # we don't want to check in nix things for campbell projects
-      ../../program/git/ignores/nixshell.ignore
       ../../program/git/ignores/visualstudio.ignore
     ];
     # extraConfig = {

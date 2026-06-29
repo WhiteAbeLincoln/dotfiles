@@ -11,6 +11,7 @@ in {
     ../../program/fish
     ../../program/starship
     ../../program/ai-agents
+    ../../program/userscripts
   ];
 
   home.packages = [
@@ -67,15 +68,15 @@ in {
   programs.fish.shellAliases = {
     # docker = "podman";
     cat = "bat --paging=never";
-    ll = "eza -F -l --git --hyperlink";
+    ll = "eza --classify --long --all --header --git --hyperlink";
     # start with depth 2 by default, luckily eza allows overriding
     # the level flag by providing it again, so I can tack on another
     # when using the alias to go deeper.
     # in many directories it runs into max filedescriptor limits
     # if we run without a depth limit so 2 is a reasonable default.
     # I can always override with a big depth if it matters.
-    tree = "eza -F -l --git --hyperlink --tree --level=2";
-    ls = "eza -F --hyperlink";
+    tree = "eza --classify --long --git --hyperlink --tree --level=2";
+    ls = "eza --classify --hyperlink";
   };
 
   programs.rbw = {
