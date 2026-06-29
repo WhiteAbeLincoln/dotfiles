@@ -58,7 +58,7 @@ a file; `statix` lints; `nix-tree`/`nix-du`/`nix-visualize` graph *runtime store
 closures*). `tree-sitter-nix` is a viable alternative front-end but needs grammar
 compilation + queries for no gain here.
 
-## Component 1 — the detector (`misc/find-dead-nix.py`)
+## Component 1 — the detector (`misc/find_dead_nix.py`)
 
 A single-file Python script, stdlib-only, run via `uv run` (PEP 723 inline
 metadata header even though it has no third-party deps), committed for reuse.
@@ -140,7 +140,7 @@ still gives a native ground-truth check.
 ## Verification
 
 ```sh
-uv run misc/find-dead-nix.py            # lists dead files; flags campbell+windows
+uv run misc/find_dead_nix.py            # lists dead files; flags campbell+windows
 # ...apply flake pruning + git rm...
 nix flake check                          # eval all (now two) outputs
 # drvPath before == after for both active configs
