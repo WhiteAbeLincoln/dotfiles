@@ -10,6 +10,9 @@
       };
     })
     (import ../../packages/mdadf/overlay.nix)
+    # `pkgs.llm-agents.<name>` — coding agents from numtide/llm-agents.nix.
+    # Lazy: hosts that don't reference it (globalhawk) pay nothing.
+    inputs.llm-agents.overlays.default
   ];
   nixpkgs.config.allowUnfree = true;
 }

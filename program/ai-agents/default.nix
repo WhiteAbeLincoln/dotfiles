@@ -10,17 +10,17 @@
 
     claude-code = {
       enable = true;
-      package = pkgs.unstable.claude-code;
+      package = pkgs.llm-agents.claude-code;
     };
 
     codex = {
       enable = true;
-      package = pkgs.codex;
+      package = pkgs.llm-agents.codex;
     };
 
     pi = {
       enable = true;
-      package = pkgs.pi-coding-agent;
+      package = pkgs.llm-agents.pi;
       settings = {};
     };
   };

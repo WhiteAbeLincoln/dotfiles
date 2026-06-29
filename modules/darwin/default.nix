@@ -30,6 +30,11 @@
     # extra-trusted-public-keys = [
     #   "virby-nix-darwin.cachix.org-1:z9GiEZeBU5bEeoDQjyfHPMGPBaIQJOOvYOOjGMKIlLo="
     # ];
+    # Prebuilt coding agents from numtide/llm-agents.nix (pkgs.llm-agents.*).
+    extra-substituters = ["https://cache.numtide.com"];
+    extra-trusted-public-keys = [
+      "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
+    ];
     extra-trusted-users = "@admin ${config.meta.user}";
   };
 }
