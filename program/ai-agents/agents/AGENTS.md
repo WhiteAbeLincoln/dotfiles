@@ -20,7 +20,7 @@ If you need a one-off tool, prefer using `nix run` instead of installing through
 
 ### GitLab
 
-Use the `glab` CLI for all GitLab operations (creating merge requests, reviewing comments, managing issues, etc.). The GitLab MCP connector does not work — do not attempt to use it. Authenticate via the `GITLAB_SECRET_TOKEN` env var (e.g. `GITLAB_TOKEN="$GITLAB_SECRET_TOKEN" glab mr create ...`).
+Use the `glab` CLI for all GitLab operations (creating merge requests, reviewing comments, managing issues, etc.). The GitLab MCP connector does not work — do not attempt to use it. `glab` should be pre-authenticated via the `GITLAB_TOKEN` env var.
 
 ## General Coding Conventions
 

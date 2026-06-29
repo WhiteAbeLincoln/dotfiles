@@ -2,7 +2,6 @@
 - Always run linters after changes and fix any issues they report:
   1. `golangci-lint run --fix ./...` to check for issues.
   2. `golangci-lint fmt ./...`
-  3. `betteralign -apply ./...` to reorder struct fields for better memory layout.
 - Run unit tests after changes.
 - Prefer `Ginkgo` and `Gomega` for testing, unless the module is already using a different testing framework.
 - Ginkgo uses the `--focus` flag to filter tests instead of `-run`: `go test ./... --gingo.focus=TestName`
