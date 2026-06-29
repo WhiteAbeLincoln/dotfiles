@@ -96,16 +96,19 @@ def tracked_nix(root: Path) -> set[Path]:
     return {(root / f).resolve() for f in out.stdout.split("\0") if f}
 
 
-def cross_check(dead: Path, root: Path) -> list[str]:
+def cross_check(candidate: Path, root: Path) -> list[str]:
     """Grep the repo for references the parser may have missed.
 
-    Searches the repo-relative path and (for default.nix) the parent directory
-    name. Bare `default.nix` is non-unique and deliberately skipped.
+    Searches the repo-relative path and (for default.nix) the parent directory's
+    repo-relative path (e.g. "modules/windows"). Using the full path fragment
+    avoids false positives from bare English words that happen to match a
+    directory name (e.g. "windows" in tmux docs). Bare `default.nix` is
+    non-unique and deliberately skipped.
     """
-    rel = dead.relative_to(root)
+    rel = candidate.relative_to(root)
     needles = [str(rel)]
-    if dead.name == "default.nix":
-        needles.append(rel.parent.name)
+    if candidate.name == "default.nix":
+        needles.append(str(rel.parent))
     hits: list[str] = []
     for needle in needles:
         res = subprocess.run(
@@ -115,7 +118,7 @@ def cross_check(dead: Path, root: Path) -> list[str]:
             text=True,
         )
         for line in res.stdout.splitlines():
-            if (root / line).resolve() != dead:
+            if (root / line).resolve() != candidate:
                 hits.append(f"{needle} -> {line}")
     return hits
 
