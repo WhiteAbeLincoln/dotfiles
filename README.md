@@ -49,5 +49,49 @@ This will work because zsh.shellInit is run in /etc/zshenv after nix-darwin sets
 NIX_PATH, and zsh.interactiveShellInit is run in /etc/static/zshrc, which is executed
 after the daemon script resets NIX_PATH.
 
+## Maintenance
+
+### Finding dead `.nix` files
+
+`misc/find_dead_nix.py` reports every git-tracked `.nix` file that is **not**
+reachable from the active flake outputs, so cruft can be removed without
+guessing. It walks the import graph using Nix's own parser
+(`nix-instantiate --parse`), seeded from `flake.nix`, and follows every
+`import`/`imports = [ ./… ]` path reference transitively.
+
+```sh
+uv run misc/find_dead_nix.py            # list dead files (exit 1 if any, 0 if none)
+uv run misc/find_dead_nix.py --verbose  # also print the reachable set + why each file is kept
+```
+
+Each dead file may be annotated with `! cross-check reference:` lines — places
+elsewhere in the repo that mention its path. These are advisory; a hit in
+`docs/` or in another dead file is not a live consumer.
+
+Notes:
+
+- **What counts as "active"** is whatever `flake.nix` imports. To change the
+  set (e.g. retire or add a host), edit `flake.nix` and re-run — the seed is
+  derived from it, not hardcoded.
+- The walk is **conservative**: a path that only appears inside a string
+  literal is still treated as a reference, so the tool errs toward keeping a
+  file, never toward wrongly deleting one.
+- It only sees literal path imports. Computed imports
+  (`import (./. + "/${x}")`) and non-`.nix` data files pulled in via
+  `builtins.path`/`readDir` are out of scope — this repo currently has none of
+  the former.
+- **Before deleting**, confirm the removal is inert: capture each active
+  config's `toplevel.drvPath`, delete, and check it is unchanged, then
+  `nix flake check`. A changed drvPath or a failing check means a removed file
+  was actually live.
+
+  ```sh
+  nix eval --raw .#darwinConfigurations.nighthawk.config.system.build.toplevel.drvPath
+  nix eval --raw .#nixosConfigurations.globalhawk.config.system.build.toplevel.drvPath
+  ```
+
+Run its tests with `cd misc && uv run --with pytest pytest test_find_dead_nix.py`.
+Design rationale lives in `docs/superpowers/specs/2026-06-29-dead-nix-detection-design.md`.
+
 ## References & Interesting nix dotfiles
 + https://github.com/solomon-b/nixos-config

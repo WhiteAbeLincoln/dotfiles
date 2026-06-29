@@ -10,3 +10,6 @@ current-theme.nix
 darwin-configuration.nix
 # nix flake result
 result
+# python bytecode cache (misc/ tooling + its tests)
+__pycache__/
+*.pyc
