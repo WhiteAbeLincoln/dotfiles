@@ -71,8 +71,14 @@
           {mine = import ./lib {lib = self;};}
           // home-manager.lib);
 
-        sysArgs = {inherit inputs; lib = mkLib;};
-        hmArgs = {inherit inputs; lib = hmLib;};
+        sysArgs = {
+          inherit inputs;
+          lib = mkLib;
+        };
+        hmArgs = {
+          inherit inputs;
+          lib = hmLib;
+        };
 
         # Same overlay as modules/common/overlays.nix, applied at pkgs-
         # construction time for the standalone home-manager config (which
@@ -136,25 +142,24 @@
           ];
         };
 
-        homeConfigurations."awhite@4ZTHR73" =
-          home-manager.lib.homeManagerConfiguration {
-            pkgs = import nixpkgs {
-              system = "x86_64-linux";
-              config.allowUnfree = true;
-              overlays = [unstableOverlay];
-            };
-            extraSpecialArgs = hmArgs;
-            modules = [
-              ./modules/common-hm
-              ./modules/hm
-              ./modules/windows
-              ./machine/campbell/home.nix
-              {
-                meta.user = "awhite";
-                meta.isWSL = true;
-              }
-            ];
+        homeConfigurations."awhite@4ZTHR73" = home-manager.lib.homeManagerConfiguration {
+          pkgs = import nixpkgs {
+            system = "x86_64-linux";
+            config.allowUnfree = true;
+            overlays = [unstableOverlay];
           };
+          extraSpecialArgs = hmArgs;
+          modules = [
+            ./modules/common-hm
+            ./modules/hm
+            ./modules/windows
+            ./machine/campbell/home.nix
+            {
+              meta.user = "awhite";
+              meta.isWSL = true;
+            }
+          ];
+        };
       };
     };
 }
