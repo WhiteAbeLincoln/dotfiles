@@ -113,6 +113,23 @@ def test_compute_reachable_tolerates_parse_errors(tmp_path):
     assert (root / "valid.nix").resolve() in reachable
 
 
+def test_tracked_nix_excludes_files_deleted_from_disk(tmp_path):
+    """A tracked file removed from the working tree (but not yet staged) is
+    excluded, so a plain `rm` is reflected before `git rm`/`git add`."""
+    root = tmp_path
+    _write(root / "present.nix", "{ }")
+    _write(root / "removed.nix", "{ }")
+    _git_init_and_add(root)
+
+    # delete from the working tree only; the index still tracks it (like `rm`)
+    (root / "removed.nix").unlink()
+
+    tracked = fdn.tracked_nix(root)
+
+    assert (root / "present.nix").resolve() in tracked
+    assert (root / "removed.nix").resolve() not in tracked
+
+
 def test_main_writes_clean_pipeable_list_to_stdout(tmp_path):
     """stdout carries only the dead-file list; chrome goes to stderr.
 

@@ -91,6 +91,13 @@ def git_root() -> Path:
 
 
 def tracked_nix(root: Path) -> set[Path]:
+    """Git-tracked `.nix` files that still exist on disk.
+
+    `git ls-files` reports the index, so a file deleted from the working tree
+    with a plain `rm` (not yet staged) still appears there. Intersecting with
+    on-disk existence reflects the working tree: a `rm`'d file drops out
+    immediately, while untracked scratch files stay excluded.
+    """
     out = subprocess.run(
         ["git", "ls-files", "-z", "*.nix"],
         cwd=root,
@@ -98,7 +105,11 @@ def tracked_nix(root: Path) -> set[Path]:
         text=True,
         check=True,
     )
-    return {(root / f).resolve() for f in out.stdout.split("\0") if f}
+    return {
+        (root / f).resolve()
+        for f in out.stdout.split("\0")
+        if f and (root / f).is_file()
+    }
 
 
 def cross_check(candidate: Path, root: Path) -> list[str]:
