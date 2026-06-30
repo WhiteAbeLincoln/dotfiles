@@ -8,6 +8,11 @@
 Walks the import graph using Nix's own parser (`nix-instantiate --parse`),
 seeded from flake.nix, and reports every git-tracked .nix file not reached.
 Exit status is non-zero when dead files exist, so it can run as a lint.
+
+Output streams follow the Unix convention so the result is pipeable: the dead
+file paths (one per line) go to stdout, while the count header, cross-check
+annotations, parse errors, and --verbose reachable set go to stderr. Thus
+`find_dead_nix.py > deadlist.txt` writes a clean list with no chrome.
 """
 from __future__ import annotations
 
@@ -132,24 +137,26 @@ def main() -> int:
     dead = sorted(find_dead(tracked_nix(root), reachable))
 
     if verbose:
-        print("# reachable (file <- parent)")
+        print("# reachable (file <- parent)", file=sys.stderr)
         for f in sorted(reachable):
             par = parent[f]
             prel = par.relative_to(root) if par else "(root)"
-            print(f"  {f.relative_to(root)}  <-  {prel}")
-        print()
+            print(f"  {f.relative_to(root)}  <-  {prel}", file=sys.stderr)
+        print(file=sys.stderr)
 
     if errors:
-        print("# parse errors (treated as leaves):")
+        print("# parse errors (treated as leaves):", file=sys.stderr)
         for e in errors:
-            print(f"  ! {e}")
-        print()
+            print(f"  ! {e}", file=sys.stderr)
+        print(file=sys.stderr)
 
-    print(f"# {len(dead)} dead .nix file(s):")
+    print(f"# {len(dead)} dead .nix file(s):", file=sys.stderr)
     for d in dead:
+        # stdout: the pipeable dead-file list. Annotations go to stderr so a
+        # redirect captures paths only.
         print(d.relative_to(root))
         for hit in cross_check(d, root):
-            print(f"    ! cross-check reference: {hit}")
+            print(f"    ! cross-check reference: {hit}", file=sys.stderr)
     return 1 if dead else 0
 
 

@@ -62,11 +62,18 @@ guessing. It walks the import graph using Nix's own parser
 ```sh
 uv run misc/find_dead_nix.py            # list dead files (exit 1 if any, 0 if none)
 uv run misc/find_dead_nix.py --verbose  # also print the reachable set + why each file is kept
+uv run misc/find_dead_nix.py > dead.txt # clean, pipeable list (chrome goes to stderr)
 ```
 
-Each dead file may be annotated with `! cross-check reference:` lines — places
-elsewhere in the repo that mention its path. These are advisory; a hit in
-`docs/` or in another dead file is not a live consumer.
+Output follows the Unix convention: the dead file paths go to **stdout** (one
+per line, pipeable), while the count header, `! cross-check reference:`
+annotations, parse errors, and the `--verbose` reachable set go to **stderr**.
+So a redirect captures a clean list while you still see the annotations on the
+terminal.
+
+The cross-check lines flag places elsewhere in the repo that mention a dead
+file's path. They are advisory; a hit in `docs/` or in another dead file is not
+a live consumer.
 
 Notes:
 

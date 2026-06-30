@@ -1,8 +1,11 @@
 import subprocess
+import sys
 import textwrap
 from pathlib import Path
 
 import find_dead_nix as fdn
+
+SCRIPT = Path(__file__).parent / "find_dead_nix.py"
 
 
 def _write(p: Path, body: str) -> None:
@@ -108,3 +111,32 @@ def test_compute_reachable_tolerates_parse_errors(tmp_path):
     assert any("broken.nix" in e for e in errors)
     # The valid sibling must still be reached
     assert (root / "valid.nix").resolve() in reachable
+
+
+def test_main_writes_clean_pipeable_list_to_stdout(tmp_path):
+    """stdout carries only the dead-file list; chrome goes to stderr.
+
+    So `find_dead_nix.py > list.txt` captures a clean, pipeable list with no
+    `#` headers or `! cross-check` annotations mixed in.
+    """
+    root = tmp_path
+    _write(root / "flake.nix", "{ outputs = _: { sys = import ./live.nix; }; }")
+    _write(root / "live.nix", "{ x = 1; }")
+    _write(root / "orphan.nix", "{ y = 2; }")
+    _git_init_and_add(root)
+
+    proc = subprocess.run(
+        [sys.executable, str(SCRIPT)],
+        cwd=root,
+        capture_output=True,
+        text=True,
+    )
+
+    # a dead file exists -> non-zero exit (lint behaviour)
+    assert proc.returncode == 1
+    # stdout is ONLY the dead-file list: pipeable, no header, no cross-check noise
+    assert proc.stdout.splitlines() == ["orphan.nix"]
+    assert "#" not in proc.stdout
+    assert "cross-check" not in proc.stdout
+    # the human-facing count header went to stderr
+    assert "dead .nix file(s)" in proc.stderr
