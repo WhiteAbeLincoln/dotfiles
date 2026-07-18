@@ -22,7 +22,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     # AI coding agents (claude-code, codex, pi), repackaged and updated daily.
-    # Intentionally no `inputs.nixpkgs.follows`: overlays.default ships packages
+    # Intentionally no `inputs.nixpkgs.follows`: its `packages` output is
     # prebuilt against llm-agents' own pinned nixpkgs, so following ours would
     # rebuild from source and miss cache.numtide.com.
     llm-agents.url = "github:numtide/llm-agents.nix";

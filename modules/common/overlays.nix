@@ -12,7 +12,12 @@
     (import ../../packages/mdadf/overlay.nix)
     # `pkgs.llm-agents.<name>` — coding agents from numtide/llm-agents.nix.
     # Lazy: hosts that don't reference it (globalhawk) pay nothing.
-    inputs.llm-agents.overlays.default
+    # Deliberately NOT upstream's `overlays.shared-nixpkgs`: that builds the
+    # packages against our (stable) nixpkgs, rebuilding from source and missing
+    # cache.numtide.com. `packages` are prebuilt against their pinned unstable.
+    (final: _prev: {
+      llm-agents = inputs.llm-agents.packages.${final.stdenv.hostPlatform.system};
+    })
   ];
   nixpkgs.config.allowUnfree = true;
 }
