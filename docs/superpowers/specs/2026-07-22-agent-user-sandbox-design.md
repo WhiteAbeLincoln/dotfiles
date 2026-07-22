@@ -152,14 +152,39 @@ are fixed.
 
 The module defers to upstream `programs.claude-code` / `programs.codex`, which install a
 **plain-named** binary on PATH. To expose a *renamed* binary (`claude-local`) without
-colliding with a `runAs` wrapper's plain `claude`, the intended approach is: set the
-upstream submodule's `package = null` (upstream still writes `~/.claude` / `~/.codex`
-config, installs no binary) and add our own `writeShellScriptBin "claude${binSuffix}"`
-pointing at the package. `pi` is hand-rolled, so renaming is trivial there. If the pinned
-home-manager version does **not** support "config without binary" via `package = null`,
-the fallback is a suffixed symlink/wrapper over the installed binary. This is the one
-wiring detail to confirm against upstream during the plan; the option semantics do not
-change either way.
+colliding with a `runAs` wrapper's plain `claude`, we hand the upstream module a package
+whose **entrypoint is renamed**, and let it install + configure normally — config
+discovery is by `$HOME`, independent of the binary name, so `~/.claude` / `~/.codex` are
+still written:
+
+```nix
+# Expose <pkg>'s primary command <cmd> as <cmd><suffix>, preserving the rest of the
+# package tree; update mainProgram so lib.getExe still resolves.
+suffixPackage = suffix: cmd: pkg:
+  if suffix == "" then pkg
+  else (pkgs.symlinkJoin {
+    name = "${pkg.pname or "harness"}${suffix}";
+    paths = [ pkg ];
+    postBuild = ''
+      if [ -e "$out/bin/${cmd}" ]; then
+        t=$(readlink -f "$out/bin/${cmd}"); rm "$out/bin/${cmd}"
+        ln -s "$t" "$out/bin/${cmd}${suffix}"
+      fi
+    '';
+  }) // { meta = (pkg.meta or {}) // { mainProgram = "${cmd}${suffix}"; }; };
+# programs.claude-code.package = suffixPackage cfg.binSuffix "claude" cfg.claude-code.package;
+```
+
+Upstream then installs `claude-local`; there is no plain `claude` from upstream to collide
+with the `runAs` wrapper. The same helper covers codex and pi (pi's renamed package just
+goes into `home.packages`). Chosen over `package = null` + a hand-built
+`writeShellScriptBin` because it reuses upstream's install/config path wholesale and
+removes the "does upstream support config-without-binary?" uncertainty.
+
+Residual (low risk) to confirm during the plan: whether the upstream module references the
+binary by a **literal** `bin/<cmd>` path rather than `lib.getExe`. `meta.mainProgram`
+covers `getExe`; if a module hardcodes the name, the fallback is `package = null` + own
+`writeShellScriptBin`.
 
 ## Part 2 — Why the orchestrator exists (the HM constraint)
 
@@ -183,6 +208,7 @@ services.aiAgentSandbox = {
   binSuffix = "-local";                  # operator's escape-hatch suffix
   sharedModules = [ ../../program/ai-agents ];  # SINGLE source of the opinionated ai-agents config
   docker.enable = true;                  # stand up docker-socket-proxy + point agent at it
+  # docker.settings = { CONTAINERS = 1; POST = 0; ... };  # tune the proxy's API surface (mkDefault)
 };
 ```
 
@@ -190,10 +216,11 @@ What it sets:
 
 1. **Sandbox user** — `users.users.${user}`:
    - `isNormalUser = true` (real `/home/${user}`, real shell), **locked password**
-     (`hashedPassword = "!"`), no SSH authorized keys → not independently loginable.
-     Optionally hidden from the SDDM greeter.
+     (`hashedPassword = mkDefault "!"`), no SSH authorized keys → not independently
+     loginable. Optionally hidden from the SDDM greeter (`mkDefault`).
    - `extraGroups = [ "systemd-journal" ]` (read-only journal access) and **nothing
-     else** — explicitly not `wheel`, `docker`, or `_media`.
+     else** — explicitly not `wheel`, `docker`, or `_media`. This is a plain list, so
+     further read-only groups merge additively from outside the module.
    - No sudoers entry *for* this user.
 2. **sudoers `operator → user`**:
    ```nix
@@ -230,6 +257,24 @@ Because `sharedModules` is a *parameter* (any HM module, defaulting to
 file, and there is exactly one definition of the opinionated config, imported into two
 homes. Nothing to keep in sync.
 
+### Extending the orchestrator (merge, not passthrough options)
+
+Both the generated user and the generated home are ordinary options the module
+contributes to, so extension is done by **Nix merge** from `machine/globalhawk/`, without
+editing the module or re-exposing every setting:
+
+```nix
+users.users.agent.extraGroups = [ "video" ];            # additive list merge
+home-manager.users.agent.programs.htop.enable = true;   # merges into the agent's HM eval
+```
+
+To keep this painless the module (a) sets every scalar it owns — `hashedPassword`, shell,
+greeter visibility, docker-proxy port — with `mkDefault`, so a plain assignment wins
+without `mkForce`, and (b) keeps group contributions as additive lists. Deliberately **no**
+redundant `extraGroups`/`agentModules` passthrough options; they would only duplicate
+mergeable behavior. The one exception is `docker.settings` (below), where merging into a
+large env attrset is clumsy enough to justify a first-class knob.
+
 ### globalhawk wiring changes
 
 - `machine/globalhawk/default.nix` — enable `services.aiAgentSandbox` as above (via the
@@ -244,7 +289,9 @@ homes. Nothing to keep in sync.
 
 Add one `virtualisation.oci-containers.containers.docker-proxy` (Tecnativa
 `docker-socket-proxy`), bind-mounting the real `/var/run/docker.sock`, listening on
-`127.0.0.1:2375` (localhost only → no firewall change). Standard read set on, writes off:
+`127.0.0.1:2375` (localhost only → no firewall change). The proxy's env comes from
+`services.aiAgentSandbox.docker.settings`, whose defaults (set with `mkDefault`, so they
+can be overridden per-key from outside) are the standard read set on, writes off:
 
 ```
 CONTAINERS=1  IMAGES=1  NETWORKS=1  INFO=1  VERSION=1
@@ -294,7 +341,7 @@ Lives under `packages/` and is exposed in `flake.nix`'s `perSystem.packages` nex
 
 | File | Change |
 |---|---|
-| `modules/hm/ai-agents/module.nix` | add `runAs` + `binSuffix` options and their behavior (wrappers, renamed binaries, local-setup suppression). |
+| `modules/hm/ai-agents/module.nix` | add `runAs` + `binSuffix` options and their behavior (`suffixPackage` helper for renamed binaries, sudo-wrappers, local-setup suppression). |
 | `modules/nixos/ai-agent-sandbox.nix` *(new)* | `services.aiAgentSandbox` orchestrator: user, sudoers, journal group, both HM homes from `sharedModules`, docker-socket-proxy, `DOCKER_HOST` + toolset. |
 | `modules/nixos/default.nix` *(new, if absent)* | aggregate import so the module is available to NixOS hosts. |
 | `machine/globalhawk/default.nix` | import the new NixOS module dir; set `services.aiAgentSandbox`. |
@@ -339,13 +386,20 @@ The unit of work is a Nix evaluation plus runtime behavior.
   goal). `inspect` kept enabled despite env-secret exposure.
 - **`systemd-journal` is the only extra group** — read-only; unit control stays
   polkit-denied.
+- **`binSuffix` renames the harness's entrypoint in a wrapped package** (`suffixPackage`)
+  fed to the upstream module, rather than `package = null` + a separate binary install.
+  Reuses upstream's install/config path and drops the config-without-binary uncertainty.
+- **Extension is by Nix merge, not passthrough options** — the module uses `mkDefault` on
+  the scalars it owns and additive lists for groups, so users extend `users.users.<user>`
+  / `home-manager.users.<user>` directly. Only `docker.settings` is a first-class knob.
 - **Audit script is standalone**, never a `flake check` gate, so it can't block activation.
 
 ## Open items to confirm during planning
 
-- Whether the pinned home-manager `programs.claude-code` / `programs.codex` support
-  `package = null` (config without binary) for the `binSuffix` rename; fallback is a
-  suffixed symlink.
+- Low-risk `binSuffix` residual: does the upstream `programs.claude-code` /
+  `programs.codex` reference the binary by a **literal** `bin/<cmd>` path rather than
+  `lib.getExe`? `meta.mainProgram` covers `getExe`; if a name is hardcoded, fall back to
+  `package = null` + own `writeShellScriptBin`.
 - Exact wrapper env set (`--preserve-env` list; necessity of sourcing `hm-session-vars.sh`
   given the explicit PATH).
 - Module home: `modules/nixos/` (new tree) vs a machine-scoped `machine/globalhawk/`
