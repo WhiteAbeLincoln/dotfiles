@@ -35,7 +35,7 @@ Each task states its gate explicitly.
 
 **Interfaces:**
 - Consumes: a new B2 application key **restricted to the backup bucket**, created by the user (keyID + applicationKey). See the design spec's "Sequencing" step 1 / the chat instructions for creating it.
-- Produces: `secrets.restic.b2.key_id` / `secrets.restic.b2.app_key` now hold the scoped key; `secrets.restic.b2.repo` and `secrets.restic.b2.pass` are unchanged.
+- Produces: `secrets.restic.b2.key_id` / `secrets.restic.b2.app_key` now hold the scoped key; `secrets.restic.b2.repo` and `secrets.restic.b2.restic_repo_pass` are unchanged.
 
 **Precondition:** git-crypt is unlocked (`nix run .#decrypt-secrets` on a fresh checkout). Confirm with `git-crypt status secrets/globalhawk.nix` showing decrypted content readable.
 
@@ -57,7 +57,7 @@ cd /srv/dotfiles
 export AWS_ACCESS_KEY_ID="$(nix eval --raw --file secrets/globalhawk.nix restic.b2.key_id)"
 export AWS_SECRET_ACCESS_KEY="$(nix eval --raw --file secrets/globalhawk.nix restic.b2.app_key)"
 export RESTIC_REPOSITORY="$(nix eval --raw --file secrets/globalhawk.nix restic.b2.repo)"
-export RESTIC_PASSWORD="$(nix eval --raw --file secrets/globalhawk.nix restic.b2.pass)"
+export RESTIC_PASSWORD="$(nix eval --raw --file secrets/globalhawk.nix restic.b2.restic_repo_pass)"
 nix run nixpkgs#restic -- cat config; echo "exit=$?"
 unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY RESTIC_REPOSITORY RESTIC_PASSWORD
 ```
@@ -124,7 +124,7 @@ in {
   # hardening path, out of scope here.
   environment.etc = {
     "restic/media-password" = {
-      text = secrets.restic.b2.pass;
+      text = secrets.restic.b2.restic_repo_pass;
       mode = "0600";
     };
     "restic/media-env" = {

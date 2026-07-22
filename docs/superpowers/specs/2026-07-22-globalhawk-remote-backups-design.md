@@ -206,7 +206,7 @@ The restic password and B2 keys live in the git-crypt'd
 `secrets/globalhawk.nix`. Two `environment.etc` entries render them to root-only
 files the module reads:
 
-- `/etc/restic/media-password` (mode 0600) — `secrets.restic.b2.pass`
+- `/etc/restic/media-password` (mode 0600) — `secrets.restic.b2.restic_repo_pass`
 - `/etc/restic/media-env` (mode 0600) — the B2 S3 credentials as env:
   ```
   AWS_ACCESS_KEY_ID=<key_id>
