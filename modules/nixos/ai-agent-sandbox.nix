@@ -171,6 +171,13 @@ in {
 
       # docker-socket-proxy: bind the real socket, expose only whitelisted GET
       # endpoints on localhost. POST=0 => run/exec/stop/rm/build return 403.
+      #
+      # KNOWN LIMITATION (accepted; may restrict later): loopback TCP has no
+      # per-UID access control, so the read-only API here is reachable by ANY
+      # local account (plex/immich/calibre-web/…), not just `user`. Those can
+      # read container env (incl. secrets) via `inspect`. Acceptable on this
+      # single-operator box; to tighten, front it with a group-owned unix socket
+      # or an nftables `owner --uid-owner` rule for this port.
       virtualisation.oci-containers.containers.docker-proxy = {
         image = cfg.docker.image;
         volumes = ["/var/run/docker.sock:/var/run/docker.sock:ro"];

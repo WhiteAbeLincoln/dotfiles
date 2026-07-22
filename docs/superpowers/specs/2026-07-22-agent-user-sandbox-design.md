@@ -305,6 +305,20 @@ The agent reaches it only through `DOCKER_HOST=tcp://127.0.0.1:2375`; it is neve
 because it is essential for debugging and consistent with the read-only-everything
 posture.
 
+### Known limitation (accepted; may restrict later)
+
+The proxy is exposed as **loopback TCP** (`127.0.0.1:2375`), and loopback TCP has no
+per-UID access control (the NixOS firewall does not filter loopback). So the read-only
+Docker API is reachable by **any** local account on globalhawk — the service users
+(`plex`, `immich`, `calibre-web`, …) and any future user — not only the sandbox `user`.
+Those accounts can therefore read container env (including the secrets `inspect` exposes)
+read-only, which before this change required the `docker` group (just the operator) or
+root. This is an accepted trade-off for a single-operator box where the same container
+secrets already live in world-readable `/nix/store` paths and the exposure is read-only
+and localhost-only. If a tighter boundary is wanted later, front the proxy with a
+**group-owned unix socket** (agent + operator in the group; `DOCKER_HOST=unix://…`) or add
+an `nftables` `owner --uid-owner` rule restricting who may connect to the proxy port.
+
 ## Part 5 — Debugging the `oci-containers` through systemd
 
 Each `virtualisation.oci-containers.containers.<name>` becomes a `docker-<name>.service`
