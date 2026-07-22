@@ -53,6 +53,9 @@
             decrypt-secrets = pkgs.writeShellScriptBin "decrypt-secrets" ''
               ${pkgs.gnupg}/bin/gpg --decrypt ${./local.key.asc} | ${pkgs.git-crypt}/bin/git-crypt unlock -
             '';
+            # Read-only audit of the globalhawk AI-agent sandbox. Deliberately NOT
+            # part of `nix flake check` — it must never block activation.
+            audit-agent-access = pkgs.callPackage ./packages/audit-agent-access.nix {};
           }
           // pkgs.lib.optionalAttrs pkgs.stdenv.isDarwin {
             # always include the --flake argument pointing to the current working
