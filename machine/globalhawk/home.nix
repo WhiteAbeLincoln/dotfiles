@@ -6,6 +6,7 @@
 }: {
   imports = [
     ../../role/dev.nix
+    ../../program/zellij
   ];
 
   # home.sessionVariables = {

@@ -2,8 +2,12 @@
 {
   pkgs,
   config,
+  lib,
   ...
 }: {
+  imports = [
+    ./module.nix
+  ];
   programs.fish = {
     enable = true;
     package = pkgs.unstable.fish;
@@ -28,9 +32,16 @@
         fish_add_path -m /opt/homebrew/bin
       end
     '';
-    loginShellInit = ''
-      if ps -p %self -o command | sed -n '2p' | grep ssh
-          tmux has-session -t remote; and tmux attach-session -t remote; or tmux new-session -s remote; and kill %self
+    loginShellInit = lib.optionalString (config.programs.fish.sshMultiplexer == "tmux") ''
+      # Attach to (or create) a shared tmux session on SSH login, then close the
+      # shell once it detaches so exiting the multiplexer ends the SSH session
+      # rather than dropping into a bare fish. Detect SSH via $SSH_CONNECTION
+      # (set by sshd) instead of walking the process tree, and skip when already
+      # inside tmux to avoid nesting.
+      if set -q SSH_CONNECTION; and not set -q TMUX
+          if tmux attach-session -t remote 2>/dev/null; or tmux new-session -s remote
+              kill $fish_pid
+          end
           echo "tmux failed to start; using plain fish shell"
       end
     '';
