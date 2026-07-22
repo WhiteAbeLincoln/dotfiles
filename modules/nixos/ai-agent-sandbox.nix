@@ -146,5 +146,37 @@ in {
         programs.ai-agents.binSuffix = cfg.binSuffix;
       };
     }
+
+    (mkIf cfg.docker.enable {
+      # Read-only debugging defaults: read areas on, all mutations (POST) off.
+      # mkDefault so any single area can be flipped from outside without mkForce.
+      services.aiAgentSandbox.docker.settings = {
+        CONTAINERS = mkDefault 1;
+        IMAGES = mkDefault 1;
+        NETWORKS = mkDefault 1;
+        VOLUMES = mkDefault 1;
+        INFO = mkDefault 1;
+        VERSION = mkDefault 1;
+        PING = mkDefault 1;
+        EVENTS = mkDefault 1;
+        POST = mkDefault 0;
+      };
+
+      # Point the sandbox user at the proxy and give it the read-only debugging
+      # toolset. Never add it to the `docker` group; it reaches Docker only here.
+      home-manager.users.${cfg.user} = {
+        home.sessionVariables.DOCKER_HOST = "tcp://${cfg.docker.listenAddress}:${toString cfg.docker.port}";
+        home.packages = [pkgs.docker-client pkgs.jq pkgs.ripgrep];
+      };
+
+      # docker-socket-proxy: bind the real socket, expose only whitelisted GET
+      # endpoints on localhost. POST=0 => run/exec/stop/rm/build return 403.
+      virtualisation.oci-containers.containers.docker-proxy = {
+        image = cfg.docker.image;
+        volumes = ["/var/run/docker.sock:/var/run/docker.sock:ro"];
+        ports = ["${cfg.docker.listenAddress}:${toString cfg.docker.port}:2375"];
+        environment = lib.mapAttrs (_: toString) cfg.docker.settings;
+      };
+    })
   ]);
 }

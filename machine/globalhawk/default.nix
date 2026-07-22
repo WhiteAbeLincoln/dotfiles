@@ -101,7 +101,10 @@ in {
 
   # Unprivileged user for running AI agents read-only; see
   # docs/superpowers/specs/2026-07-22-agent-user-sandbox-design.md.
-  services.aiAgentSandbox.enable = true;
+  services.aiAgentSandbox = {
+    enable = true;
+    docker.enable = true;
+  };
   # }}}
 
   # {{{ Networking, TZ, Locale
