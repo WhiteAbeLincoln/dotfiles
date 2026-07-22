@@ -43,7 +43,16 @@ in {
     ../../modules/nixos/ai-agent-sandbox.nix
   ];
 
-  nix.settings.experimental-features = ["nix-command" "flakes"];
+  nix.settings = {
+    experimental-features = ["nix-command" "flakes"];
+    # Prebuilt coding agents from numtide/llm-agents.nix (pkgs.llm-agents.*).
+    # This host is plain NixOS (no Determinate), so the cache goes here rather
+    # than in the darwin `determinateNix.customSettings`.
+    extra-substituters = ["https://cache.numtide.com"];
+    extra-trusted-public-keys = [
+      "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
+    ];
+  };
 
   # {{{ Boot & System
   # upgrade the linux kernel to support our Intel AX101 wifi
