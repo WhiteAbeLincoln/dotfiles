@@ -1,110 +1,103 @@
 {
   lib,
-  config,
-  options,
   pkgs,
+  config,
   ...
-}:
-with lib; let
+}: let
   secrets = import ../../secrets/globalhawk.nix;
-  cfg = config.services.restic-b2;
-  getMount = pool: ''
-    getPoolMount() {
-      output="$(mount)"
-      output="''${output#*${pool} on }"
-      output="''${output%% type zfs*}"
-      echo "$output"
-    }
-  '';
-  backupCfg = options.services.restic.backups.type.nestedTypes.elemType;
+  # Immich's UPLOAD_LOCATION, taken from the service config so the two can't
+  # drift (becomes services.immich.mediaLocation after the NixOS migration).
+  immichRoot = config.services.immich-custom.uploadDir;
+  # Where the newest Immich DB dump is staged for inclusion in the backup.
+  stagedDbDump = "/var/lib/restic-media/immich-db-latest.sql.gz";
 in {
-  options = {
-    services.restic-b2 = {
-      enable = mkEnableOption "restic-b2";
-      user = mkOption {
-        type = types.str;
-        default = "_restic";
-      };
-      group = mkOption {
-        type = types.str;
-        default = "_restic";
-      };
-      additionalGroups = mkOption {
-        type = types.listOf types.str;
-        default = [];
-      };
-      zfsPool = mkOption {
-        type = types.str;
-      };
-      password = mkOption {
-        type = types.str;
-      };
-      env = mkOption {
-        type = types.attrsOf types.string;
-        default = {};
-      };
-      config = mkOption {
-        type = backupCfg;
-      };
+  # Materialize restic credentials from the git-crypt'd secrets file.
+  # NOTE: environment.etc.*.text renders content into the world-readable Nix
+  # store. This matches the repo's existing secret handling (e.g. the msmtp
+  # password in disks.nix); migrating secrets to agenix/sops is the future
+  # hardening path, out of scope here.
+  environment.etc = {
+    "restic/media-password" = {
+      text = secrets.restic.b2.restic_repo_pass;
+      mode = "0600";
+    };
+    "restic/media-env" = {
+      text = ''
+        AWS_ACCESS_KEY_ID=${secrets.restic.b2.key_id}
+        AWS_SECRET_ACCESS_KEY=${secrets.restic.b2.app_key}
+      '';
+      mode = "0600";
     };
   };
-}
-# users.groups._restic = {};
-# users.users._restic = {
-#   isSystemUser = true;
-#   group = "_restic";
-#   createHome = false;
-# };
-# environment.etc = {
-#   "restic/backblaze-password" = {
-#     text = secrets.restic.b2.pass;
-#     user = "_restic";
-#     group = "_restic";
-#     mode = "0600";
-#   };
-#   "restic/backblaze-env" = {
-#     text = ''
-#       AWS_ACCESS_KEY_ID="${secrets.restic.b2.key_id}"
-#       AWS_SECRET_ACCESS_KEY="${secrets.restic.b2.app_key}"
-#     '';
-#     user = "_restic";
-#     group = "_restic";
-#     mode = "0600";
-#   };
-# };
-# services.restic.backups = {
-#   backblaze = {
-#     initialize = true;
-#     repository = secrets.restic.b2.repo;
-#     passwordFile = "/etc/restic/backblaze-password";
-#     user = "_restic";
-#     dynamicFilesFrom = ''
-#       base="/data/Media/.zfs/snapshot/$(date +restic_%F)"
-#       # we don't want to back up everything, just
-#       # some select paths
-#       for folder in photos immich documents docker-services/homebridge; do
-#         if [ -d "$base/$folder" ]; then
-#           echo "$base/$folder"
-#         fi
-#       done
-#     '';
-#     # create a zfs snapshot
-#     backupPrepareCommand = ''
-#       # create a new snapshot
-#       snapshot="$(date +restic_%F)"
-#       zfs snap "pool/media@$snapshot"
-#     '';
-#     backupCleanupCommand = ''
-#       # do a rolling snapshot of 7 days
-#       limit="$(date --date '7 days ago' +restic_%F)"
-#       for f in /data/Media/.zfs/snapshot/restic_*; do
-#         name="$(basename $f)"
-#         if expr "$name" \< "$limit" > /dev/null; then
-#           zfs destroy "pool/media@$name"
-#         fi
-#       done
-#     '';
-#   };
-# };
-# }
 
+  services.restic.backups.media = {
+    initialize = true; # create the repo on first run
+    repository = secrets.restic.b2.repo; # S3-compatible B2 endpoint + bucket
+    passwordFile = "/etc/restic/media-password";
+    environmentFile = "/etc/restic/media-env";
+
+    # Direct path backup (no ZFS snapshot): media is write-once and the Immich
+    # dump is an atomically-written file. See the design spec for rationale.
+    paths = [
+      immichRoot
+      stagedDbDump
+      "/data/Media/photos"
+      "/data/Media/books"
+      "/data/Media/old_books"
+      "/data/Media/audiobooks"
+      "/data/Media/documents"
+      "/data/Media/music"
+    ];
+
+    # thumbs/ and encoded-video/ are regenerable from originals; backups/ holds
+    # the rotated DB-dump backlog (the newest is staged separately, below).
+    exclude = [
+      "${immichRoot}/thumbs"
+      "${immichRoot}/encoded-video"
+      "${immichRoot}/backups"
+    ];
+
+    # Stage only the newest Immich DB dump (full pg_dumpall, ~28 MB) so the repo
+    # carries one current restore point rather than the whole rotated backlog.
+    backupPrepareCommand = ''
+      mkdir -p "$(dirname ${stagedDbDump})"
+      latest="$(ls -t ${immichRoot}/backups/immich-db-backup-*.sql.gz 2>/dev/null | head -1)"
+      if [ -n "$latest" ]; then
+        cp -f "$latest" ${stagedDbDump}
+      fi
+    '';
+
+    # Run after Immich's built-in 02:00 dump so the staged dump is same-day fresh.
+    timerConfig = {
+      OnCalendar = "*-*-* 03:30:00";
+      RandomizedDelaySec = "30m";
+      Persistent = true; # catch up a missed run on next boot
+    };
+
+    pruneOpts = [
+      "--keep-daily 7"
+      "--keep-weekly 5"
+      "--keep-monthly 12"
+    ];
+  };
+
+  # The prepare command uses coreutils (ls/head/cp/mkdir/dirname); ensure they
+  # resolve in the service's PATH.
+  systemd.services.restic-backups-media.path = [pkgs.coreutils];
+
+  # Make a failed backup loud: email root (aliased to gmail via /etc/aliases)
+  # through the msmtp setup already configured in disks.nix for ZED/smartd.
+  systemd.services.restic-backups-media.onFailure = ["restic-media-failure.service"];
+  systemd.services.restic-media-failure = {
+    description = "Alert on restic media backup failure";
+    serviceConfig.Type = "oneshot";
+    script = ''
+      printf '%s\n' \
+        'Subject: [globalhawk] restic media backup FAILED' \
+        "" \
+        'The restic-backups-media job failed. Investigate with:' \
+        '  journalctl -u restic-backups-media --since -1d' \
+        | ${pkgs.msmtp}/bin/msmtp root
+    '';
+  };
+}

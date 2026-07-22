@@ -39,7 +39,7 @@ in {
     # remove custom module
     # ../../program/homebridge
     ./disks.nix
-    # ./backup.nix
+    ./backup.nix
     ../../modules/nixos/ai-agent-sandbox.nix
   ];
 
@@ -212,10 +212,6 @@ in {
   # services.printing.enable = true;
 
   programs.nix-ld.enable = true;
-
-  # services.restic-b2 = {
-  #   enable = true;
-  # };
 
   services.flatpak.enable = true;
   services.immich-custom = {
