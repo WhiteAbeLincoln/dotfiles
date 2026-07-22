@@ -31,7 +31,7 @@ if [ ! -d /data ]; then
   note "FAIL: /data does not exist or is not mounted — cannot audit it"
   fail=1
 else
-  writable=$(find /data -xdev -perm -0002 2>/dev/null || true)
+  writable=$(find /data -perm -0002 -not -path '*/.zfs/*' 2>/dev/null || true)
   if [ -n "${writable}" ]; then
     note "FAIL: world-writable paths under /data (agent could write these):"
     printf '%s\n' "${writable}" | while IFS= read -r p; do note "    ${p}"; done
@@ -55,6 +55,7 @@ fi
 echo "== docker-socket-proxy is read-only =="
 get_code=$(curl -s -o /dev/null -w '%{http_code}' "${proxy}/version" || echo 000)
 post_code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "${proxy}/containers/create" || echo 000)
+del_code=$(curl -s -o /dev/null -w '%{http_code}' -X DELETE "${proxy}/containers/audit-probe" || echo 000)
 if [ "${get_code}" = "200" ]; then
   note "ok: GET /version -> 200"
 else
@@ -65,6 +66,12 @@ if [ "${post_code}" = "403" ]; then
   note "ok: POST /containers/create -> 403"
 else
   note "FAIL: POST /containers/create -> ${post_code} (expected 403)"
+  fail=1
+fi
+if [ "${del_code}" = "403" ]; then
+  note "ok: DELETE /containers/audit-probe -> 403"
+else
+  note "FAIL: DELETE /containers/audit-probe -> ${del_code} (expected 403)"
   fail=1
 fi
 

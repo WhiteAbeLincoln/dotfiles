@@ -80,6 +80,10 @@
   # Expose <pkg>'s primary command <cmd> under the name <cmd><suffix>, preserving
   # the rest of the package tree; update mainProgram so lib.getExe still resolves.
   # A no-op when suffix is empty or the package is null.
+  # NOTE: safe here because programs.claude-code only re-wraps its package's bin/claude
+  # when mcpServers/lspServers/plugins are set (none are). If you ever configure those
+  # alongside a binSuffix, upstream's `mv $out/bin/claude` would miss the renamed binary
+  # — switch that harness to package = null plus an own writeShellScriptBin instead.
   suffixPackage = suffix: cmd: pkg:
     if suffix == "" || pkg == null
     then pkg
@@ -97,8 +101,8 @@
         meta = (pkg.meta or {}) // {mainProgram = "${cmd}${suffix}";};
       };
 
-  # Provision the harnesses + ~/.agents/~/.claude in THIS user's home? runAs alone
-  # (binSuffix == "") means "emit wrappers only, provision nothing here".
+  # localSetup: whether THIS user hosts the harnesses (~/.agents, ~/.claude) locally.
+  # A bare runAs (binSuffix == "") emits wrappers only and provisions nothing here.
   localSetup = cfg.runAs == null || cfg.binSuffix != "";
   emitWrappers = cfg.runAs != null;
 
