@@ -25,6 +25,7 @@
     mkOption
     mkPackageOption
     nameValuePair
+    optional
     optionalAttrs
     types
     ;
@@ -75,6 +76,52 @@
         nameValuePair "${root}/${name}" {source = norm src;}
     )
     cfg.skills;
+
+  # Expose <pkg>'s primary command <cmd> under the name <cmd><suffix>, preserving
+  # the rest of the package tree; update mainProgram so lib.getExe still resolves.
+  # A no-op when suffix is empty or the package is null.
+  suffixPackage = suffix: cmd: pkg:
+    if suffix == "" || pkg == null
+    then pkg
+    else
+      pkgs.symlinkJoin {
+        name = "${pkg.pname or cmd}${suffix}";
+        paths = [pkg];
+        postBuild = ''
+          if [ -e "$out/bin/${cmd}" ]; then
+            target=$(readlink -f "$out/bin/${cmd}")
+            rm "$out/bin/${cmd}"
+            ln -s "$target" "$out/bin/${cmd}${suffix}"
+          fi
+        '';
+        meta = (pkg.meta or {}) // {mainProgram = "${cmd}${suffix}";};
+      };
+
+  # Provision the harnesses + ~/.agents/~/.claude in THIS user's home? runAs alone
+  # (binSuffix == "") means "emit wrappers only, provision nothing here".
+  localSetup = cfg.runAs == null || cfg.binSuffix != "";
+  emitWrappers = cfg.runAs != null;
+
+  # sudo-wrapper: run <cmd> as cfg.runAs, in the caller's cwd, with the target
+  # user's per-user profile on PATH and its HM session vars (e.g. DOCKER_HOST)
+  # sourced. HOME is set from the target user's passwd entry via `sudo -H`.
+  runAsWrapper = cmd:
+    pkgs.writeShellScriptBin cmd ''
+      exec /run/wrappers/bin/sudo -H -u ${cfg.runAs} \
+        PATH=/etc/profiles/per-user/${cfg.runAs}/bin:/run/current-system/sw/bin \
+        ${pkgs.bash}/bin/bash -c '
+          vars="/etc/profiles/per-user/${cfg.runAs}/etc/profile.d/hm-session-vars.sh"
+          [ -r "$vars" ] && . "$vars"
+          cd "$1" || exit 1
+          shift
+          exec ${cmd} "$@"
+        ' ${cmd}-runas "$PWD" "$@"
+    '';
+
+  enabledHarnesses =
+    optional cfg.claude-code.enable "claude"
+    ++ optional cfg.codex.enable "codex"
+    ++ optional cfg.pi.enable "pi";
 in {
   options.programs.ai-agents = {
     enable = mkEnableOption "AI coding-agent harnesses and the shared ~/.agents tree";
@@ -114,6 +161,34 @@ in {
         (for example `"''${repo}/skills/foo"`). Codex and pi read
         {file}`~/.agents/skills` directly; for claude the same skills are additionally
         linked into {file}`~/.claude/skills/<name>`.
+      '';
+    };
+
+    runAs = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      example = "agent";
+      description = ''
+        If set, this user does NOT get the harnesses configured in its own home.
+        Instead, each enabled harness is exposed as a `sudo` wrapper that runs the
+        real harness as the named user, in the caller's working directory, using
+        that user's home-manager profile and session variables. Provisions nothing
+        for the target user — configure the target user's home separately (e.g. via
+        {option}`services.aiAgentSandbox`). Combine with {option}`binSuffix` to also
+        keep a full, local (unsandboxed) setup for this user under suffixed names.
+      '';
+    };
+
+    binSuffix = mkOption {
+      type = types.str;
+      default = "";
+      example = "-local";
+      description = ''
+        If non-empty, do the full local setup for this user (context, skills,
+        harness config) and expose each enabled harness command under its suffixed
+        name (for example `binSuffix = "-local"` yields `claude-local`). The
+        unsuffixed command name is left free so a {option}`runAs` wrapper can claim
+        it.
       '';
     };
 
@@ -172,8 +247,17 @@ in {
   };
 
   config = mkIf cfg.enable (mkMerge [
+    # Operator wrappers: run each enabled harness as cfg.runAs. Emitted whenever
+    # runAs is set, regardless of whether a local (suffixed) setup also exists.
+    (mkIf emitWrappers {
+      home.packages = map runAsWrapper enabledHarnesses;
+    })
+
+    # ---- Local setup (this user hosts the harnesses). Skipped for a pure runAs
+    #      (wrappers-only) user; that user's config lives in the target home. ----
+
     # Canonical ~/.agents tree (read by codex and pi directly).
-    (mkIf hasContext {
+    (mkIf (localSetup && hasContext) {
       home.file =
         contextDocs
         // {
@@ -187,40 +271,41 @@ in {
     # many individually-managed paths that collide with the single ~/.agents/skills
     # directory symlink during activation. Single symlinks to a shared store path let
     # both locations be treated as the same.
-    (mkIf hasSkills {
+    (mkIf (localSetup && hasSkills) {
       home.file = mkMerge [
         (mkSkillLinks skillsRoot)
         (mkIf cfg.claude-code.enable (mkSkillLinks claudeSkillsRoot))
       ];
     })
 
-    # claude-code: defer to the upstream module for context, settings, and packaging.
-    (mkIf cfg.claude-code.enable {
+    # claude-code: defer to the upstream module for context and settings; feed it the
+    # (optionally renamed) package.
+    (mkIf (localSetup && cfg.claude-code.enable) {
       programs.claude-code = mkMerge [
         (removeAttrs cfg.claude-code.settings ["enable" "package"])
         ({
             enable = true;
-            package = cfg.claude-code.package;
+            package = suffixPackage cfg.binSuffix "claude" cfg.claude-code.package;
           }
           // optionalAttrs hasContext {context = mkDefault rewrittenAgents;})
       ];
     })
 
     # codex: defer to the upstream module. Reads ~/.agents/skills directly.
-    (mkIf cfg.codex.enable {
+    (mkIf (localSetup && cfg.codex.enable) {
       programs.codex = mkMerge [
         (removeAttrs cfg.codex.settings ["enable" "package"])
         ({
             enable = true;
-            package = cfg.codex.package;
+            package = suffixPackage cfg.binSuffix "codex" cfg.codex.package;
           }
           // optionalAttrs hasContext {context = mkDefault rewrittenAgents;})
       ];
     })
 
     # pi-coding-agent: no upstream module. Reads ~/.agents/skills directly.
-    (mkIf cfg.pi.enable (mkMerge [
-      {home.packages = mkIf (cfg.pi.package != null) [cfg.pi.package];}
+    (mkIf (localSetup && cfg.pi.enable) (mkMerge [
+      {home.packages = mkIf (cfg.pi.package != null) [(suffixPackage cfg.binSuffix "pi" cfg.pi.package)];}
       (mkIf hasContext {
         home.file."${homeDir}/.pi/agent/AGENTS.md".source = agentsFile;
       })
