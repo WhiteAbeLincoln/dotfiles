@@ -40,6 +40,7 @@ in {
     # ../../program/homebridge
     ./disks.nix
     # ./backup.nix
+    ../../modules/nixos/ai-agent-sandbox.nix
   ];
 
   nix.settings.experimental-features = ["nix-command" "flakes"];
@@ -97,6 +98,10 @@ in {
   # home-manager.users.${user} = import ./home.nix;
 
   users.users.calibre-web.extraGroups = ["_media"];
+
+  # Unprivileged user for running AI agents read-only; see
+  # docs/superpowers/specs/2026-07-22-agent-user-sandbox-design.md.
+  services.aiAgentSandbox.enable = true;
   # }}}
 
   # {{{ Networking, TZ, Locale
@@ -135,7 +140,7 @@ in {
   # {{{ Hardware
   # enable hardware video acceleration
   nixpkgs.config.packageOverrides = pkgs: {
-      intel-vaapi-driver = pkgs.intel-vaapi-driver.override {enableHybridCodec = true;};
+    intel-vaapi-driver = pkgs.intel-vaapi-driver.override {enableHybridCodec = true;};
   };
 
   # Enable sound.
