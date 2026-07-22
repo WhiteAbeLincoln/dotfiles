@@ -73,6 +73,8 @@ Some files (proprietary t2 MacBook firmware, `secrets/`) are encrypted with git-
 nix run .#decrypt-secrets      # gpg --decrypt local.key.asc | git-crypt unlock -
 ```
 
+**This repo is public; only `secrets/` and the t2 firmware are encrypted.** Never write a value that lives in `secrets/*.nix` (bucket names, S3 endpoints/regions, API key IDs, passwords, keys, emails) into any unencrypted committed file — including `docs/`, specs, comments, and `.nix` files outside `secrets/`. Reference the Nix attribute *path* (e.g. `secrets.restic.b2.repo`) or a generic description instead of the literal value.
+
 ## Gotchas
 
 - On macOS/zsh, `darwin-rebuild` can fail due to `NIX_PATH` being clobbered by `/etc/zshrc`. The README documents the fix.
