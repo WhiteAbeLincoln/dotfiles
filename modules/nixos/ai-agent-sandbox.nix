@@ -164,9 +164,23 @@ in {
 
       # Point the sandbox user at the proxy and give it the read-only debugging
       # toolset. Never add it to the `docker` group; it reaches Docker only here.
+      #
+      # DOCKER_HOST is also set as a session variable (honoured by docker-aware
+      # tools running under the wrapper, which sources this user's HM session
+      # vars), but this user has NO shell integration enabled, so session vars are
+      # not sourced for a bare `sudo -u ${cfg.user} docker ...`. So we ship a
+      # `docker` that pins the proxy itself — working in every context (bare,
+      # login, and under the wrapper) rather than depending on shell sourcing.
       home-manager.users.${cfg.user} = {
         home.sessionVariables.DOCKER_HOST = "tcp://${cfg.docker.listenAddress}:${toString cfg.docker.port}";
-        home.packages = [pkgs.docker-client pkgs.jq pkgs.ripgrep];
+        home.packages = [
+          (pkgs.writeShellScriptBin "docker" ''
+            export DOCKER_HOST="tcp://${cfg.docker.listenAddress}:${toString cfg.docker.port}"
+            exec ${pkgs.docker-client}/bin/docker "$@"
+          '')
+          pkgs.jq
+          pkgs.ripgrep
+        ];
       };
 
       # docker-socket-proxy: bind the real socket, expose only whitelisted GET
