@@ -200,7 +200,7 @@ in {
     script = ''
       printf '%s\n' \
         'Subject: [globalhawk] restic media backup FAILED' \
-        '' \
+        "" \
         'The restic-backups-media job failed. Investigate with:' \
         '  journalctl -u restic-backups-media --since -1d' \
         | ${pkgs.msmtp}/bin/msmtp root
