@@ -200,6 +200,9 @@ in {
     calibre
     vlc
     vuetorrent
+    # xterm-ghostty terminfo, system-wide so SSH sessions resolve it for every
+    # user (abe, the sandbox agent, root) without a per-user `tic` copy.
+    ghostty.terminfo
   ];
 
   # {{{ Services
