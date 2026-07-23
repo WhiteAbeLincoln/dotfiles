@@ -46,11 +46,17 @@ These produce four values the Nix tasks consume: the **Cloudflare-sealed token b
   2. **Permissions:** the token needs **two** — `Zone` → `DNS` → **Edit** (create/delete the challenge TXT) **and** `Zone` → `Zone` → **Read** (so cert-manager can resolve the zone ID). The "Edit zone DNS" template bundles both; if you build the policy by hand, `DNS:Edit` alone is NOT enough — it fails at issuance with a zone-lookup 403. Leave all other rows (Zone Custom Asset, Zone DNS Settings, Zone Settings, Zone Versioning) unchecked.
   3. **Zone Resources:** `Include` → `Specific zone` → your domain.
   4. **TTL:** leave blank = **no expiry** (avoids future rotation).
-  5. Create, copy the token, then verify it:
+  5. Create, copy the token, then verify it. **Which endpoint depends on the token type:**
+     - A **User API token** (created under *My Profile → API Tokens*) verifies at `/user/tokens/verify`.
+     - An **account-owned token** (prefix `cfat_`, created under *Manage Account → API Tokens*) verifies at `/accounts/{account_id}/tokens/verify` — the user endpoint returns a misleading `code 1000 "Invalid API Token"` for a *valid* account-owned token. Account-owned is the recommended type for a service integration and works fine with cert-manager (it's just a bearer credential for the DNS API).
      ```bash
      export CF_TOKEN='paste-token-here'
+     # User token:
      nix run nixpkgs#curl -- -s -H "Authorization: Bearer $CF_TOKEN" \
        https://api.cloudflare.com/client/v4/user/tokens/verify | nix run nixpkgs#jq -- .
+     # Account-owned (cfat_) token — ACCOUNT_ID from the dashboard URL / zone Overview:
+     nix run nixpkgs#curl -- -s -H "Authorization: Bearer $CF_TOKEN" \
+       "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/tokens/verify" | nix run nixpkgs#jq -- .
      ```
      Expected: JSON containing `"status": "active"` and `"success": true`.
 
