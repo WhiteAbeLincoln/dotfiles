@@ -19,6 +19,14 @@
   # /nix/store/nixidy-app-<ns>), so find must follow them or it descends into
   # nothing. The -path exclusion still matches the logical prefix, so apps/
   # (ArgoCD Application CRs) stays excluded.
+  # cert-manager controller, installed from pinned upstream release YAML (plain
+  # YAML, no Helm). Includes its CRDs + namespace + deployments.
+  certManagerVersion = "v1.16.2";
+  certManagerYaml = pkgs.fetchurl {
+    url = "https://github.com/cert-manager/cert-manager/releases/download/${certManagerVersion}/cert-manager.yaml";
+    hash = "sha256-HVHN7NRC8fX4l4Pp4BabldNyck2iA8x13XpcTlChDOY=";
+  };
+
   nixidyCombined = pkgs.runCommand "nixidy-globalhawk.yaml" {} ''
     : > "$out"
     for f in $(${pkgs.findutils}/bin/find -L ${nixidyManifests} -name '*.yaml' -not -path '*/apps/*' | sort); do
@@ -36,6 +44,9 @@ in {
     manifests = {
       # Our nixidy-authored workloads, delivered as one multi-doc file.
       nixidy.source = nixidyCombined;
+      # Third-party controller: pinned upstream YAML, applied before our CRs
+      # (k3s retries until the CRDs it defines are established).
+      cert-manager.source = certManagerYaml;
     };
   };
 

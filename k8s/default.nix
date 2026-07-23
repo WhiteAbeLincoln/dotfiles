@@ -16,9 +16,8 @@
   imports = [
     # apps and infra modules are added task-by-task:
     # ./infra/network.nix
-    # ./infra/cert-manager.nix
+    ./infra/cert-manager.nix
     ./apps/whoami.nix
-    ./apps/_crtest.nix
     # ./apps/plex.nix
     # ./apps/arr.nix
     # ./apps/torrent.nix
