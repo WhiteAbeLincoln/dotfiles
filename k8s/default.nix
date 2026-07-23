@@ -18,7 +18,7 @@
     # ./infra/network.nix
     ./infra/cert-manager.nix
     ./apps/whoami.nix
-    # ./apps/plex.nix
+    ./apps/plex.nix
     # ./apps/arr.nix
     # ./apps/torrent.nix
   ];
