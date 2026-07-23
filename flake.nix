@@ -120,6 +120,7 @@
               _module.args = {
                 wireguardAddresses = s.wireguard_addresses;
                 vpnServerCities = s.vpn_server_cities;
+                acmeEmail = s.acme_email;
                 inherit (facts) ingressSuffix podCidr serviceCidr hostGatewayIp mediaRoot mediaUid timezone;
               };
             })
