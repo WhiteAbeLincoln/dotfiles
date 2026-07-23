@@ -276,6 +276,13 @@ in {
               resources = ["nodes" "namespaces" "persistentvolumes"];
               verbs = ["get" "list" "watch"];
             }
+            # cluster-scoped CRs the built-in `view` role does not aggregate, but
+            # that are useful read-only for debugging cert issuance.
+            {
+              apiGroups = ["cert-manager.io"];
+              resources = ["clusterissuers"];
+              verbs = ["get" "list" "watch"];
+            }
           ];
         }
         {
