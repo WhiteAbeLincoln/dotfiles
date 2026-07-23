@@ -17,13 +17,15 @@
   lanInterface = "enp1s0";
 
   # Suffix appended to each app name to form its ingress host: "<app>" + suffix,
-  # e.g. "radarr" -> "radarr.h.abewhite.dev". The dedicated child label `h` keeps
-  # the wildcard cert + AdGuard rewrite scoped to the homelab and prevents the
-  # wildcard from shadowing anything on the apex. Resolved LAN-privately by
+  # e.g. "radarr" -> "radarr.h.abrahamwhite.com". The dedicated child label `h`
+  # keeps the wildcard cert + AdGuard rewrite scoped to the homelab and prevents
+  # the wildcard from shadowing anything on the apex. Resolved LAN-privately by
   # AdGuard (machine/globalhawk/adguard.nix); never published to public DNS.
-  # Not secret (domains are public via WHOIS; internal names already appear in
-  # the committed k8s manifests). OPERATOR: set to your real registered domain.
-  ingressSuffix = ".h.abewhite.dev";
+  # Deliberately on abrahamwhite.com, NOT abewhite.dev — the latter carries the
+  # operator's email + personal GitHub Pages, kept out of the homelab's blast
+  # radius. Not secret (domains are public via WHOIS; internal names already
+  # appear in the committed k8s manifests).
+  ingressSuffix = ".h.abrahamwhite.com";
 
   # --- cluster network ---
   # k3s is *pinned* to these CIDRs (see k3s.nix), which is what makes the

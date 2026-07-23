@@ -17,7 +17,7 @@
 - **Commit messages document the *why*, not the *what*.** End every commit body with:
   `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>`
 - **Placeholders the operator must confirm** (used verbatim below; correct them in Task/Phase 0 if different):
-  - Domain suffix: **`.h.abewhite.dev`** (child label `h` under the operator's registered domain).
+  - Domain suffix: **`.h.abrahamwhite.com`** (child label `h`; deliberately on abrahamwhite.com, not the identity domain abewhite.dev). Other `abewhite.dev` strings in the design/plan prose are illustrative — the source of truth is `facts.ingressSuffix`.
   - globalhawk reserved LAN IP: **`192.168.1.50`**.
   - LAN subnet: **`192.168.1.0/24`**.
 
