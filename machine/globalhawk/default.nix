@@ -272,6 +272,10 @@ in {
     ipv4 = true;
     ipv6 = true;
     nssmdns4 = true;
+    # Only advertise/resolve mDNS on the LAN interface. Without this, avahi
+    # publishes across the docker bridges and dozens of k3s veths, so even
+    # globalhawk.local resolves to link-local/bridge junk instead of the LAN IP.
+    allowInterfaces = [facts.lanInterface];
     publish = {
       enable = true;
       userServices = true;

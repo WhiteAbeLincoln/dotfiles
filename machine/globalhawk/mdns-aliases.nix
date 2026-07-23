@@ -1,12 +1,12 @@
-# Publish mDNS aliases so every k8s ingress host resolves on the LAN (phones,
-# laptops, avahi-resolve). avahi only advertises the host's own name
-# (globalhawk.local); each ingress hostname is a *separate* single-label .local
-# name that must be published explicitly.
+# Publish every k3s ingress host as an mDNS **CNAME -> globalhawk.local** so the
+# names resolve on the LAN — including macOS/iOS Bonjour, which follows mDNS
+# CNAMEs (confirmed via `dns-sd`). CNAMEs (not address records) mean resolution
+# is delegated to avahi's own host publishing: dual-stack (v4+v6) and resilient
+# to the DHCP IP changing, with no address logic here.
 #
-# The alias list is DERIVED from the nixidy env's Ingress resources — add an app
-# with an ingress in k8s/ and its alias is published automatically, no edit here.
-# avahi-publish only does address records (no CNAME), so we publish A records at
-# this host's current IPv4, re-resolved on every (re)start.
+# Uses go-avahi-cname (flake input) rather than an ad-hoc avahi-publish loop. The
+# alias list is DERIVED from the nixidy env's Ingress hosts — add a k8s app with
+# an ingress and its alias publishes automatically.
 {
   config,
   pkgs,
@@ -14,10 +14,10 @@
   inputs,
   ...
 }: let
+  goAvahiCname = inputs.go-avahi-cname.packages.${pkgs.stdenv.hostPlatform.system}.default;
+
   env = inputs.self.nixidyEnvs.x86_64-linux.globalhawk;
-  # Every rendered k8s object across all applications.
   allObjects = lib.concatMap (app: app.objects) (lib.attrValues env.config.applications);
-  # Hosts from every Ingress rule.
   ingressHosts =
     lib.concatMap (
       o:
@@ -26,31 +26,26 @@
         else []
     )
     allObjects;
-  aliases = lib.unique ingressHosts;
+
+  # Trailing dot = publish the name verbatim as a CNAME. Without it, go-avahi-cname
+  # treats a bare name as a SUBDOMAIN of the host (e.g. radarr-globalhawk.local ->
+  # radarr-globalhawk.globalhawk.local), which is a 3-label name macOS won't
+  # resolve over mDNS.
+  aliasFqdns = map (h: "${h}.") (lib.unique ingressHosts);
+  hostFqdn = "${config.networking.hostName}.local.";
 in {
-  systemd.services.avahi-aliases = {
-    description = "Publish k8s ingress mDNS aliases pointing at this host";
+  systemd.services.mdns-aliases = {
+    description = "Publish k3s ingress hostnames as mDNS CNAMEs -> ${hostFqdn}";
     after = ["avahi-daemon.service" "network-online.target"];
     wants = ["avahi-daemon.service" "network-online.target"];
     wantedBy = ["multi-user.target"];
     serviceConfig = {
+      ExecStart = "${goAvahiCname}/bin/go-avahi-cname cname --fqdn ${hostFqdn} ${lib.escapeShellArgs aliasFqdns}";
       Restart = "on-failure";
       RestartSec = 5;
+      # Unprivileged: it only needs the system D-Bus to reach avahi, which its
+      # default policy permits for any user.
+      DynamicUser = true;
     };
-    script = ''
-      set -eu
-      ip=$(${pkgs.iproute2}/bin/ip -4 route get 1.1.1.1 | ${pkgs.gnugrep}/bin/grep -oP 'src \K[0-9.]+')
-      echo "publishing ${toString (lib.length aliases)} aliases -> $ip"
-      pids=""
-      for a in ${lib.concatStringsSep " " aliases}; do
-        ${pkgs.avahi}/bin/avahi-publish -a -R "$a" "$ip" &
-        pids="$pids $!"
-      done
-      # If any single publisher exits (e.g. daemon restart), tear the rest down
-      # so systemd restarts the whole set and re-resolves the IP.
-      wait -n
-      kill $pids 2>/dev/null || true
-      exit 1
-    '';
   };
 }

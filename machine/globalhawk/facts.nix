@@ -12,6 +12,10 @@
 
   timezone = "America/Denver";
 
+  # The LAN network interface (hardware-stable for this box). avahi is restricted
+  # to it so mDNS isn't advertised/resolved across docker bridges and k3s veths.
+  lanInterface = "enp1s0";
+
   # Suffix appended to each app name to form its ingress host: "<app>" + suffix.
   # The interim value gives single-label mDNS names like "radarr-globalhawk.local"
   # (dash, NOT a dotted subdomain — macOS mDNS resolves single-label .local but

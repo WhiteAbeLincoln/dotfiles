@@ -30,6 +30,12 @@
     # delivery via services.k3s.manifests (no ArgoCD, no Helm). Tracks its own
     # nixpkgs deliberately — its CRD generators pin against it.
     nixidy.url = "github:arnarg/nixidy/latest";
+    # mDNS CNAME publisher (upstream ships a flake) — publishes the k3s ingress
+    # hostnames as CNAMEs -> globalhawk.local so they resolve on the LAN.
+    go-avahi-cname = {
+      url = "github:grishy/go-avahi-cname/v2.6.1";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     # virby.url = "github:quinneden/virby-nix-darwin";
   };
 
