@@ -58,6 +58,14 @@ in {
     extraFlags = [
       "--cluster-cidr=${net.podCidr}"
       "--service-cidr=${net.serviceCidr}"
+      # Pin the node IP + flannel interface to the static LAN address. Without
+      # this k3s auto-detects from the default route, which broke when the node's
+      # IP moved from its old DHCP lease to the static facts.lanIp: a running k3s
+      # kept the stale IP for the Node InternalIP, flannel public-ip, and the
+      # kubernetes apiserver endpoint, so pods hit "no route to host" on service
+      # IPs. Pinning also prevents picking the wrong NIC (wlo1 is also up).
+      "--node-ip=${net.lanIp}"
+      "--flannel-iface=${net.lanInterface}"
     ];
     manifests = {
       # Our nixidy-authored workloads, delivered as one multi-doc file.
