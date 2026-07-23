@@ -5,14 +5,13 @@
 {
   lib,
   ingressSuffix,
+  hostGatewayIp,
   ...
 }: let
   host = "plex${ingressSuffix}";
-  # The host as seen from a pod: every pod's default gateway is the node's
-  # flannel bridge (cni0 = <podCIDR>.1). Stable across DHCP lease changes (it's a
-  # k3s cluster-CIDR constant, not the LAN IP), and cni0 is a trusted firewall
-  # interface. Plex listens on 0.0.0.0:32400 so it answers here.
-  hostGatewayIp = "10.42.0.1";
+  # hostGatewayIp = the host as seen from a pod (flannel cni0 bridge), pinned in
+  # machine/globalhawk/cluster-net.nix. Stable across DHCP lease changes and
+  # rebuilds; cni0 is a trusted firewall interface; Plex listens on 0.0.0.0:32400.
   plexPort = 32400;
 in {
   applications.plex = {

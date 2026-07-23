@@ -7,6 +7,7 @@
   inputs,
   ...
 }: let
+  net = import ./cluster-net.nix;
   # The nixidy-rendered YAML tree. nixidy rev deb28dc exposes this as
   # `environmentPackage` (there is no `build` attr) — its build output is the
   # apps/ + <namespace>/ YAML tree.
@@ -51,6 +52,13 @@ in {
     # Traefik (bundled) and servicelb (klipper) are kept — do NOT disable them.
     # Graceful shutdown so pods drain on reboot.
     gracefulNodeShutdown.enable = true;
+    # Pin the cluster network so it's identical on a rebuild — this is what makes
+    # cluster-net.nix's hostGatewayIp a guaranteed constant. These match k3s's
+    # current defaults, so pinning them is a no-op on the running cluster.
+    extraFlags = [
+      "--cluster-cidr=${net.podCidr}"
+      "--service-cidr=${net.serviceCidr}"
+    ];
     manifests = {
       # Our nixidy-authored workloads, delivered as one multi-doc file.
       nixidy.source = nixidyCombined;

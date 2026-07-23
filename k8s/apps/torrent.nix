@@ -8,6 +8,8 @@
   ingressSuffix,
   wireguardAddresses,
   vpnServerCities,
+  podCidr,
+  serviceCidr,
   ...
 }: let
   l = import ../lib.nix {inherit lib;};
@@ -99,7 +101,7 @@ in {
                   }
                   {
                     name = "FIREWALL_OUTBOUND_SUBNETS";
-                    value = "10.42.0.0/16,10.43.0.0/16";
+                    value = "${podCidr},${serviceCidr}";
                   }
                   {
                     name = "FIREWALL_INPUT_PORTS";

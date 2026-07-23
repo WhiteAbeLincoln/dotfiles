@@ -111,14 +111,16 @@
             ./k8s
             (let
               s = import ./secrets/globalhawk.nix;
+              net = import ./machine/globalhawk/cluster-net.nix;
             in {
-              # Inject secret-derived values from the git-crypt'd secrets so no
-              # literal (ingress hostname, VPN config) lands in a committed
-              # unencrypted file.
+              # Inject secret-derived values from the git-crypt'd secrets (so no
+              # literal lands in a committed unencrypted file) and the pinned
+              # cluster-network constants (single source of truth with k3s.nix).
               _module.args = {
                 ingressSuffix = s.ingressSuffix;
                 wireguardAddresses = s.wireguard_addresses;
                 vpnServerCities = s.vpn_server_cities;
+                inherit (net) podCidr serviceCidr hostGatewayIp;
               };
             })
           ];
