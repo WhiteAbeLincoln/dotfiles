@@ -118,10 +118,9 @@
               # (media/uid/tz + pinned cluster network) — the single sources of
               # truth shared with the NixOS layer.
               _module.args = {
-                ingressSuffix = s.ingressSuffix;
                 wireguardAddresses = s.wireguard_addresses;
                 vpnServerCities = s.vpn_server_cities;
-                inherit (facts) podCidr serviceCidr hostGatewayIp mediaRoot mediaUid timezone;
+                inherit (facts) ingressSuffix podCidr serviceCidr hostGatewayIp mediaRoot mediaUid timezone;
               };
             })
           ];

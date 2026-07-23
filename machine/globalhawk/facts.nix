@@ -12,6 +12,14 @@
 
   timezone = "America/Denver";
 
+  # Suffix appended to each app name to form its ingress host: "<app>" + suffix.
+  # The interim value gives single-label mDNS names like "radarr-globalhawk.local"
+  # (dash, NOT a dotted subdomain — macOS mDNS resolves single-label .local but
+  # not sub.host.local). The real-domain follow-up swaps this to a dotted suffix
+  # like ".home.abewhite.dev" -> "radarr.home.abewhite.dev". Not secret (the
+  # hostname is already in networking.hostName and the avahi config).
+  ingressSuffix = "-globalhawk.local";
+
   # --- cluster network ---
   # k3s is *pinned* to these CIDRs (see k3s.nix), which is what makes the
   # host-from-pods gateway a fixed, known value rather than a k3s default we're
