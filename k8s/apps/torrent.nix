@@ -10,12 +10,14 @@
   vpnServerCities,
   podCidr,
   serviceCidr,
+  mediaRoot,
+  mediaUid,
+  timezone,
   ...
 }: let
   l = import ../lib.nix {inherit lib;};
   labels = l.appLabels "qbittorrent";
   host = "qbittorrent${ingressSuffix}";
-  mediaUid = 994;
 in {
   applications.torrent = {
     namespace = "media";
@@ -41,14 +43,14 @@ in {
               {
                 name = "qbt-config";
                 hostPath = {
-                  path = "/data/Media/docker-services/torrent-config/qbittorrent";
+                  path = "${mediaRoot}/docker-services/torrent-config/qbittorrent";
                   type = "Directory";
                 };
               }
               {
                 name = "downloads";
                 hostPath = {
-                  path = "/data/Media/torrents/downloads";
+                  path = "${mediaRoot}/torrents/downloads";
                   type = "Directory";
                 };
               }
@@ -81,7 +83,7 @@ in {
                 env = [
                   {
                     name = "TZ";
-                    value = "America/Denver";
+                    value = timezone;
                   }
                   {
                     name = "VPN_TYPE";
@@ -154,7 +156,7 @@ in {
                 env = [
                   {
                     name = "TZ";
-                    value = "America/Denver";
+                    value = timezone;
                   }
                   {
                     name = "PUID";

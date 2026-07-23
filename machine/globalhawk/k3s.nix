@@ -7,7 +7,7 @@
   inputs,
   ...
 }: let
-  net = import ./cluster-net.nix;
+  net = import ./facts.nix;
   # The nixidy-rendered YAML tree. nixidy rev deb28dc exposes this as
   # `environmentPackage` (there is no `build` attr) — its build output is the
   # apps/ + <namespace>/ YAML tree.

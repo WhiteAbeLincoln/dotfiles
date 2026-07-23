@@ -8,6 +8,7 @@
 }: let
   lib = pkgs.lib;
   user = config.meta.user;
+  facts = import ./facts.nix;
   secrets = (import ../../secrets/common.nix) // (import ../../secrets/globalhawk.nix);
   mkMediaFs = uuid: fsType: {
     device = "/dev/disk/by-uuid/" + uuid;
@@ -84,12 +85,12 @@ in {
 
   # {{{ Users
   # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.groups._media = {gid = 994;};
+  users.groups._media = {gid = facts.mediaUid;};
   users.users._media = {
     isSystemUser = true;
     group = "_media";
     createHome = false;
-    uid = 994;
+    uid = facts.mediaUid;
   };
   programs.fish.enable = true;
   users.users.${user} = {
@@ -147,7 +148,7 @@ in {
   };
 
   # Set your time zone.
-  time.timeZone = "America/Denver";
+  time.timeZone = facts.timezone;
 
   # Configure network proxy if necessary
   # networking.proxy.default = "http://user:password@proxy:port/";
@@ -229,8 +230,8 @@ in {
   services.immich-custom = {
     enable = true;
     immichVersion = "v1.124.2";
-    uploadDir = "/data/Media/immich/photos";
-    backupDir = "/data/Media/immich/backups";
+    uploadDir = "${facts.mediaRoot}/immich/photos";
+    backupDir = "${facts.mediaRoot}/immich/backups";
     dbPassword = secrets.immich_pass;
   };
 
@@ -299,7 +300,7 @@ in {
         "unix extensions" = "no";
       };
       Media = {
-        path = "/data/Media";
+        path = facts.mediaRoot;
         browseable = "yes";
         "read only" = "yes";
         "guest ok" = "yes";

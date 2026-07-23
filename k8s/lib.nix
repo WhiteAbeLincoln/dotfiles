@@ -15,12 +15,14 @@
     image,
     port,
     ingressSuffix,
+    mediaRoot,
+    mediaUid,
+    timezone,
     extraVolumes ? [],
     extraMounts ? [],
   }: let
     labels = appLabels name;
     host = "${name}${ingressSuffix}";
-    mediaUid = 994;
   in {
     "${name}" = {
       namespace = "media";
@@ -43,7 +45,7 @@
                 env = [
                   {
                     name = "TZ";
-                    value = "America/Denver";
+                    value = timezone;
                   }
                   {
                     name = "PUID";
@@ -69,7 +71,7 @@
                   {
                     name = "config";
                     hostPath = {
-                      path = "/data/Media/docker-services/torrent-config/${name}";
+                      path = "${mediaRoot}/docker-services/torrent-config/${name}";
                       type = "Directory";
                     };
                   }

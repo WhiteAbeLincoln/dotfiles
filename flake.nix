@@ -111,16 +111,17 @@
             ./k8s
             (let
               s = import ./secrets/globalhawk.nix;
-              net = import ./machine/globalhawk/cluster-net.nix;
+              facts = import ./machine/globalhawk/facts.nix;
             in {
               # Inject secret-derived values from the git-crypt'd secrets (so no
-              # literal lands in a committed unencrypted file) and the pinned
-              # cluster-network constants (single source of truth with k3s.nix).
+              # literal lands in a committed unencrypted file) and the host facts
+              # (media/uid/tz + pinned cluster network) — the single sources of
+              # truth shared with the NixOS layer.
               _module.args = {
                 ingressSuffix = s.ingressSuffix;
                 wireguardAddresses = s.wireguard_addresses;
                 vpnServerCities = s.vpn_server_cities;
-                inherit (net) podCidr serviceCidr hostGatewayIp;
+                inherit (facts) podCidr serviceCidr hostGatewayIp mediaRoot mediaUid timezone;
               };
             })
           ];

@@ -4,6 +4,7 @@
   ...
 }: let
   secrets = import ../../secrets/common.nix;
+  facts = import ./facts.nix;
 in {
   boot.supportedFilesystems = ["zfs"];
   boot.zfs.forceImportRoot = false;
@@ -16,20 +17,18 @@ in {
     trim.enable = true;
   };
 
-  fileSystems = {
-    "/data/Media" = {
-      device = "pool/media";
-      fsType = "zfs";
-    };
+  fileSystems.${facts.mediaRoot} = {
+    device = "pool/media";
+    fsType = "zfs";
   };
 
   systemd.tmpfiles.rules = [
     # user rwx, group rwx, other rx
-    "d /data/Media 0775 _media _media -"
-    "d /data/Media/apps 0775 _media _media -"
+    "d ${facts.mediaRoot} 0775 _media _media -"
+    "d ${facts.mediaRoot}/apps 0775 _media _media -"
     # ensure new files are created with the correct permissions using ACL
-    "A /data/Media - - - - group:_media:rwx"
-    "A /data/Media/books - - - - group:calibre-web:rwx"
+    "A ${facts.mediaRoot} - - - - group:_media:rwx"
+    "A ${facts.mediaRoot}/books - - - - group:calibre-web:rwx"
   ];
 
   programs.msmtp = {

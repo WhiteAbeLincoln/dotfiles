@@ -5,6 +5,7 @@
   ...
 }: let
   secrets = import ../../secrets/globalhawk.nix;
+  facts = import ./facts.nix;
   # Immich's UPLOAD_LOCATION, taken from the service config so the two can't
   # drift (becomes services.immich.mediaLocation after the NixOS migration).
   immichRoot = config.services.immich-custom.uploadDir;
@@ -41,12 +42,12 @@ in {
     paths = [
       immichRoot
       stagedDbDump
-      "/data/Media/photos"
-      "/data/Media/books"
-      "/data/Media/old_books"
-      "/data/Media/audiobooks"
-      "/data/Media/documents"
-      "/data/Media/music"
+      "${facts.mediaRoot}/photos"
+      "${facts.mediaRoot}/books"
+      "${facts.mediaRoot}/old_books"
+      "${facts.mediaRoot}/audiobooks"
+      "${facts.mediaRoot}/documents"
+      "${facts.mediaRoot}/music"
     ];
 
     # thumbs/ and encoded-video/ are regenerable from originals; backups/ holds
