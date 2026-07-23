@@ -299,6 +299,40 @@ against a trivial app before any real workload depends on it."
 
 ---
 
+### Task 0.2b: Read-only kubectl for the sandbox agent user (added during execution)
+
+**Rationale:** the automation runs as the unprivileged `agent` sandbox user (no
+sudo, root-only kubeconfig), so it cannot verify k3s state itself. This mirrors
+the existing read-only `docker-socket-proxy` access: give the agent read-only
+kubectl so it self-serves most verification gates, without cluster-admin.
+
+**Files:**
+- Modify: `modules/nixos/ai-agent-sandbox.nix` (add `services.aiAgentSandbox.k3s`)
+- Modify: `machine/globalhawk/default.nix` (`k3s.enable = true`)
+- Modify: `machine/globalhawk/k3s.nix` (drop the global root-only `KUBECONFIG` env)
+
+**What it does:**
+- In-cluster RBAC via `services.k3s.manifests.agent-readonly-rbac.content`: a
+  `ServiceAccount agent-readonly` (kube-system) bound cluster-wide to the built-in
+  read-only `view` ClusterRole (excludes Secrets, and all write/exec/port-forward
+  verbs), a long-lived `service-account-token` Secret, and a small supplementary
+  ClusterRole for `nodes`/`namespaces`/`persistentvolumes` (read-only).
+- A root systemd oneshot (`agent-readonly-kubeconfig`, `After=k3s.service`) reads
+  the SA token+CA and writes an **agent-owned 0400** kubeconfig
+  (`/etc/rancher/k3s/agent-readonly.kubeconfig`, also `~agent/.kube/config`).
+- The agent HM home ships a `kubectl` wrapper pinning that kubeconfig.
+
+**Boundary preserved:** the agent can `get`/`list`/`logs`/`describe`/`events`
+cluster-wide but **cannot** read Secret/SealedSecret contents or `exec`/
+`port-forward`. So leak-tests, port-forwards, and unseal checks stay operator-run.
+The kubeconfig is 0400 (not world-readable), unlike the docker proxy port.
+
+**Verify (agent, after the operator switches):** `kubectl get nodes`,
+`kubectl -n whoami get pods`, and confirm `kubectl -n kube-system get secret X`
+is **denied** (proves the no-secrets boundary holds).
+
+---
+
 ### Task 0.3: Install cert-manager and the internal-CA issuer
 
 **Files:**
