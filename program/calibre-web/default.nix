@@ -8,7 +8,8 @@
     listen.ip = "0.0.0.0";
     options = {
       enableBookUploading = true;
-      calibreLibrary = "/data/Media/books";
+      # calibreLibrary is a host-specific path, set by the importing machine
+      # (globalhawk derives it from facts.mediaRoot).
     };
   };
 }

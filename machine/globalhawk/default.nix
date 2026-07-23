@@ -103,6 +103,8 @@ in {
   # home-manager.users.${user} = import ./home.nix;
 
   users.users.calibre-web.extraGroups = ["_media"];
+  # Host-specific library path for the calibre-web program module.
+  services.calibre-web.options.calibreLibrary = "${facts.mediaRoot}/books";
 
   # Unprivileged user for running AI agents read-only; see
   # docs/superpowers/specs/2026-07-22-agent-user-sandbox-design.md.
