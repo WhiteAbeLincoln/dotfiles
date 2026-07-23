@@ -1,6 +1,6 @@
 # globalhawk service architecture — single-node k3s authored in Nix
 
-**Status:** design approved; implementation plan scoped to Phases 0–2
+**Status:** Phases 0–2 implemented (2026-07-22); immich (Phase 3) + calibre-web deferred
 **Date:** 2026-07-22
 
 > **Implementation scope (resolved during planning).** The first implementation
