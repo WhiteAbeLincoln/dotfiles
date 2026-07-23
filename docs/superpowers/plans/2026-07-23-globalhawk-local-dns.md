@@ -60,21 +60,32 @@ These produce four values the Nix tasks consume: the **Cloudflare-sealed token b
      ```
      Expected: JSON containing `"status": "active"` and `"success": true`.
 
-- [ ] **Step 0.4 — Seal the token into a `SealedSecret` (on globalhawk, needs the cluster).**
-  Uses the same kubeseal invocation that sealed the Mullvad key. The sealed-secrets controller is `sealed-secrets` in `kube-system` (from `machine/globalhawk/k3s.nix`); confirm the exact controller name with `sudo k3s kubectl -n kube-system get deploy | grep sealed` if the command below errors.
+- [ ] **Step 0.4 — Seal the token into the encrypted blob.**
+  The token becomes `encryptedData.api-token` in the SealedSecret authored in Task 4
+  (name `cloudflare-api-token`, namespace `cert-manager`, default *strict* scope). The
+  sealed-secrets controller is **`sealed-secrets-controller`** in `kube-system` (NOT
+  `sealed-secrets` — confirm with `kubectl -n kube-system get deploy | grep sealed`).
+
+  Sealing is easiest **offline** with `kubeseal --raw` — the plaintext token never
+  touches disk or the cluster. First get the controller's *public* cert (safe to
+  share; it's only the encryption half), which needs cluster read access once:
   ```bash
-  sudo k3s kubectl create secret generic cloudflare-api-token \
-    --namespace cert-manager \
-    --from-literal=api-token="$CF_TOKEN" \
-    --dry-run=client -o yaml \
-  | kubeseal --format yaml \
-      --controller-namespace kube-system \
-      --controller-name sealed-secrets \
-  | tee /tmp/cf-sealedsecret.yaml
-  # Extract just the encrypted blob you will paste into Nix (Task 4):
-  nix run nixpkgs#yq-go -- '.spec.encryptedData.api-token' /tmp/cf-sealedsecret.yaml
+  # As abe (root kubeconfig), or any read-capable kubeconfig:
+  sudo env KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubeseal \
+    --controller-namespace kube-system --controller-name sealed-secrets-controller \
+    --fetch-cert > /tmp/cf-sealed-cert.pem
   ```
-  Expected: a long `AgB…`-style base64 string. **Save this blob** — it goes into `k8s/infra/cert-manager.nix` in Task 4.
+  Then seal (no sudo, no cluster needed):
+  ```bash
+  CF_TOKEN=$(rbw get -f 'globalhawk-dns01-cert token' dash.cloudflare.com)
+  printf '%s' "$CF_TOKEN" | kubeseal --raw --scope strict \
+    --namespace cert-manager --name cloudflare-api-token \
+    --cert /tmp/cf-sealed-cert.pem
+  ```
+  **Use `printf '%s'`, never `echo`** — a trailing newline gets encrypted into the
+  token and silently corrupts it. The output is a long `AgA…` blob. **Save it** — it
+  goes into `k8s/infra/cert-manager.nix` `cloudflareTokenSealed` in Task 4. The
+  `--scope strict` + name + namespace must match that SealedSecret exactly.
 
 - [ ] **Step 0.5 — Generate the AdGuard admin password hash.**
   ```bash
