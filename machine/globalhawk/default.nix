@@ -20,13 +20,6 @@
     ];
   };
   linuxPkgs = pkgs.linuxKernel.packages.linux_6_12;
-  vuetorrent = pkgs.callPackage (
-    {fetchzip}:
-      fetchzip {
-        url = "https://github.com/VueTorrent/VueTorrent/releases/download/v2.24.2/vuetorrent.zip";
-        sha256 = "sha256-kjNeOk5Yyum5uSqn7EZHL6HOSfkEucr0BnGNVSTaOK4=";
-      }
-  ) {};
 in {
   imports = [
     # Include the results of the hardware scan.
@@ -130,11 +123,28 @@ in {
     };
   };
 
-  # Open ports in the firewall.
-  # networking.firewall.allowedTCPPorts = [ ... ];
-  # networking.firewall.allowedUDPPorts = [ ... ];
-  # Or disable the firewall altogether.
-  networking.firewall.enable = false;
+  # Firewall re-enabled after the torrent/arr migration (was wide open). Traefik
+  # fronts every migrated app on 80/443, so the old per-service high ports are
+  # gone. ssh/Samba/xrdp/avahi(mDNS) open their own ports via their modules;
+  # Tailscale manages its interface. k3s's internal ports (6443 API, 10250
+  # kubelet, flannel 8472) are not exposed on the LAN — only the CNI interfaces
+  # are trusted so in-cluster pod/service/DNS traffic keeps flowing.
+  networking.firewall = {
+    enable = true;
+    # k3s/flannel traffic can trip strict reverse-path filtering; loosen it so
+    # pod/service packets aren't silently dropped.
+    checkReversePath = "loose";
+    trustedInterfaces = ["cni0" "flannel.1" "tailscale0"];
+    allowedTCPPorts = [
+      80 # Traefik ingress (HTTP -> HTTPS)
+      443 # Traefik ingress (HTTPS)
+      8083 # calibre-web (still native, deferred)
+      config.services.immich-custom.port # immich (still on docker, deferred)
+    ];
+    allowedUDPPorts = [
+      8472 # flannel VXLAN (k3s CNI)
+    ];
+  };
 
   # Set your time zone.
   time.timeZone = "America/Denver";
@@ -202,7 +212,6 @@ in {
     tmux
     calibre
     vlc
-    vuetorrent
     # xterm-ghostty terminfo, system-wide so SSH sessions resolve it for every
     # user (abe, the sandbox agent, root) without a per-user `tic` copy.
     ghostty.terminfo
@@ -304,81 +313,19 @@ in {
     };
   };
 
-  # ensure that the torrent network is created
-  systemd.services.init-torrent-network = {
-    description = "Create the network bridge for torrent.";
-    after = ["network.target"];
-    wantedBy = ["multi-user.target"];
-    serviceConfig.Type = "oneshot";
-    script = ''
-      check=$(${pkgs.docker}/bin/docker network ls | grep "torrent" || true)
-      if [ -z "$check" ]; then
-        ${pkgs.docker}/bin/docker network create torrent
-      else
-        echo "torrent network already exists in docker"
-      fi
-    '';
-  };
-
-  # TODO: ensure our folders exist for these containers
-  # using systemd.tmpfiles.rules
+  # The `torrent` docker network + its init unit are gone with the torrent stack's
+  # move to k3s. The docker `torrent` network may be orphaned on the host: remove
+  # it once with `docker network rm torrent`.
 
   virtualisation.docker.enable = true;
   users.extraGroups.docker.members = [user];
   # podman is having issues resolving containers by name
   virtualisation.oci-containers.backend = "docker";
   virtualisation.oci-containers.containers = {
-    # https://gist.github.com/1player/dbdafdd197e1623f5831108fc0cc973a
-    vpn = {
-      image = "qmcgaw/gluetun";
-      extraOptions = [
-        "--network=torrent"
-        "--cap-add=NET_ADMIN"
-        "--device=/dev/net/tun"
-        "--label=autoheal=true"
-        # "--sysctl=net.ipv6.conf.all.disable_ipv6=0"
-      ];
-      environment = {
-        TZ = config.time.timeZone;
-        VPN_TYPE = "wireguard";
-        VPN_SERVICE_PROVIDER = "mullvad";
-        WIREGUARD_PRIVATE_KEY = secrets.wireguard_private_key;
-        WIREGUARD_ADDRESSES = "10.69.148.156/32,fc00:bbbb:bbbb:bb01::6:949b/128";
-        SERVER_CITIES = "stockholm,amsterdam";
-      };
-      ports = [
-        "8000:8000" # vpn control server
-        "6881:6881/udp" # qbittorrent listening port
-        "6881:6881/tcp" # qbittorrent listening port
-        "9091:9091" # qbittorrent web-ui
-      ];
-    };
-    # prowlarr/radarr/sonarr migrated to k3s (k8s/apps/arr.nix); their config
-    # dirs moved in place. qbittorrent + vpn remain here until Phase 2.
-    qbittorrent = {
-      image = "lscr.io/linuxserver/qbittorrent:latest";
-      extraOptions = [
-        # "--restart=unless-stopped"
-        "--network=container:vpn"
-        # "--health-cmd" "curl https://am.i.mullvad.net/connected | grep -q 'You are connected'"
-        "--label=autoheal=true"
-      ];
-      environment = {
-        TZ = config.time.timeZone;
-        PUID = toString config.users.users._media.uid;
-        PGID = toString config.users.groups._media.gid;
-        WEBUI_PORT = "9091";
-        TORRENTING_PORT = "6881";
-      };
-      volumes = [
-        "/data/Media/docker-services/torrent-config/qbittorrent:/config"
-        "${vuetorrent}:/vuetorrent"
-        # make sure that the mapped path in the container matches what radarr and sonarr expect
-        # https://wiki.servarr.com/radarr/system#docker-bad-remote-path-mapping
-        "/data/Media/torrents/downloads:/data/torrents/downloads"
-      ];
-      dependsOn = ["vpn"];
-    };
+    # The torrent stack (vpn/gluetun + qbittorrent + prowlarr/radarr/sonarr)
+    # migrated to k3s: the arr apps as Deployments and qbittorrent+gluetun as the
+    # shared-netns torrent-vpn pod (k8s/apps/{arr,torrent}.nix). Only immich
+    # remains on docker, pending its own migration.
     # minecraft-tina = {
     #   image = "itzg/minecraft-server";
     #   ports = [ "25565:25565" ];
@@ -416,18 +363,6 @@ in {
     #  };
     #  };
   };
-
-  networking.firewall.allowedTCPPorts = [
-    8080
-    7878
-    8989
-    9091
-    9696
-    6881
-    config.services.photoprism.port
-    8083
-  ];
-  networking.firewall.allowedUDPPorts = [6881];
 
   # }}}
 
