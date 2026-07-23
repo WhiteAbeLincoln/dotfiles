@@ -1,7 +1,16 @@
 # globalhawk service architecture — single-node k3s authored in Nix
 
-**Status:** design, awaiting review
+**Status:** design approved; implementation plan scoped to Phases 0–2
 **Date:** 2026-07-22
+
+> **Implementation scope (resolved during planning).** The first implementation
+> plan covers **Phases 0–2** (foundation → arr stack → torrent+VPN pod) plus a
+> *partial* decommission of the migrated docker workloads and firewall re-enable.
+> **Immich (Phase 3) is deferred** to a follow-on plan because its Postgres state
+> is the highest-risk move; its `oci-containers` block and bridge network stay in
+> place until then. **calibre-web stays NixOS-native for now** (see boundary
+> table) — it is not a container today, so migrating it is a re-authoring task,
+> deferred alongside the other "future apps."
 
 ## Goal
 
@@ -98,8 +107,14 @@ NixOS-native — orchestrating them would add friction for no benefit.
 |---|---|
 | ZFS, bootloader, sshd, Tailscale, Avahi | prowlarr, radarr, sonarr |
 | Samba, desktop/xrdp, AI-agent-sandbox | qbittorrent + gluetun (one pod) |
-| **Plex** (keeps direct `/dev/dri`) | immich (migrated last) |
-| pipewire, smartd, restic, firewall | calibre-web, homebridge, future apps |
+| **Plex** (keeps direct `/dev/dri`) | immich (deferred to follow-on plan) |
+| pipewire, smartd, restic, firewall | homebridge, future apps |
+| **calibre-web** (native today; deferred) | |
+
+calibre-web is a NixOS-native `services.calibre-web` service today, not a
+container — so it is treated like Plex for now (stays native, optionally surfaced
+via `ExternalName` + ingress later). Re-authoring it as a k8s workload is a
+follow-on, not part of Phases 0–2.
 
 **Plex is deliberately native** — it is difficult to run under k3s (GPU, its own
 networking assumptions) and gains nothing from orchestration. It is *surfaced* in-cluster
@@ -203,10 +218,33 @@ an internal CA** — HTTP-01 cannot work. This design does not preclude either.
 - Plex transcoding intact (native, unaffected) and reachable via its `ExternalName` route.
 - `nmap` from another LAN host shows only the intended open ports (Phase 4 gate).
 
-## Open items to resolve during planning
+## Open items — resolved during planning
 
-- Ingress controller: keep k3s's bundled Traefik, or replace with ingress-nginx? (Traefik
-  is already present and its middleware model suits forward-auth; leaning keep.)
-- Immich packaging under nixidy: adapt the upstream Helm chart via `fromCRDModule`/chart
-  generators, or hand-author the StatefulSet + services? Decided in Phase 3.
-- Exact firewall rule set and which interface k3s internal ports bind to.
+- **Ingress controller: keep k3s's bundled Traefik.** Already present, nothing to
+  install, and its middleware model suits the future forward-auth/SSO. ingress-nginx
+  was rejected as extra wiring with no near-term benefit on a single node.
+- **cert-manager issuer (Phase 0): internal CA (self-signed).** A self-signed
+  `ClusterIssuer` mints an internal root CA that signs per-service certs. This works
+  immediately with no external credentials (browsers/clients trust the root CA once
+  imported). **DNS-01 / Let's Encrypt is explicitly deferred** to the SSO/ingress
+  follow-on spec — it needs a DNS-provider API token and provider choice that this
+  plan does not take on. The `ClusterIssuer` kind is the swap point; moving to DNS-01
+  later is additive.
+- **Immich packaging under nixidy** (adapt the upstream Helm chart via
+  `fromCRDModule`/chart generators vs. hand-author the StatefulSet + services): still
+  open, but **deferred with Phase 3** and out of scope for this plan.
+
+## Partial decommission & firewall (this plan)
+
+Because immich stays on `oci-containers`, the Phase 4 decommission is done
+*partially* at the end of Phase 2:
+
+- Remove the torrent/arr `oci-containers` (vpn, qbittorrent, prowlarr, radarr,
+  sonarr), the docker `torrent` network, and the `init-torrent-network` systemd unit.
+- **Re-enable `networking.firewall`** with the locked-down rule set, but keep
+  immich's port open until immich migrates. The blanket per-service ports
+  (7878/8989/9091/9696/6881/8080) are removed; only 22, 80/443, Samba (LAN),
+  Tailscale, xrdp, and immich's port remain.
+- Leave immich's `oci-containers` block, its `immich-bridge` network, and its
+  `init-immich-network` unit untouched. The *final* full lockdown (dropping
+  immich's port, `nmap` gate) lands with the immich follow-on plan.
