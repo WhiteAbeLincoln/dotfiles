@@ -43,7 +43,7 @@ These produce four values the Nix tasks consume: the **Cloudflare-sealed token b
 
 - [ ] **Step 0.3 — Mint a scoped Cloudflare API token.**
   1. Cloudflare → **My Profile** → **API Tokens** → **Create Token** → template **Edit zone DNS** → **Use template**.
-  2. **Permissions:** `Zone` / `DNS` / `Edit` (from the template).
+  2. **Permissions:** the token needs **two** — `Zone` → `DNS` → **Edit** (create/delete the challenge TXT) **and** `Zone` → `Zone` → **Read** (so cert-manager can resolve the zone ID). The "Edit zone DNS" template bundles both; if you build the policy by hand, `DNS:Edit` alone is NOT enough — it fails at issuance with a zone-lookup 403. Leave all other rows (Zone Custom Asset, Zone DNS Settings, Zone Settings, Zone Versioning) unchecked.
   3. **Zone Resources:** `Include` → `Specific zone` → your domain.
   4. **TTL:** leave blank = **no expiry** (avoids future rotation).
   5. Create, copy the token, then verify it:
