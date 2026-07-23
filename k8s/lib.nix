@@ -34,17 +34,24 @@
           template = {
             metadata.labels = labels;
             spec = {
-              securityContext = {
-                runAsUser = mediaUid;
-                runAsGroup = mediaUid;
-                fsGroup = mediaUid;
-              };
+              # LinuxServer images START as root and drop to PUID/PGID via s6;
+              # forcing runAsUser breaks their init (mods, permission fixups). So
+              # run as root + PUID/PGID env, with fsGroup for volume ownership.
+              securityContext.fsGroup = mediaUid;
               containers."${name}" = {
                 inherit image;
                 env = [
                   {
                     name = "TZ";
                     value = "America/Denver";
+                  }
+                  {
+                    name = "PUID";
+                    value = toString mediaUid;
+                  }
+                  {
+                    name = "PGID";
+                    value = toString mediaUid;
                   }
                 ];
                 ports.http.containerPort = port;

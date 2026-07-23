@@ -60,6 +60,16 @@ in {
               gluetun = {
                 image = "qmcgaw/gluetun";
                 securityContext.capabilities.add = ["NET_ADMIN"];
+                # gluetun self-heals its tunnel; this restarts the container as a
+                # backstop if the VPN stays down (the "silent drop" case) so the
+                # netns's WireGuard interface is rebuilt.
+                livenessProbe = {
+                  exec.command = ["/gluetun-entrypoint" "healthcheck"];
+                  initialDelaySeconds = 30;
+                  periodSeconds = 30;
+                  timeoutSeconds = 10;
+                  failureThreshold = 4;
+                };
                 volumeMounts = [
                   {
                     name = "tun";
@@ -110,11 +120,35 @@ in {
               # WebUI\RootFolder=/vuetorrent config).
               qbittorrent = {
                 image = "lscr.io/linuxserver/qbittorrent:latest";
-                securityContext = {
-                  runAsUser = mediaUid;
-                  runAsGroup = mediaUid;
-                };
+                # No runAsUser: LinuxServer starts as root and drops to PUID/PGID
+                # via s6 (required for the VueTorrent docker mod to install).
                 ports.webui.containerPort = 9091;
+                # Ready only when the WebUI answers, so the ingress doesn't 502
+                # during restarts / the VueTorrent mod install.
+                readinessProbe = {
+                  httpGet = {
+                    path = "/";
+                    port = 9091;
+                  };
+                  initialDelaySeconds = 20;
+                  periodSeconds = 15;
+                  timeoutSeconds = 8;
+                  failureThreshold = 4;
+                };
+                # Restart qbit if it can't reach the internet through the VPN for a
+                # sustained window (after gluetun has had time to recover) — the
+                # automated version of the old manual "restart vpn, then qbit".
+                livenessProbe = {
+                  exec.command = [
+                    "sh"
+                    "-c"
+                    "wget -q -T 8 -O /dev/null http://connectivitycheck.gstatic.com/generate_204 || curl -fsS -m 8 -o /dev/null http://connectivitycheck.gstatic.com/generate_204"
+                  ];
+                  initialDelaySeconds = 90;
+                  periodSeconds = 30;
+                  timeoutSeconds = 12;
+                  failureThreshold = 6;
+                };
                 env = [
                   {
                     name = "TZ";
