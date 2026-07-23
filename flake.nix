@@ -26,6 +26,10 @@
     # prebuilt against llm-agents' own pinned nixpkgs, so following ours would
     # rebuild from source and miss cache.numtide.com.
     llm-agents.url = "github:numtide/llm-agents.nix";
+    # nixidy: author k8s workloads as Nix modules, render to plain YAML for
+    # delivery via services.k3s.manifests (no ArgoCD, no Helm). Tracks its own
+    # nixpkgs deliberately — its CRD generators pin against it.
+    nixidy.url = "github:arnarg/nixidy/latest";
     # virby.url = "github:quinneden/virby-nix-darwin";
   };
 
@@ -98,6 +102,22 @@
           };
         };
       in {
+        # nixidy environment for globalhawk's in-cluster workloads. Rendered to
+        # plain YAML and consumed by machine/globalhawk/k3s.nix via
+        # services.k3s.manifests — ArgoCD is never involved.
+        nixidyEnvs.x86_64-linux = inputs.nixidy.lib.mkEnvs {
+          pkgs = nixpkgs.legacyPackages."x86_64-linux";
+          envs.globalhawk.modules = [
+            ./k8s
+            {
+              # Inject the home domain from the git-crypt'd secrets so no ingress
+              # hostname literal lands in a committed unencrypted file.
+              _module.args.homeDomain =
+                (import ./secrets/globalhawk.nix).homeDomain;
+            }
+          ];
+        };
+
         nixosConfigurations.globalhawk = nixpkgs.lib.nixosSystem {
           specialArgs = sysArgs;
           modules = [
