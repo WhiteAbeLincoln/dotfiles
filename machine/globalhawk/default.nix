@@ -35,6 +35,7 @@ in {
     ./disks.nix
     ./backup.nix
     ./k3s.nix
+    ./adguard.nix
     ../../modules/nixos/ai-agent-sandbox.nix
   ];
 
@@ -125,6 +126,23 @@ in {
     };
   };
 
+  # Static LAN IP on the wired interface. The Fiber router only leases .100+, so
+  # a static below the pool cannot collide — no DHCP reservation needed. AdGuard
+  # answers the ingress wildcard with facts.lanIp, so it must be stable. Host
+  # resolution uses public resolvers directly (independent of AdGuard, so the
+  # host still resolves if AdGuard restarts). wlo1 stays on DHCP as a fallback.
+  networking.interfaces.${facts.lanInterface} = {
+    useDHCP = false;
+    ipv4.addresses = [
+      {
+        address = facts.lanIp;
+        prefixLength = 24;
+      }
+    ];
+  };
+  networking.defaultGateway = facts.lanGateway;
+  networking.nameservers = ["1.1.1.1" "9.9.9.9"];
+
   # Firewall re-enabled after the torrent/arr migration (was wide open). Traefik
   # fronts every migrated app on 80/443, so the old per-service high ports are
   # gone. ssh/Samba/xrdp/avahi(mDNS) open their own ports via their modules;
@@ -146,6 +164,14 @@ in {
     allowedUDPPorts = [
       8472 # flannel VXLAN (k3s CNI)
     ];
+  };
+
+  # AdGuard Home DNS: reachable on the LAN interface and (implicitly, via the
+  # trusted tailscale0 interface) the tailnet. The web UI (:3000) is deliberately
+  # NOT opened here, so it stays off the LAN.
+  networking.firewall.interfaces.${facts.lanInterface} = {
+    allowedTCPPorts = [53];
+    allowedUDPPorts = [53];
   };
 
   # Set your time zone.
@@ -262,8 +288,14 @@ in {
   services.xrdp.defaultWindowManager = "startplasma-x11";
   services.xrdp.openFirewall = true;
 
-  # stuck behind a double-NAT with no router control. This helps
-  services.tailscale.enable = true;
+  # stuck behind a double-NAT with no router control. useRoutingFeatures
+  # "server" enables IP forwarding so globalhawk can advertise the LAN subnet as
+  # a Tailscale route (operator runs `tailscale set --advertise-routes` once), so
+  # the ingress names resolve+connect the same on the LAN and over the tailnet.
+  services.tailscale = {
+    enable = true;
+    useRoutingFeatures = "server";
+  };
 
   # make sure mdns/.local addresses are working
   services.avahi = {

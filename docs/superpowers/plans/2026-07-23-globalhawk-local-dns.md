@@ -93,9 +93,11 @@ These produce four values the Nix tasks consume: the **Cloudflare-sealed token b
   ```
   Expected: `admin:$2y$05$…`. **Take only the part after `admin:`** (the `$2y$…` bcrypt hash).
 
-- [ ] **Step 0.6 — Reserve globalhawk's LAN IP and confirm the subnet (Google Fiber app).**
-  1. In the Fiber app, create a **DHCP reservation** binding globalhawk's LAN MAC to a fixed IP. Record that IP (this is the placeholder `192.168.1.50`).
-  2. Note the LAN subnet/CIDR (placeholder `192.168.1.0/24`). ⚠️ If it is the ultra-common `192.168.0.0/24` or `192.168.1.0/24`, remote subnet-route collisions are likelier (see design); nothing to do now, just be aware.
+- [ ] **Step 0.6 — Pick globalhawk's static LAN IP + confirm the subnet.**
+  **No router config needed.** globalhawk is assigned a **static IP in Nix** (`default.nix`, from `facts.lanIp`) rather than a DHCP reservation. The Fiber router only leases from `.100` up, so any address in `.2–.99` is collision-free without a reservation.
+  1. Choose an address below the DHCP pool floor (placeholder `192.168.1.50`) and set `facts.lanIp`. AdGuard answers the wildcard with it, and it's set statically on `facts.lanInterface` (`enp1s0`).
+  2. Confirm `facts.lanSubnet` (`192.168.1.0/24`) and `facts.lanGateway` (`192.168.1.1`). ⚠️ If the subnet is the ultra-common `192.168.0/1.0/24`, remote subnet-route collisions are likelier (see design); just be aware.
+  3. ⚠️ Activation changes globalhawk's wired IP from its current DHCP lease to the static value — have Tailscale or console access ready when abe runs `switch` (Task 7) so a dropped SSH session isn't a lockout.
 
 - [ ] **Step 0.7 — Add the two secret values to git-crypt'd secrets.**
   Edit `secrets/globalhawk.nix` (decrypted in the working tree) and add, inside the top-level attrset:

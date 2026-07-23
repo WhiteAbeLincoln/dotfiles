@@ -40,10 +40,12 @@
   hostGatewayIp = "10.42.0.1";
 
   # --- lan ---
-  # globalhawk's reserved LAN IP (DHCP reservation in the Fiber app). AdGuard
-  # answers the `*${ingressSuffix}` wildcard with this address. OPERATOR: must
-  # match the reservation.
+  # globalhawk's static LAN IP, set on lanInterface in default.nix. The Fiber
+  # router only leases .100+, so a static below the pool can't collide — no DHCP
+  # reservation needed. AdGuard answers the ingress wildcard with this address,
+  # so it must be stable.
   lanIp = "192.168.1.50";
+  lanGateway = "192.168.1.1";
   # The LAN CIDR globalhawk advertises as a Tailscale subnet route so the same
   # name resolves+connects remotely (topology 2c). OPERATOR: confirm.
   lanSubnet = "192.168.1.0/24";
