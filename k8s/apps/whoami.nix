@@ -1,5 +1,8 @@
-# Phase-0 end-to-end proof: a stateless echo server. Exists only to validate the
-# author->render->deliver->apply->reach chain; removed once real apps are migrated.
+# Stateless echo server kept as a debugging canary: enable its import in
+# k8s/default.nix to test the ingress + cert-manager + routing path in isolation
+# (is a problem infra-wide or app-specific?) without touching a real service.
+# Disabled by default. Originally the Phase-0 end-to-end proof of the
+# author->render->deliver->apply->reach chain.
 {
   lib,
   ingressSuffix,
