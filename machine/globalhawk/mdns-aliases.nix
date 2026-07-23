@@ -1,28 +1,35 @@
-# Publish mDNS aliases so <app>-globalhawk.local resolves on the LAN (phones,
+# Publish mDNS aliases so every k8s ingress host resolves on the LAN (phones,
 # laptops, avahi-resolve). avahi only advertises the host's own name
 # (globalhawk.local); each ingress hostname is a *separate* single-label .local
-# name that must be published explicitly. avahi-publish only does address
-# records (no CNAME), so we publish A records at this host's current IPv4,
-# re-resolved on every (re)start. Keep `apps` in sync with the k8s ingresses.
+# name that must be published explicitly.
+#
+# The alias list is DERIVED from the nixidy env's Ingress resources — add an app
+# with an ingress in k8s/ and its alias is published automatically, no edit here.
+# avahi-publish only does address records (no CNAME), so we publish A records at
+# this host's current IPv4, re-resolved on every (re)start.
 {
   config,
   pkgs,
   lib,
+  inputs,
   ...
 }: let
-  ingressSuffix = (import ../../secrets/globalhawk.nix).ingressSuffix;
-  apps = [
-    "whoami"
-    "plex"
-    "prowlarr"
-    "radarr"
-    "sonarr"
-    "qbittorrent"
-  ];
-  aliases = map (a: a + ingressSuffix) apps;
+  env = inputs.self.nixidyEnvs.x86_64-linux.globalhawk;
+  # Every rendered k8s object across all applications.
+  allObjects = lib.concatMap (app: app.objects) (lib.attrValues env.config.applications);
+  # Hosts from every Ingress rule.
+  ingressHosts =
+    lib.concatMap (
+      o:
+        if (o.kind or "") == "Ingress"
+        then lib.concatMap (rule: lib.optional (rule ? host) rule.host) (o.spec.rules or [])
+        else []
+    )
+    allObjects;
+  aliases = lib.unique ingressHosts;
 in {
   systemd.services.avahi-aliases = {
-    description = "Publish <app>${ingressSuffix} mDNS aliases pointing at this host";
+    description = "Publish k8s ingress mDNS aliases pointing at this host";
     after = ["avahi-daemon.service" "network-online.target"];
     wants = ["avahi-daemon.service" "network-online.target"];
     wantedBy = ["multi-user.target"];
