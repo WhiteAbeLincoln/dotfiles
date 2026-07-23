@@ -20,6 +20,6 @@
     ./apps/whoami.nix
     ./apps/plex.nix
     ./apps/arr.nix
-    # ./apps/torrent.nix
+    ./apps/torrent.nix
   ];
 }

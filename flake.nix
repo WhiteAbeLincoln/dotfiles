@@ -109,12 +109,18 @@
           pkgs = nixpkgs.legacyPackages."x86_64-linux";
           envs.globalhawk.modules = [
             ./k8s
-            {
-              # Inject the ingress host suffix from the git-crypt'd secrets so no
-              # hostname literal lands in a committed unencrypted file.
-              _module.args.ingressSuffix =
-                (import ./secrets/globalhawk.nix).ingressSuffix;
-            }
+            (let
+              s = import ./secrets/globalhawk.nix;
+            in {
+              # Inject secret-derived values from the git-crypt'd secrets so no
+              # literal (ingress hostname, VPN config) lands in a committed
+              # unencrypted file.
+              _module.args = {
+                ingressSuffix = s.ingressSuffix;
+                wireguardAddresses = s.wireguard_addresses;
+                vpnServerCities = s.vpn_server_cities;
+              };
+            })
           ];
         };
 
