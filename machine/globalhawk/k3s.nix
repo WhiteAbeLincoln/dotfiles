@@ -39,7 +39,9 @@ in {
     };
   };
 
-  # kubectl for the operator without sudo gymnastics; k3s writes this file.
+  # kubectl/kubeseal/helm on PATH for the operator. No global KUBECONFIG env: the
+  # admin config at /etc/rancher/k3s/k3s.yaml is root-only, so operators use
+  # `sudo k3s kubectl ...` (which finds it automatically), and the sandbox agent
+  # user gets its own read-only kubeconfig via services.aiAgentSandbox.k3s.
   environment.systemPackages = [pkgs.kubectl pkgs.kubernetes-helm pkgs.kubeseal];
-  environment.variables.KUBECONFIG = "/etc/rancher/k3s/k3s.yaml";
 }

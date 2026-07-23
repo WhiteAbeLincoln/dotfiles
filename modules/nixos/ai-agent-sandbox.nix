@@ -93,6 +93,30 @@ in {
         '';
       };
     };
+
+    k3s = {
+      enable = mkEnableOption "read-only kubectl access for the sandbox user via a view-bound ServiceAccount";
+
+      clusterRole = mkOption {
+        type = types.str;
+        default = "view";
+        description = ''
+          The ClusterRole the sandbox user's ServiceAccount is bound to
+          cluster-wide. Defaults to the built-in read-only `view` role, which
+          excludes Secrets and every write/exec/port-forward verb.
+        '';
+      };
+
+      kubeconfig = mkOption {
+        type = types.str;
+        default = "/etc/rancher/k3s/agent-readonly.kubeconfig";
+        description = ''
+          Where the generated read-only kubeconfig is written. Owned by the sandbox
+          user, mode 0400 — the token is not world-readable (unlike the docker proxy
+          port), so other local accounts cannot use it.
+        '';
+      };
+    };
   };
 
   config = mkIf cfg.enable (mkMerge [
@@ -197,6 +221,137 @@ in {
         volumes = ["/var/run/docker.sock:/var/run/docker.sock:ro"];
         ports = ["${cfg.docker.listenAddress}:${toString cfg.docker.port}:2375"];
         environment = lib.mapAttrs (_: toString) cfg.docker.settings;
+      };
+    })
+
+    (mkIf cfg.k3s.enable {
+      # In-cluster RBAC delivered through the same services.k3s.manifests lane as
+      # every other workload: a ServiceAccount bound cluster-wide to the read-only
+      # `view` ClusterRole (no Secrets, no write/exec/port-forward), plus a
+      # long-lived token Secret (k8s >=1.24 no longer auto-mints SA tokens) and a
+      # small supplementary role for the cluster-scoped resources `view` omits.
+      services.k3s.manifests.agent-readonly-rbac.content = [
+        {
+          apiVersion = "v1";
+          kind = "ServiceAccount";
+          metadata = {
+            name = "agent-readonly";
+            namespace = "kube-system";
+          };
+        }
+        {
+          apiVersion = "rbac.authorization.k8s.io/v1";
+          kind = "ClusterRoleBinding";
+          metadata.name = "agent-readonly-view";
+          roleRef = {
+            apiGroup = "rbac.authorization.k8s.io";
+            kind = "ClusterRole";
+            name = cfg.k3s.clusterRole;
+          };
+          subjects = [
+            {
+              kind = "ServiceAccount";
+              name = "agent-readonly";
+              namespace = "kube-system";
+            }
+          ];
+        }
+        {
+          apiVersion = "v1";
+          kind = "Secret";
+          metadata = {
+            name = "agent-readonly-token";
+            namespace = "kube-system";
+            annotations."kubernetes.io/service-account.name" = "agent-readonly";
+          };
+          type = "kubernetes.io/service-account-token";
+        }
+        {
+          apiVersion = "rbac.authorization.k8s.io/v1";
+          kind = "ClusterRole";
+          metadata.name = "agent-readonly-cluster";
+          rules = [
+            {
+              apiGroups = [""];
+              resources = ["nodes" "namespaces" "persistentvolumes"];
+              verbs = ["get" "list" "watch"];
+            }
+          ];
+        }
+        {
+          apiVersion = "rbac.authorization.k8s.io/v1";
+          kind = "ClusterRoleBinding";
+          metadata.name = "agent-readonly-cluster";
+          roleRef = {
+            apiGroup = "rbac.authorization.k8s.io";
+            kind = "ClusterRole";
+            name = "agent-readonly-cluster";
+          };
+          subjects = [
+            {
+              kind = "ServiceAccount";
+              name = "agent-readonly";
+              namespace = "kube-system";
+            }
+          ];
+        }
+      ];
+
+      # Root oneshot: read the SA token+CA (via the admin kubeconfig) once k3s has
+      # populated them, and assemble an agent-owned 0400 read-only kubeconfig.
+      systemd.services.agent-readonly-kubeconfig = {
+        description = "Generate the read-only kubeconfig for the ${cfg.user} sandbox user";
+        after = ["k3s.service"];
+        wants = ["k3s.service"];
+        wantedBy = ["multi-user.target"];
+        path = [pkgs.kubectl pkgs.coreutils];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
+        script = ''
+          set -euo pipefail
+          admin=/etc/rancher/k3s/k3s.yaml
+          token=""
+          for _ in $(seq 1 60); do
+            token=$(kubectl --kubeconfig "$admin" -n kube-system get secret agent-readonly-token -o jsonpath='{.data.token}' 2>/dev/null | base64 -d || true)
+            [ -n "$token" ] && break
+            sleep 2
+          done
+          if [ -z "$token" ]; then
+            echo "agent-readonly ServiceAccount token was not populated in time" >&2
+            exit 1
+          fi
+          cafile=$(mktemp)
+          kubectl --kubeconfig "$admin" -n kube-system get secret agent-readonly-token -o jsonpath='{.data.ca\.crt}' | base64 -d > "$cafile"
+
+          out=${cfg.k3s.kubeconfig}
+          umask 077
+          rm -f "$out"
+          KUBECONFIG="$out" kubectl config set-cluster default --server=https://127.0.0.1:6443 --certificate-authority="$cafile" --embed-certs=true
+          KUBECONFIG="$out" kubectl config set-credentials agent-readonly --token="$token"
+          KUBECONFIG="$out" kubectl config set-context default --cluster=default --user=agent-readonly
+          KUBECONFIG="$out" kubectl config use-context default
+          rm -f "$cafile"
+
+          chown ${cfg.user}:users "$out"
+          chmod 0400 "$out"
+          install -d -o ${cfg.user} -g users -m 0700 /home/${cfg.user}/.kube
+          install -o ${cfg.user} -g users -m 0400 "$out" /home/${cfg.user}/.kube/config
+        '';
+      };
+
+      # Ship a `kubectl` that pins the read-only kubeconfig, robust in every
+      # context (bare `sudo -u`, login, under the wrapper) — mirrors the `docker`
+      # wrapper above rather than relying on session-var sourcing.
+      home-manager.users.${cfg.user} = {
+        home.sessionVariables.KUBECONFIG = cfg.k3s.kubeconfig;
+        home.packages = [
+          (pkgs.writeShellScriptBin "kubectl" ''
+            export KUBECONFIG="${cfg.k3s.kubeconfig}"
+            exec ${pkgs.kubectl}/bin/kubectl "$@"
+          '')
+        ];
       };
     })
   ]);

@@ -114,6 +114,7 @@ in {
   services.aiAgentSandbox = {
     enable = true;
     docker.enable = true;
+    k3s.enable = true;
   };
   # }}}
 
