@@ -16,13 +16,14 @@
   # to it so mDNS isn't advertised/resolved across docker bridges and k3s veths.
   lanInterface = "enp1s0";
 
-  # Suffix appended to each app name to form its ingress host: "<app>" + suffix.
-  # The interim value gives single-label mDNS names like "radarr-globalhawk.local"
-  # (dash, NOT a dotted subdomain — macOS mDNS resolves single-label .local but
-  # not sub.host.local). The real-domain follow-up swaps this to a dotted suffix
-  # like ".home.abewhite.dev" -> "radarr.home.abewhite.dev". Not secret (the
-  # hostname is already in networking.hostName and the avahi config).
-  ingressSuffix = "-globalhawk.local";
+  # Suffix appended to each app name to form its ingress host: "<app>" + suffix,
+  # e.g. "radarr" -> "radarr.h.abewhite.dev". The dedicated child label `h` keeps
+  # the wildcard cert + AdGuard rewrite scoped to the homelab and prevents the
+  # wildcard from shadowing anything on the apex. Resolved LAN-privately by
+  # AdGuard (machine/globalhawk/adguard.nix); never published to public DNS.
+  # Not secret (domains are public via WHOIS; internal names already appear in
+  # the committed k8s manifests). OPERATOR: set to your real registered domain.
+  ingressSuffix = ".h.abewhite.dev";
 
   # --- cluster network ---
   # k3s is *pinned* to these CIDRs (see k3s.nix), which is what makes the
@@ -35,4 +36,13 @@
   # /24 node mask, node 0 is 10.42.0.0/24 -> gateway 10.42.0.1. Pinning podCidr
   # is what guarantees this holds across a rebuild.
   hostGatewayIp = "10.42.0.1";
+
+  # --- lan ---
+  # globalhawk's reserved LAN IP (DHCP reservation in the Fiber app). AdGuard
+  # answers the `*${ingressSuffix}` wildcard with this address. OPERATOR: must
+  # match the reservation.
+  lanIp = "192.168.1.50";
+  # The LAN CIDR globalhawk advertises as a Tailscale subnet route so the same
+  # name resolves+connects remotely (topology 2c). OPERATOR: confirm.
+  lanSubnet = "192.168.1.0/24";
 }
