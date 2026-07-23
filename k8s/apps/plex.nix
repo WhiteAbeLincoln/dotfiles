@@ -8,9 +8,11 @@
   ...
 }: let
   host = "plex${ingressSuffix}";
-  # globalhawk's LAN InternalIP. DHCP-assigned today; if it churns, update here
-  # (or give the box a static reservation). Not secret (RFC1918).
-  nodeIp = "192.168.1.197";
+  # The host as seen from a pod: every pod's default gateway is the node's
+  # flannel bridge (cni0 = <podCIDR>.1). Stable across DHCP lease changes (it's a
+  # k3s cluster-CIDR constant, not the LAN IP), and cni0 is a trusted firewall
+  # interface. Plex listens on 0.0.0.0:32400 so it answers here.
+  hostGatewayIp = "10.42.0.1";
   plexPort = 32400;
 in {
   applications.plex = {
@@ -51,25 +53,26 @@ in {
         };
       };
     };
-    # Endpoints has no typed nixidy option here and must name-match the Service;
-    # authored raw (JSON is valid YAML). Port name "web" matches the Service port.
+    # EndpointSlice (the non-deprecated replacement for Endpoints) binds the
+    # selector-less Service to the off-cluster backend. The
+    # kubernetes.io/service-name label links it to the `plex` Service; the port
+    # name "web" matches the Service port. Authored raw (JSON is valid YAML).
     yamls = [
       (builtins.toJSON {
-        apiVersion = "v1";
-        kind = "Endpoints";
+        apiVersion = "discovery.k8s.io/v1";
+        kind = "EndpointSlice";
         metadata = {
           name = "plex";
           namespace = "plex";
+          labels."kubernetes.io/service-name" = "plex";
         };
-        subsets = [
+        addressType = "IPv4";
+        endpoints = [{addresses = [hostGatewayIp];}];
+        ports = [
           {
-            addresses = [{ip = nodeIp;}];
-            ports = [
-              {
-                name = "web";
-                port = plexPort;
-              }
-            ];
+            name = "web";
+            port = plexPort;
+            protocol = "TCP";
           }
         ];
       })
