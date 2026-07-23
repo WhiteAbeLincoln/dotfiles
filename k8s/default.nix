@@ -17,6 +17,7 @@
     # apps and infra modules are added task-by-task:
     ./infra/network.nix
     ./infra/cert-manager.nix
+    ./infra/wildcard-tls.nix
     # ./apps/whoami.nix  # debugging canary; enable to test ingress/TLS/routing
     ./apps/plex.nix
     ./apps/arr.nix
