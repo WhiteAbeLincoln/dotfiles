@@ -110,10 +110,10 @@
           envs.globalhawk.modules = [
             ./k8s
             {
-              # Inject the home domain from the git-crypt'd secrets so no ingress
+              # Inject the ingress host suffix from the git-crypt'd secrets so no
               # hostname literal lands in a committed unencrypted file.
-              _module.args.homeDomain =
-                (import ./secrets/globalhawk.nix).homeDomain;
+              _module.args.ingressSuffix =
+                (import ./secrets/globalhawk.nix).ingressSuffix;
             }
           ];
         };

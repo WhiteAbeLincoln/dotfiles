@@ -24,7 +24,7 @@
 ## File Structure
 
 **New — nixidy authoring lane (flake-output level, rendered to plain YAML):**
-- `k8s/default.nix` — the `globalhawk` environment root; sets `nixidy.target.*`, imports every app/infra module, receives `homeDomain` as a module arg.
+- `k8s/default.nix` — the `globalhawk` environment root; sets `nixidy.target.*`, imports every app/infra module, receives `ingressSuffix` as a module arg.
 - `k8s/lib.nix` — shared nixidy helpers (`mkArrApp`, label conventions).
 - `k8s/infra/cert-manager.nix` — the self-signed `ClusterIssuer` + internal-CA `Certificate` + CA `ClusterIssuer` (the controller itself installs via the NixOS lane).
 - `k8s/infra/network.nix` — the `media` namespace + default-deny `NetworkPolicy` boundary.
@@ -39,7 +39,7 @@
 **Modified:**
 - `flake.nix` — add the `nixidy` input and the `nixidyEnvs.x86_64-linux.globalhawk` output.
 - `machine/globalhawk/default.nix` — import `./k3s.nix`; (Phase 2) delete the torrent/arr `oci-containers`, the `torrent` docker network, and `init-torrent-network`.
-- `secrets/globalhawk.nix` — add `homeDomain` (git-crypt'd).
+- `secrets/globalhawk.nix` — add `ingressSuffix` (git-crypt'd).
 
 ---
 
@@ -54,7 +54,7 @@
 - Modify: `secrets/globalhawk.nix`
 
 **Interfaces:**
-- Produces: flake output `nixidyEnvs.x86_64-linux.globalhawk` (a nixidy environment; its rendered-YAML tree is at `.build.manifests`). `secrets.homeDomain : str`. `k8s/lib.nix` exports `{ mkArrApp, appLabels }` (bodies added in Task 1.2 — start with `appLabels` only).
+- Produces: flake output `nixidyEnvs.x86_64-linux.globalhawk` (a nixidy environment; its rendered-YAML tree is at `.environmentPackage`). `secrets.ingressSuffix : str`. `k8s/lib.nix` exports `{ mkArrApp, appLabels }` (bodies added in Task 1.2 — start with `appLabels` only).
 
 - [ ] **Step 1: Add the nixidy input**
 
@@ -64,12 +64,12 @@ In `flake.nix`, inside `inputs = { ... }`, add (nixidy tracks nixpkgs-unstable i
     nixidy.url = "github:arnarg/nixidy/latest";
 ```
 
-- [ ] **Step 2: Add `homeDomain` to the git-crypt'd secrets**
+- [ ] **Step 2: Add `ingressSuffix` to the git-crypt'd secrets**
 
-Confirm `secrets/globalhawk.nix` is encrypted first: `git-crypt status secrets/globalhawk.nix` must show `encrypted`. Then add the attribute (use the real home domain, e.g. the `.home.<domain>` base you intend for ingress hostnames — this file is encrypted, so the literal is safe here and ONLY here):
+Confirm `secrets/globalhawk.nix` is encrypted first: `git-crypt status secrets/globalhawk.nix` must show `encrypted`. Then add the attribute. It is a **suffix appended to each app name** to form the ingress host (`host = "<app>" + ingressSuffix`). The interim value gives single-label mDNS names (dash, not a dotted subdomain — macOS mDNS resolves `radarr-globalhawk.local` but not `radarr.globalhawk.local`). The real-domain follow-up swaps this to a dotted suffix (e.g. `.home.abewhite.dev`). Encrypted, so the literal is safe here and ONLY here:
 
 ```nix
-  homeDomain = "home.example.com";
+  ingressSuffix = "-globalhawk.local";
 ```
 
 - [ ] **Step 3: Create the nixidy helper stub `k8s/lib.nix`**
@@ -96,7 +96,7 @@ Confirm `secrets/globalhawk.nix` is encrypted first: `git-crypt status secrets/g
 # machine/globalhawk/k3s.nix — ArgoCD is NOT used, so nixidy.target is only a
 # formality required by the module system.
 {
-  homeDomain,
+  ingressSuffix,
   pkgs,
   lib,
   ...
@@ -130,8 +130,8 @@ In `flake.nix`, inside the top-level `flake = let ... in { ... }` block (where `
             {
               # Inject the home domain from the git-crypt'd secrets so no ingress
               # hostname literal lands in a committed unencrypted file.
-              _module.args.homeDomain =
-                (import ./secrets/globalhawk.nix).homeDomain;
+              _module.args.ingressSuffix =
+                (import ./secrets/globalhawk.nix).ingressSuffix;
             }
           ];
         };
@@ -423,21 +423,21 @@ gives every service a cert now, with DNS-01 left as an additive swap later."
 - Modify: `k8s/apps/whoami.nix` (add Ingress)
 
 **Interfaces:**
-- Consumes: `globalhawk-ca` ClusterIssuer (Task 0.3), `homeDomain` (Task 0.1), Traefik (k3s-bundled).
-- Produces: the Ingress annotation/host pattern (`<app>.${homeDomain}`, `ingressClassName = "traefik"`, `cert-manager.io/cluster-issuer = "globalhawk-ca"`) reused by every later app.
+- Consumes: `globalhawk-ca` ClusterIssuer (Task 0.3), `ingressSuffix` (Task 0.1), Traefik (k3s-bundled).
+- Produces: the Ingress annotation/host pattern (`<app>${ingressSuffix}`, `ingressClassName = "traefik"`, `cert-manager.io/cluster-issuer = "globalhawk-ca"`) reused by every later app.
 
 - [ ] **Step 1: Add the Ingress to `k8s/apps/whoami.nix`**
 
-Change the module signature to take `homeDomain`, and add an Ingress resource:
+Change the module signature to take `ingressSuffix`, and add an Ingress resource:
 
 ```nix
 {
   lib,
-  homeDomain,
+  ingressSuffix,
   ...
 }: let
   labels = (import ../lib.nix {inherit lib;}).appLabels "whoami";
-  host = "whoami.${homeDomain}";
+  host = "whoami${ingressSuffix}";
 in {
   applications.whoami = {
     namespace = "whoami";
@@ -487,11 +487,11 @@ export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 # cert issued?
 kubectl -n whoami get secret whoami-tls -o name   # expect: secret/whoami-tls
 # reachable through Traefik on 443 via Host header (DNS is a later spec):
-HOST="whoami.$(sudo grep -oP 'homeDomain\s*=\s*"\K[^"]+' /dev/stdin <<<"$(nix eval --raw .#nixidyEnvs.x86_64-linux.globalhawk --apply 'e: \"\"' 2>/dev/null || true)")"
+HOST="whoami.$(sudo grep -oP 'ingressSuffix\s*=\s*"\K[^"]+' /dev/stdin <<<"$(nix eval --raw .#nixidyEnvs.x86_64-linux.globalhawk --apply 'e: \"\"' 2>/dev/null || true)")"
 curl -sk --resolve "whoami.$(kubectl get ingress -n whoami whoami -o jsonpath='{.spec.rules[0].host}' | cut -d. -f2-):443:127.0.0.1" \
   "https://$(kubectl get ingress -n whoami whoami -o jsonpath='{.spec.rules[0].host}')" | grep -qi Hostname && echo OK-INGRESS-TLS
 ```
-Expected: `whoami-tls` secret exists (cert-manager issued it from `globalhawk-ca`); `OK-INGRESS-TLS` printed (Traefik terminated TLS and routed to whoami). Simpler manual check: `curl -sk -H "Host: whoami.<domain>" https://127.0.0.1 | grep Hostname`.
+Expected: `whoami-tls` secret exists (cert-manager issued it from `globalhawk-ca`); `OK-INGRESS-TLS` printed (Traefik terminated TLS and routed to whoami). Simpler manual check: `curl -sk -H "Host: whoami-globalhawk.local" https://127.0.0.1 | grep Hostname`.
 
 - [ ] **Step 3: Commit**
 
@@ -572,8 +572,8 @@ secrets are safe to keep in the world-readable store and in git."
 - Modify: `k8s/default.nix` (uncomment plex import)
 
 **Interfaces:**
-- Consumes: `globalhawk-ca`, `homeDomain`, Traefik.
-- Produces: `https://plex.<domain>` routing to the native Plex on the host. No SSO/forward-auth (Plex is an SSO exception by design).
+- Consumes: `globalhawk-ca`, `ingressSuffix`, Traefik.
+- Produces: `https://plex-globalhawk.local` routing to the native Plex on the host. No SSO/forward-auth (Plex is an SSO exception by design).
 
 - [ ] **Step 1: Confirm the native Plex listen port**
 
@@ -590,10 +590,10 @@ An `ExternalName` Service can't be a normal Ingress backend directly with a port
 # table as everything else, per the design's host<->cluster boundary.
 {
   lib,
-  homeDomain,
+  ingressSuffix,
   ...
 }: let
-  host = "plex.${homeDomain}";
+  host = "plex${ingressSuffix}";
   # The host's in-cluster-reachable address. k3s pods can reach the node via its
   # LAN IP; set this to globalhawk's stable LAN IP.
   nodeIp = "127.0.0.1"; # replaced in Step 3 with the real node IP
@@ -674,7 +674,7 @@ Replace `nodeIp = "127.0.0.1"` with that address. (Using the node IP rather than
 nix fmt && sudo nixos-rebuild build --flake .#globalhawk
 sudo nixos-rebuild switch --flake .#globalhawk
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-curl -sk -H "Host: plex.<domain>" https://127.0.0.1/identity | grep -qi 'MediaContainer' && echo OK-PLEX-INGRESS
+curl -sk -H "Host: plex-globalhawk.local" https://127.0.0.1/identity | grep -qi 'MediaContainer' && echo OK-PLEX-INGRESS
 ```
 Expected: `OK-PLEX-INGRESS` (Traefik routed to native Plex's `/identity`, which returns a `MediaContainer` XML doc). Confirm native Plex playback/transcode is unaffected (it was never touched).
 
@@ -787,7 +787,7 @@ app lands in the namespace."
 - Modify: `k8s/default.nix` (uncomment arr import)
 
 **Interfaces:**
-- Consumes: `media` namespace (Task 1.1), `globalhawk-ca`, `homeDomain`, `_media` uid/gid `994`.
+- Consumes: `media` namespace (Task 1.1), `globalhawk-ca`, `ingressSuffix`, `_media` uid/gid `994`.
 - Produces: `mkArrApp { name; image; port; extraVolumes ? []; }` → a nixidy resources fragment (Deployment + Service + Ingress). Config dir convention: `/data/Media/docker-services/torrent-config/<name>` → `/config`. Reused by radarr/sonarr in 1.3/1.4.
 
 - [ ] **Step 1: Implement `mkArrApp` in `k8s/lib.nix`**
@@ -802,12 +802,12 @@ Replace the placeholder comment with:
     name,
     image,
     port,
-    homeDomain,
+    ingressSuffix,
     extraVolumes ? [],
     extraMounts ? [],
   }: let
     labels = appLabels name;
-    host = "${name}.${homeDomain}";
+    host = "${name}${ingressSuffix}";
     mediaUid = 994;
   in {
     "${name}" = {
@@ -903,7 +903,7 @@ The `/data/Media` mount (`extraVolumes`/`extraMounts`) is defined once here so r
 ```nix
 {
   lib,
-  homeDomain,
+  ingressSuffix,
   ...
 }: let
   l = import ../lib.nix {inherit lib;};
@@ -925,7 +925,7 @@ in {
       name = "prowlarr";
       image = "lscr.io/linuxserver/prowlarr:latest";
       port = 9696;
-      inherit homeDomain;
+      inherit ingressSuffix;
     };
   # radarr and sonarr merged in via lib.mkMerge in Tasks 1.3/1.4.
 }
@@ -939,7 +939,7 @@ nix fmt && sudo nixos-rebuild build --flake .#globalhawk
 sudo nixos-rebuild switch --flake .#globalhawk
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 kubectl -n media rollout status deploy/prowlarr --timeout=180s
-curl -sk -H "Host: prowlarr.<domain>" https://127.0.0.1/ | grep -qi 'prowlarr' && echo OK-PROWLARR
+curl -sk -H "Host: prowlarr-globalhawk.local" https://127.0.0.1/ | grep -qi 'prowlarr' && echo OK-PROWLARR
 ```
 Expected: prowlarr rolls out reading its **existing** `/config` (indexers/settings intact); reachable via ingress. Confirm in the UI that existing indexers are present (proves the hostPath config carried over).
 
@@ -974,13 +974,13 @@ in {
       name = "prowlarr";
       image = "lscr.io/linuxserver/prowlarr:latest";
       port = 9696;
-      inherit homeDomain;
+      inherit ingressSuffix;
     })
     (l.mkArrApp {
       name = "radarr";
       image = "lscr.io/linuxserver/radarr:latest";
       port = 7878;
-      inherit homeDomain;
+      inherit ingressSuffix;
       extraVolumes = [mediaVolume];
       extraMounts = [mediaMount];
     })
@@ -995,7 +995,7 @@ nix fmt && sudo nixos-rebuild build --flake .#globalhawk
 sudo nixos-rebuild switch --flake .#globalhawk
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 kubectl -n media rollout status deploy/radarr --timeout=180s
-curl -sk -H "Host: radarr.<domain>" https://127.0.0.1/ | grep -qi 'radarr' && echo OK-RADARR
+curl -sk -H "Host: radarr-globalhawk.local" https://127.0.0.1/ | grep -qi 'radarr' && echo OK-RADARR
 ```
 Expected: radarr rolls out; existing movies/settings present in UI; `/data` library visible.
 
@@ -1026,7 +1026,7 @@ config with zero data movement."
       name = "sonarr";
       image = "lscr.io/linuxserver/sonarr:latest";
       port = 8989;
-      inherit homeDomain;
+      inherit ingressSuffix;
       extraVolumes = [mediaVolume];
       extraMounts = [mediaMount];
     })
@@ -1039,7 +1039,7 @@ nix fmt && sudo nixos-rebuild build --flake .#globalhawk
 sudo nixos-rebuild switch --flake .#globalhawk
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 kubectl -n media rollout status deploy/sonarr --timeout=180s
-curl -sk -H "Host: sonarr.<domain>" https://127.0.0.1/ | grep -qi 'sonarr' && echo OK-SONARR
+curl -sk -H "Host: sonarr-globalhawk.local" https://127.0.0.1/ | grep -qi 'sonarr' && echo OK-SONARR
 ```
 Expected: sonarr rolls out; existing series/settings present; `/data` visible.
 
@@ -1267,7 +1267,7 @@ and add a Service (as a typed resource, alongside `raw`):
     };
 ```
 
-Also add a qbittorrent Ingress (reuse the whoami/arr ingress shape, host `qbittorrent.${homeDomain}`, backend `qbittorrent:9091`) so the WebUI is reachable by name — thread `homeDomain` into the module args.
+Also add a qbittorrent Ingress (reuse the whoami/arr ingress shape, host `qbittorrent${ingressSuffix}`, backend `qbittorrent:9091`) so the WebUI is reachable by name — thread `ingressSuffix` into the module args.
 
 - [ ] **Step 3: Build, deploy, verify the pod runs**
 
@@ -1294,7 +1294,7 @@ Expected: `OK-VPN-CONNECTED`; qbittorrent's egress also reports connected (provi
 - [ ] **Step 5: Verify WebUI reachable**
 
 ```bash
-curl -sk -H "Host: qbittorrent.<domain>" https://127.0.0.1/ | grep -qi 'qbittorrent' && echo OK-QBIT-UI
+curl -sk -H "Host: qbittorrent-globalhawk.local" https://127.0.0.1/ | grep -qi 'qbittorrent' && echo OK-QBIT-UI
 ```
 Expected: `OK-QBIT-UI`; existing qbit config/torrents present in the UI.
 
@@ -1400,7 +1400,7 @@ Expected: `OK-DOCKER-CLEAN`, `OK-IMMICH-STILL-UP`; from another LAN host `nmap` 
 
 - [ ] **Step 5: Verify the full stack post-decommission**
 
-Re-run the Phase 1 and Phase 2 ingress checks (whoami, prowlarr, radarr, sonarr, qbittorrent, plex over `https://<app>.<domain>`) and the VPN leak test once more, to confirm nothing regressed when docker's copies stopped.
+Re-run the Phase 1 and Phase 2 ingress checks (whoami, prowlarr, radarr, sonarr, qbittorrent, plex over `https://<app>-globalhawk.local`) and the VPN leak test once more, to confirm nothing regressed when docker's copies stopped.
 
 - [ ] **Step 6: Commit**
 

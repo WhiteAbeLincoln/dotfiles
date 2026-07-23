@@ -3,7 +3,7 @@
 # machine/globalhawk/k3s.nix — ArgoCD is NOT used, so nixidy.target is only a
 # formality required by the module system.
 {
-  homeDomain,
+  ingressSuffix,
   pkgs,
   lib,
   ...
