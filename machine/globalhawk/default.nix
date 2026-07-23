@@ -62,8 +62,13 @@ in {
   boot.tmp.useTmpfs = true;
   boot.loader.systemd-boot.configurationLimit = 6;
 
+  # Do NOT reboot unattended: a reboot restarts k3s, which re-triggers the media
+  # EndpointSlice reconcile gap (Traefik 503s until the Services are nudged) and
+  # briefly disrupts DNS/certs. Updates should be observed, not silent. (Also
+  # appears to have been inert — ~130d uptime despite allowReboot=true — likely
+  # because no autoUpgrade `flake`/channel is configured on this flakes host.)
   system.autoUpgrade.enable = true;
-  system.autoUpgrade.allowReboot = true;
+  system.autoUpgrade.allowReboot = false;
   nix.gc = {
     automatic = true;
     dates = "weekly";
