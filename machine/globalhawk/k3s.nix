@@ -27,6 +27,16 @@
     hash = "sha256-HVHN7NRC8fX4l4Pp4BabldNyck2iA8x13XpcTlChDOY=";
   };
 
+  # sealed-secrets controller, pinned upstream YAML (no Helm). A SealedSecret is
+  # encrypted to the cluster key and safe in the world-readable store + git; the
+  # controller decrypts it into a real Secret. Fixes the plaintext-in-/nix/store
+  # leak of the Mullvad key (see Task 2.1).
+  sealedSecretsVersion = "0.27.3";
+  sealedSecretsYaml = pkgs.fetchurl {
+    url = "https://github.com/bitnami-labs/sealed-secrets/releases/download/v${sealedSecretsVersion}/controller.yaml";
+    hash = "sha256-NRZkphGadnGanS3l1g1V/JIfvUhaseocrmyYMqKOUco=";
+  };
+
   nixidyCombined = pkgs.runCommand "nixidy-globalhawk.yaml" {} ''
     : > "$out"
     for f in $(${pkgs.findutils}/bin/find -L ${nixidyManifests} -name '*.yaml' -not -path '*/apps/*' | sort); do
@@ -44,9 +54,10 @@ in {
     manifests = {
       # Our nixidy-authored workloads, delivered as one multi-doc file.
       nixidy.source = nixidyCombined;
-      # Third-party controller: pinned upstream YAML, applied before our CRs
-      # (k3s retries until the CRDs it defines are established).
+      # Third-party controllers: pinned upstream YAML, applied before our CRs
+      # (k3s retries until the CRDs they define are established).
       cert-manager.source = certManagerYaml;
+      sealed-secrets.source = sealedSecretsYaml;
     };
   };
 
