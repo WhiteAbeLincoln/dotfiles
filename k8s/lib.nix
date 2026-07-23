@@ -88,15 +88,11 @@
           };
         };
         ingresses."${name}" = {
-          metadata.annotations."cert-manager.io/cluster-issuer" = "globalhawk-ca";
           spec = {
             ingressClassName = "traefik";
-            tls = [
-              {
-                hosts = [host];
-                secretName = "${name}-tls";
-              }
-            ];
+            # No secretName: Traefik serves its default cert (the *.h wildcard,
+            # kube-system TLSStore/default). No per-app issuer or cert needed.
+            tls = [{hosts = [host];}];
             rules = [
               {
                 inherit host;

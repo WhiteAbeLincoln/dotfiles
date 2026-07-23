@@ -25,15 +25,9 @@ in {
         targetPort = plexPort;
       };
       ingresses.plex = {
-        metadata.annotations."cert-manager.io/cluster-issuer" = "globalhawk-ca";
         spec = {
           ingressClassName = "traefik";
-          tls = [
-            {
-              hosts = [host];
-              secretName = "plex-tls";
-            }
-          ];
+          tls = [{hosts = [host];}];
           rules = [
             {
               inherit host;

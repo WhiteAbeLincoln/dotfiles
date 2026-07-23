@@ -34,15 +34,9 @@ in {
         };
       };
       ingresses.whoami = {
-        metadata.annotations."cert-manager.io/cluster-issuer" = "globalhawk-ca";
         spec = {
           ingressClassName = "traefik";
-          tls = [
-            {
-              hosts = [host];
-              secretName = "whoami-tls";
-            }
-          ];
+          tls = [{hosts = [host];}];
           rules = [
             {
               inherit host;

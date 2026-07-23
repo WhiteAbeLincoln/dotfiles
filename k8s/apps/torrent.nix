@@ -202,15 +202,9 @@ in {
         };
       };
       ingresses.qbittorrent = {
-        metadata.annotations."cert-manager.io/cluster-issuer" = "globalhawk-ca";
         spec = {
           ingressClassName = "traefik";
-          tls = [
-            {
-              hosts = [host];
-              secretName = "qbittorrent-tls";
-            }
-          ];
+          tls = [{hosts = [host];}];
           rules = [
             {
               inherit host;
