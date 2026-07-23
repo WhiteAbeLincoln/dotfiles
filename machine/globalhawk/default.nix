@@ -292,9 +292,20 @@ in {
   # "server" enables IP forwarding so globalhawk can advertise the LAN subnet as
   # a Tailscale route (operator runs `tailscale set --advertise-routes` once), so
   # the ingress names resolve+connect the same on the LAN and over the tailnet.
+  #
+  # accept-dns=false: MagicDNS otherwise hijacks /etc/resolv.conf (points it at
+  # 100.100.100.100), overriding networking.nameservers and routing the host's —
+  # and thus CoreDNS's and cert-manager's — lookups through the tailnet/AdGuard.
+  # That broke cert-manager's DNS-01 self-check, which must resolve the PUBLIC
+  # _acme-challenge TXT, not the split-horizon view (and would break once
+  # AdGuard's *.h wildcard, which also matches _acme-challenge.h, goes live).
+  # Declining tailnet DNS keeps the host on its declared public resolvers; a
+  # server needn't resolve peers' *.ts.net names, and clients' split-DNS is
+  # unaffected (that's a tailnet-wide admin-console setting, not consumed here).
   services.tailscale = {
     enable = true;
     useRoutingFeatures = "server";
+    extraSetFlags = ["--accept-dns=false"];
   };
 
   # make sure mdns/.local addresses are working
