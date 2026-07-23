@@ -41,6 +41,7 @@ in {
     ./disks.nix
     ./backup.nix
     ./k3s.nix
+    ./mdns-aliases.nix
     ../../modules/nixos/ai-agent-sandbox.nix
   ];
 
