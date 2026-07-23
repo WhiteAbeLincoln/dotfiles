@@ -73,14 +73,31 @@ ArgoCD and no `kubectl` in the activation path.
   and on change. Thus `nixos-rebuild switch` *is* the apply step. Prior art for this exact
   pure-Nix pattern: `rorosen/k3s-nix`.
 
-### Decision: no pruning, manual deletes (confirmed)
+### Decision: prune-on-switch works; no manual deletes needed (revised 2026-07-23)
 
-`services.k3s.manifests` does **not** prune — deleting a manifest file leaves its
-resources running. Removing a service is therefore a deliberate manual `kubectl delete`
-(or a `.skip` file), not an automatic consequence of editing the flake. This is accepted:
-on a single-node home box, service *removals* are rare, and the alternative
-(`nixidy apply --prune` as an activation step) reintroduces `kubectl`-at-activation and a
-live-cluster dependency during rebuild. Revisit if removals become frequent.
+**Original assumption (now falsified):** that `services.k3s.manifests` never prunes,
+so removals required a manual `kubectl delete`. That conflated the k3s docs caveat —
+deleting a whole manifest *file* orphans its Addon's children — with our actual case.
+
+**Verified behaviour:** we deliver *every* nixidy workload as one always-present file
+(`nixidyCombined` in `machine/globalhawk/k3s.nix`), owned by a single `nixidy` Addon.
+Removing a workload from the flake only changes that file's *contents*, never deletes
+the file. The k3s deploy controller re-applies changed manifests with
+`WithOwner(&addon).WithGVK(addonGVKs...).Apply(...)` — wrangler's objectset apply, which
+**prunes by default** and tracks prior GVKs on the Addon so it prunes even the last
+object of a kind. Confirmed empirically (2026-07-23): enabling the `whoami` canary and
+running `switch` created its resources; re-disabling and running `switch` deleted them,
+with no manual `kubectl` and no k3s restart.
+
+So removals are just `edit flake → nixos-rebuild switch`, same as adds. The only case
+that still orphans children is dropping the **Addon** itself — removing the
+`nixidy.source` entry from `k3s.nix` or setting `manifests.nixidy.enable = false` (or a
+`.skip` file) — which is not part of normal iteration.
+
+`nix run .#k3s-drift` (read-only) diffs the desired set against live nixidy-owned
+resources as a trust-but-verify check; it reports orphans, not-yet-applied resources, and
+hand-created (`kubectl`-applied) drift. It is not a delete step — the cluster already
+reconciles on `switch`.
 
 ### Decision: secrets via sealed-secrets (confirmed)
 

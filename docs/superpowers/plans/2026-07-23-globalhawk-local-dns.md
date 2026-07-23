@@ -13,7 +13,7 @@
 - **Roles.** The agent authoring this plan runs as the read-only sandbox user (uid 1001, **no sudo, no cluster admin**). It can edit Nix and run **build-only** validation (`nixos-rebuild build`, `nix build …environmentPackage`). Anything that mutates the live system or cluster — `nixos-rebuild switch`, `kubectl`, `kubeseal`, `tailscale set`, the Cloudflare/Fiber consoles — is an **operator (abe)** action. Operator steps are labelled **[OPERATOR]**.
 - **Never activate unasked.** Do not run `nixos-rebuild switch`. Validate with `build`. Activation happens once, by the operator, in Task 7.
 - **Public repo.** Only `secrets/` and the t2 firmware are git-crypt encrypted. Never write a credential (passwords, hashes, API tokens, emails) into any unencrypted committed file. Emails and the AdGuard admin hash live in `secrets/globalhawk.nix`; the Cloudflare token lives only as a `SealedSecret` (encrypted to the cluster key). RFC1918 IPs and the domain suffix are not secret and live in `facts.nix` (the existing convention — `abewhite.dev` is already in a committed comment there).
-- **No manifest pruning.** `services.k3s.manifests` never deletes; removing a resource from Nix leaves it running. Cluster-side cleanup of superseded resources is an explicit `kubectl delete` in Task 7.
+- **Pruning is nixidy-scoped.** `services.k3s.manifests` *does* prune resources removed from the single combined nixidy manifest — removing a workload from Nix and running `switch` deletes it (verified 2026-07-23; the whole nixidy output is one always-present Addon that k3s re-applies with pruning). What auto-prune can NOT reach is resources created by *other* controllers — the per-app `*-tls` secrets and the `globalhawk-ca-key-pair` secret that cert-manager minted and never handed to nixidy. Those (and only those) need an explicit `kubectl delete` in Task 7. `nix run .#k3s-drift` reports exactly this class as "untracked / orphaned cert-manager secret."
 - **Commit messages document the *why*, not the *what*.** End every commit body with:
   `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>`
 - **Placeholders the operator must confirm** (used verbatim below; correct them in Task/Phase 0 if different):
@@ -728,7 +728,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ## Task 7: Activation & Validation [OPERATOR]
 
-Runs on globalhawk as abe. Activates the switch, verifies staging issuance, flips to prod, brings up the Tailscale route + Fiber DNS, and runs the spec's validation gates. Cleans up superseded cluster resources (manifests don't prune).
+Runs on globalhawk as abe. Activates the switch, verifies staging issuance, flips to prod, brings up the Tailscale route + Fiber DNS, and runs the spec's validation gates. Cleans up superseded cert-manager leftovers (auto-prune covers nixidy-authored resources but not secrets other controllers created).
 
 - [ ] **Step 1: Activate**
 ```bash
@@ -796,11 +796,15 @@ curl -sSI https://radarr.h.abewhite.dev | head -1   # connects via the subnet ro
 ```
 Expected: each line as annotated. The remote `curl` returning a normal HTTP status with no TLS error is the end-to-end gate.
 
-- [ ] **Step 8: Clean up superseded cluster resources** (manifests don't prune)
+- [ ] **Step 8: Clean up cert-manager leftovers** (the only resources auto-prune can't reach)
 ```bash
-# Old self-signed CA issuer + CA cert/secret (replaced by DNS-01):
+# nixidy-authored resources below (the ClusterIssuers + the globalhawk-ca
+# Certificate) are ALREADY gone — removing them from Nix pruned them on the
+# switch above. These deletes are belt-and-suspenders (--ignore-not-found):
 sudo k3s kubectl delete clusterissuer selfsigned-bootstrap globalhawk-ca --ignore-not-found
 sudo k3s kubectl -n cert-manager delete certificate globalhawk-ca --ignore-not-found
+# GENUINELY manual — cert-manager minted these Secrets and never handed them to
+# nixidy, so auto-prune leaves them behind when their Certificate is deleted:
 sudo k3s kubectl -n cert-manager delete secret globalhawk-ca-key-pair --ignore-not-found
 # Old per-app cert secrets (each app now uses the default wildcard):
 for ns in media plex whoami; do
@@ -808,7 +812,7 @@ for ns in media plex whoami; do
   sudo k3s kubectl -n "$ns" get secret | grep -- '-tls'   # review any leftover *-tls and delete by name
 done
 ```
-Expected: old issuers/secrets gone; `kubectl get clusterissuer` shows only `letsencrypt-staging` and `letsencrypt-prod`.
+Expected: old issuers/secrets gone; `kubectl get clusterissuer` shows only `letsencrypt-staging` and `letsencrypt-prod`. Confirm with `nix run .#k3s-drift` — the "untracked / orphaned cert-manager secret" entries should be gone.
 
 ---
 
@@ -822,7 +826,7 @@ Expected: old issuers/secrets gone; `kubectl get clusterissuer` shows only `lets
 - TLS DNS-01 wildcard, Cloudflare solver, SealedSecret token, staging→prod, replaces self-signed → Tasks 4–5 + Task 7 Steps 3–4.
 - External one-time setup (Cloudflare account/delegation/token, DHCP reservation, hash) → Phase 0.
 - Public secondary resolver for internet-never-fails → Task 7 Step 6; validated Task 7 Step 7.
-- No-prune cleanup of old CA + per-app secrets → Task 7 Step 8.
+- Cleanup of cert-manager leftovers (CA key-pair + per-app `*-tls` secrets auto-prune can't reach) → Task 7 Step 8.
 - Phase 2 (Pi backup resolver) → intentionally out of scope per spec; not in this plan.
 
 **Placeholder scan:** The only intentional fill-ins are operator-supplied values flagged **OPERATOR**/**PASTE** (sealed blob, email, hash, LAN IP/subnet/domain) — these cannot be known at authoring time and are produced in Phase 0. No `TODO`/`TBD`/"add error handling"-style gaps.

@@ -60,6 +60,10 @@
             # Read-only audit of the globalhawk AI-agent sandbox. Deliberately NOT
             # part of `nix flake check` — it must never block activation.
             audit-agent-access = pkgs.callPackage ./packages/audit-agent-access.nix {};
+            # Read-only drift check: diffs the nixidy desired state against live
+            # k3s. `switch` already prunes removed workloads (single-combined-
+            # file lane), so this is trust-but-verify, not a delete mechanism.
+            k3s-drift = pkgs.callPackage ./packages/k3s-drift.nix {};
           }
           // pkgs.lib.optionalAttrs pkgs.stdenv.isDarwin {
             # always include the --flake argument pointing to the current working

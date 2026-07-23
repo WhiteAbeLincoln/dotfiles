@@ -68,7 +68,15 @@ in {
       "--flannel-iface=${net.lanInterface}"
     ];
     manifests = {
-      # Our nixidy-authored workloads, delivered as one multi-doc file.
+      # Our nixidy-authored workloads, delivered as ONE always-present multi-doc
+      # file. This single-file shape is load-bearing for cleanup: k3s tracks it
+      # as a single `nixidy` Addon and re-applies with wrangler's objectset apply
+      # (WithOwner+WithGVK), which PRUNES by default. So removing a workload from
+      # k8s/** is a content change to this file — which k3s prunes automatically
+      # on the next `switch` (verified 2026-07-23) — NOT a file deletion. Pruning
+      # only breaks if the Addon itself vanishes: don't remove this source entry
+      # or set enable=false to "clean up" — that orphans every child. Use
+      # `nix run .#k3s-drift` to verify live vs desired.
       nixidy.source = nixidyCombined;
       # Third-party controllers: pinned upstream YAML, applied before our CRs
       # (k3s retries until the CRDs they define are established).
