@@ -4,8 +4,10 @@
 # secret live in kube-system (Traefik's namespace); a Traefik TLSStore named
 # `default` (the reserved name Traefik looks up) points at the secret.
 #
-# issuerRef starts at `letsencrypt-staging` to validate issuance without burning
-# prod rate limits; Task 7 flips it to `letsencrypt-prod`.
+# issuerRef is `letsencrypt-prod` (browser-trusted). Staging validated the
+# DNS-01 path first; flipped to prod once issuance was proven. To re-validate on
+# staging, switch this back and delete the `wildcard-h-tls` secret to force a
+# reissue.
 {ingressSuffix, ...}: {
   applications.wildcard-tls = {
     namespace = "kube-system";
@@ -22,7 +24,7 @@
           secretName = "wildcard-h-tls";
           dnsNames = ["*${ingressSuffix}"];
           issuerRef = {
-            name = "letsencrypt-staging";
+            name = "letsencrypt-prod";
             kind = "ClusterIssuer";
             group = "cert-manager.io";
           };
