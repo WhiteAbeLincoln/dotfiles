@@ -15,11 +15,11 @@
 
   imports = [
     # apps and infra modules are added task-by-task:
-    # ./infra/network.nix
+    ./infra/network.nix
     ./infra/cert-manager.nix
     ./apps/whoami.nix
     ./apps/plex.nix
-    # ./apps/arr.nix
+    ./apps/arr.nix
     # ./apps/torrent.nix
   ];
 }

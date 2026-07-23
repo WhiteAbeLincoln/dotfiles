@@ -728,6 +728,17 @@ direct /dev/dri transcoding — proving the off-cluster-backend pattern."
 
 ## Phase 1 — arr stack
 
+> **SAFETY CORRECTION (found during execution).** prowlarr/radarr/sonarr are
+> running as docker containers on the same `/config` dirs the k3s pods will
+> `hostPath`-mount. Two instances on one SQLite config = corruption, so this is
+> **not** the side-by-side the original phase text implied. Each arr app is an
+> **atomic cutover**: the operator stops the docker container, and the **same
+> switch** both removes it from `virtualisation.oci-containers` (in
+> `machine/globalhawk/default.nix`) and starts the k3s workload. The whole arr
+> trio is cut over together in one switch. Their download-client link to
+> qbittorrent (still on docker until Phase 2) is repointed in Task 2.3; a brief
+> interim where arr can't reach qbit is acceptable. See [[globalhawk-arr-atomic-cutover]].
+
 ### Task 1.1: Create the `media` namespace and NetworkPolicy boundary
 
 **Files:**

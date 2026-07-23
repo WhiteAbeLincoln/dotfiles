@@ -352,25 +352,8 @@ in {
         "9091:9091" # qbittorrent web-ui
       ];
     };
-    prowlarr = {
-      image = "lscr.io/linuxserver/prowlarr:latest";
-      extraOptions = [
-        "--network=torrent"
-        # "--health-cmd" "curl https://am.i.mullvad.net/connected | grep -q 'You are connected'"
-        # "--health-start-period="
-        # "--health-startup-cmd" "curl localhost:8000/v1/publicip/ip"
-        "--label=autoheal=true"
-      ];
-      environment = {
-        TZ = config.time.timeZone;
-        PUID = toString config.users.users._media.uid;
-        PGID = toString config.users.groups._media.gid;
-      };
-      volumes = [
-        "/data/Media/docker-services/torrent-config/prowlarr:/config"
-      ];
-      ports = ["9696:9696"];
-    };
+    # prowlarr/radarr/sonarr migrated to k3s (k8s/apps/arr.nix); their config
+    # dirs moved in place. qbittorrent + vpn remain here until Phase 2.
     qbittorrent = {
       image = "lscr.io/linuxserver/qbittorrent:latest";
       extraOptions = [
@@ -394,40 +377,6 @@ in {
         "/data/Media/torrents/downloads:/data/torrents/downloads"
       ];
       dependsOn = ["vpn"];
-    };
-    radarr = {
-      image = "lscr.io/linuxserver/radarr:latest";
-      extraOptions = [
-        "--network=torrent"
-        "--label=autoheal=true"
-      ];
-      environment = {
-        TZ = config.time.timeZone;
-        PUID = toString config.users.users._media.uid;
-        PGID = toString config.users.groups._media.gid;
-      };
-      volumes = [
-        "/data/Media/docker-services/torrent-config/radarr:/config"
-        "/data/Media:/data"
-      ];
-      ports = ["7878:7878"];
-    };
-    sonarr = {
-      image = "lscr.io/linuxserver/sonarr:latest";
-      extraOptions = [
-        "--network=torrent"
-        "--label=autoheal=true"
-      ];
-      environment = {
-        TZ = config.time.timeZone;
-        PUID = toString config.users.users._media.uid;
-        PGID = toString config.users.groups._media.gid;
-      };
-      volumes = [
-        "/data/Media/docker-services/torrent-config/sonarr:/config"
-        "/data/Media:/data"
-      ];
-      ports = ["8989:8989"];
     };
     # minecraft-tina = {
     #   image = "itzg/minecraft-server";
