@@ -40,6 +40,7 @@ in {
     # ../../program/homebridge
     ./disks.nix
     ./backup.nix
+    ./k3s.nix
     ../../modules/nixos/ai-agent-sandbox.nix
   ];
 
