@@ -137,18 +137,15 @@ In `flake.nix`, inside the top-level `flake = let ... in { ... }` block (where `
         };
 ```
 
-- [ ] **Step 6: Verify the environment evaluates and the manifests attribute exists**
+- [ ] **Step 6: Verify the environment evaluates and locate the manifests attribute**
 
 Run: `nix eval .#nixidyEnvs.x86_64-linux.globalhawk --apply builtins.attrNames`
-Expected: an attribute list that includes `build`. Then:
-Run: `nix eval .#nixidyEnvs.x86_64-linux.globalhawk.build --apply builtins.attrNames`
-Expected: includes `manifests`.
-**If `build.manifests` is absent** (nixidy API drift): re-run `builtins.attrNames` on the env and on any `build`/`config` sub-attr to locate the derivation whose build output is the `result/` YAML tree, and use that path in Task 0.2's bridge instead of `.build.manifests`. Record the correct path in a comment in `k3s.nix`.
+**RESOLVED (this nixidy rev, deb28dc):** the env exposes `[ activationPackage bootstrapPackage config declarativePackage environmentPackage meta resources ]` — there is **no `build` attribute**. The rendered-YAML tree is **`.environmentPackage`** (a derivation building to a dir of `apps/` + `<namespace>/` YAML). Task 0.2's bridge uses `.environmentPackage`. (Note: flakes only see git-tracked files, so `k8s/` must be `git add`-ed before any `nix build` of the env — otherwise it errors "Path 'k8s' … is not tracked by Git".)
 
 - [ ] **Step 7: Build the (empty) rendered manifests**
 
-Run: `nix build .#nixidyEnvs.x86_64-linux.globalhawk.build.manifests -o /tmp/nixidy-result && ls -R /tmp/nixidy-result/`
-Expected: builds successfully; tree is empty or contains only an `apps/` dir (no workloads yet).
+Run: `git add k8s && nix build .#nixidyEnvs.x86_64-linux.globalhawk.environmentPackage -o /tmp/nixidy-result && find /tmp/nixidy-result/`
+Expected: builds successfully; tree contains only an empty `apps/` dir (no workloads yet).
 
 - [ ] **Step 8: Format and commit**
 
@@ -228,9 +225,10 @@ In `k8s/default.nix`, uncomment `./apps/whoami.nix` in `imports`.
   inputs,
   ...
 }: let
-  # The nixidy-rendered YAML tree (Task 0.1). If Task 0.1 Step 6 found a
-  # different attribute path, update it here.
-  nixidyManifests = inputs.self.nixidyEnvs.x86_64-linux.globalhawk.build.manifests;
+  # The nixidy-rendered YAML tree (Task 0.1 Step 6 confirmed this attribute for
+  # nixidy rev deb28dc — the env has no `build` attr; environmentPackage is the
+  # derivation whose output is the apps/ + <namespace>/ YAML tree).
+  nixidyManifests = inputs.self.nixidyEnvs.x86_64-linux.globalhawk.environmentPackage;
 
   # Bridge: concatenate every rendered document into one multi-doc manifest,
   # EXCLUDING nixidy's apps/ dir (those are ArgoCD Application CRs whose kind
