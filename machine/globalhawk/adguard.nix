@@ -38,12 +38,18 @@ in {
       filtering = {
         protection_enabled = true;
         filtering_enabled = true;
+        # REQUIRED since AdGuard schema 31 (v0.107.68): the global rewrites toggle
+        # and the per-entry `enabled` both default to FALSE when omitted, so a
+        # config without them loads cleanly but silently applies no rewrites
+        # (queries fall through to upstream). See CHANGELOG v0.107.68.
+        rewrites_enabled = true;
         # Split-horizon: the homelab wildcard resolves to globalhawk on the LAN.
         # These A records exist ONLY here — never in public DNS.
         rewrites = [
           {
             domain = "*${facts.ingressSuffix}";
             answer = facts.lanIp;
+            enabled = true;
           }
         ];
       };
