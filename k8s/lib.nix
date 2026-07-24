@@ -24,9 +24,10 @@
   };
 
   # A Traefik Ingress routing `host` to this app's Service on `port`. No
-  # secretName: Traefik serves its default *.h wildcard cert. `host` is passed
-  # explicitly so an app's ingress hostname can differ from its resource name
-  # (e.g. calibre-web-automated -> books.h.…).
+  # secretName: Traefik serves its default cert (the *.h wildcard,
+  # kube-system TLSStore/default), so no per-app issuer or cert is needed.
+  # `host` is passed explicitly so an app's ingress hostname can differ from
+  # its resource name (e.g. calibre-web-automated -> books.h.…).
   mkIngress = {
     name,
     port,
