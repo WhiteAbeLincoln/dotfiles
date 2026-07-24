@@ -42,9 +42,10 @@
 - Modify: `machine/globalhawk/facts.nix`
 - Create: `machine/globalhawk/immich-storage.nix`
 - Modify: `machine/globalhawk/default.nix` (imports list)
+- Modify: `machine/globalhawk/disks.nix` (enable `posixacl`; narrow the blanket `_media` ACL off `immich/` + `documents/`)
 
 **Interfaces:**
-- Produces: `facts.immichUid` (= 993); the `immich` user/group (uid/gid 993); the `media-readers` group; the owned/ACL'd `${mediaRoot}/immich/{library,pgdata,model-cache}` tree.
+- Produces: `facts.immichUid` (= 993); the `immich` user/group (uid/gid 993); the `media-readers` group; the owned/ACL'd `${mediaRoot}/immich/{library,pgdata,model-cache}` tree; `acltype=posixacl` on `pool/media`.
 
 - [ ] **Step 1: Add the immich uid fact**
 
@@ -133,7 +134,85 @@ read photos, while abe/agent keep read access. Host-side half of the k3s
 migration."
 ```
 
-> **Post-switch behavioural check (operator, deferred to Task 6):** after the first `switch`, verify `sudo -u abe ls ${mediaRoot}/immich/library` succeeds, `sudo -u agent ls ${mediaRoot}/immich/library` succeeds, and `sudo -u <an-arr-container-uid-994> ls ${mediaRoot}/immich` is **denied**. If a reader is wrongly denied, the ACL mask is likely too tight — adjust the `mask::` entries.
+**Steps 1–5 completed (commit `35c3aaf`).** During review it was found that `pool/media`
+has `acltype=off`, so those ACL rules are inert until ACLs are enabled — AND the existing
+recursive `A ${mediaRoot} … group:_media:rwx` in `disks.nix` (currently inert) would, once
+ACLs are on, both wipe Immich's reader ACL and grant `_media` rwx across the whole tree
+(including `documents/`). Steps 6–8 fix this: enable `posixacl` and narrow that rule.
+
+- [ ] **Step 6: Enable posixacl + narrow the blanket `_media` ACL in `disks.nix`**
+
+In `machine/globalhawk/disks.nix`, **replace** the single blanket line
+`"A ${facts.mediaRoot} - - - - group:_media:rwx"` with explicit per-subtree grants that
+omit `immich/` and `documents/` (comment kept/updated, not deleted):
+
+```nix
+    # Grant the _media group rwx on the SHARED media dirs so the media apps
+    # (which run as _media) can write each other's files despite umask. NOT a
+    # blanket rule over ${mediaRoot}: immich/ (isolated, own uid + media-readers
+    # ACL — see immich-storage.nix) and documents/ (abe-private) are deliberately
+    # omitted so enabling posixacl below doesn't expose them.
+    "A+ ${facts.mediaRoot}/anime - - - - group:_media:rwx"
+    "A+ ${facts.mediaRoot}/apps - - - - group:_media:rwx"
+    "A+ ${facts.mediaRoot}/audiobooks - - - - group:_media:rwx"
+    "A+ ${facts.mediaRoot}/docker-services - - - - group:_media:rwx"
+    "A+ ${facts.mediaRoot}/movies - - - - group:_media:rwx"
+    "A+ ${facts.mediaRoot}/music - - - - group:_media:rwx"
+    "A+ ${facts.mediaRoot}/old_books - - - - group:_media:rwx"
+    "A+ ${facts.mediaRoot}/photos - - - - group:_media:rwx"
+    "A+ ${facts.mediaRoot}/torrents - - - - group:_media:rwx"
+    "A+ ${facts.mediaRoot}/tv - - - - group:_media:rwx"
+    # (books keeps its own A+ line below.)
+```
+
+(The `A+ ${facts.mediaRoot}/books …` line already present stays.)
+
+Then, in the same file, add a oneshot that ensures `posixacl` is set on the dataset before
+tmpfiles applies any ACLs (idempotent; a dataset property, so it persists):
+
+```nix
+  # POSIX ACLs are off by default on this pool, which silently no-ops every
+  # tmpfiles `A`/`A+` rule. Enable it before systemd-tmpfiles runs so the media
+  # + immich ACLs actually take effect. `xattr=sa` is already set.
+  systemd.services.zfs-media-posixacl = {
+    description = "Ensure acltype=posixacl on pool/media";
+    wantedBy = ["local-fs.target"];
+    after = ["zfs-mount.service"];
+    before = ["systemd-tmpfiles-setup.service"];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.zfs}/bin/zfs set acltype=posixacl pool/media";
+    };
+  };
+```
+
+`disks.nix` already takes `pkgs` in its module args, so `${pkgs.zfs}` resolves.
+
+- [ ] **Step 7: Build-validate (agent)**
+
+Run: `nixos-rebuild build --flake .#globalhawk`
+Expected: builds with no evaluation error.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add machine/globalhawk/disks.nix
+git commit -m "feat(globalhawk): enable posixacl + narrow the _media grant off immich/documents
+
+pool/media had acltype=off, silently no-opping every tmpfiles ACL (incl. the
+blanket recursive _media grant and the ebook books grant). Enable posixacl so
+the immich reader ACL actually applies, and replace the whole-tree _media grant
+with explicit per-subtree grants that exclude immich/ (own isolation) and
+documents/ (abe-private) — otherwise enabling ACLs would expose both."
+```
+
+> **Post-switch behavioural checks (operator, in Task 6):** after enabling posixacl and the first `switch`:
+> - `getfacl ${mediaRoot}/documents` → **no** `_media` entry (privacy preserved).
+> - `getfacl ${mediaRoot}/immich` → a `media-readers` entry, **no** `_media` entry.
+> - `sudo -u abe ls ${mediaRoot}/immich/library` and `sudo -u agent …` succeed (abe/agent may need to re-login for the new group).
+> - a process as `_media` (994) is **denied** `ls ${mediaRoot}/immich`.
+>
+> If a reader is wrongly denied, the ACL `mask::` is too tight; if `_media` is allowed, the narrowing missed an entry.
 
 ---
 

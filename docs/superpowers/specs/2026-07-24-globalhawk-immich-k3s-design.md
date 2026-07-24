@@ -154,40 +154,73 @@ Default-deny-ingress NetworkPolicy for the `immich` ns, allowing intra-namespace
 
 The goal: **only Immich (and `abe`/`agent` read-only) can reach the photo tree; no other
 workload can — including arr, which bind-mounts all of `/data/Media`.** Achieved with host
-POSIX ownership + a reader ACL; no arr change, no hardlink risk.
+POSIX ownership + a default ACL for the readers; no arr change, no hardlink risk.
 
-Declared in the NixOS layer (`machine/globalhawk/default.nix`, or a small dedicated
-module):
+### Storage reality that shapes the mechanism (discovered during implementation)
+
+`pool/media` had **`acltype=off`** — POSIX ACLs disabled on the dataset. Consequences we
+must design around:
+
+- The dataset's existing `systemd.tmpfiles` ACL rules (`disks.nix`) were **silently inert**
+  — including `A ${mediaRoot} … group:_media:rwx` and the ebook stack's
+  `A+ .../books … group:_media:rwx`. The media apps work purely on base `_media:_media 0775`
+  ownership; those ACL lines do nothing today. (Not breaking anything, but it means the
+  media tree's permission model is currently pure POSIX, no ACLs.)
+- **setgid-group inheritance is not a reliable substitute** on this repo: prior experience
+  here showed the containers' umask stripping the group bits off newly-created files, so a
+  `2750`-setgid scheme silently loses group-read. A **default ACL** does not have this
+  failure mode — when a directory carries a default ACL, POSIX specifies the umask is *not*
+  applied to the inherited entries, so `media-readers:r-x` is granted regardless of the
+  writer's umask. This is why we enable ACLs rather than lean on setgid.
+
+**Decision:** enable `acltype=posixacl` on `pool/media`, and **narrow** `disks.nix`'s blanket
+recursive `A ${mediaRoot} … group:_media:rwx` so it no longer covers `immich/` or
+`documents/` — otherwise, once ACLs are live, that recursive *replace* rule would both wipe
+Immich's reader ACL and grant `_media` rwx across the whole tree (exposing photos, Postgres
+data, **and** `abe`'s private `documents/`). The blanket rule is replaced by explicit
+per-subtree grants for the dirs that actually share with `_media` (`anime`, `apps`,
+`audiobooks`, `books`, `docker-services`, `movies`, `music`, `old_books`, `photos`,
+`torrents`, `tv`) — `immich/` and `documents/` omitted by design.
+
+### The immich isolation itself
+
+Declared in `machine/globalhawk/immich-storage.nix`:
 
 - **`immich` service user + group, uid/gid 993** (993 is free; 994 is `_media`). System
-  user, no login. Immich's pods run as it.
-- **`media-readers` group** with members `abe` + `agent`. This is the reusable human-read
-  handle for tightened per-app trees; `abe` already has `_media` (write) elsewhere, and
-  `agent` (the read-only sandbox, uid 1001) is deliberately kept out of `_media` — it only
-  ever gets read, via this group.
-- **Ownership/mode + ACL on `${mediaRoot}/immich`** via `systemd.tmpfiles` (the same
-  mechanism the ebook stack uses):
+  user, no login. Immich's pods run as it (owner of the tree).
+- **`media-readers` group** with members `abe` + `agent`. Reusable human-read handle for
+  tightened per-app trees; `abe` already has `_media` (write) elsewhere, and `agent` (the
+  read-only sandbox, uid 1001) is deliberately kept out of `_media` — it only ever gets
+  read, via this group.
+- **Ownership/mode + ACL on `${mediaRoot}/immich`** via `systemd.tmpfiles`:
   - `d ${mediaRoot}/immich 0750 immich immich` (and `library/`, `pgdata/`, `model-cache/`).
-  - `A+` ACL granting `media-readers` read, **access + default** so files Immich creates
-    inherit it: effectively `g:media-readers:rX` + `d:g:media-readers:rX` (capital `X` =
-    traverse dirs, read files). Use `A+` (append), not `A`, per the ebook-stack lesson
-    about overlapping tmpfiles ACLs.
+  - `A+` ACL granting `media-readers` **access** on the tree root + `library/`, plus a
+    **default** ACL on `library/` so photos Immich creates inherit read
+    (`group:media-readers:r-x` + `default:group:media-readers:r-x`, with matching `mask::`
+    entries). `A+` (append), never the recursive-replace `A`.
 
 **Why this denies arr without touching it.** arr's containers run as `_media` (994). The
-dir `${mediaRoot}/immich` is `0750 immich:immich`; 994 is neither owner nor in the `immich`
-group nor in `media-readers`, so it falls to "other" = `---` and the kernel refuses even to
-traverse into it. arr never scans `immich/` anyway, so nothing breaks, and its single
-`/data/Media` mount (hence hardlinks/atomic-moves) is untouched. The old originals subtree
-(`${mediaRoot}/immich/photos`, still `_media`-owned `0755` until cleanup) is likewise
-shielded, because arr can't traverse the now-`0750` parent to reach it.
+dir `${mediaRoot}/immich` is `0750 immich:immich` and — because it's excluded from the
+narrowed `disks.nix` grant — carries **no** `_media` ACL entry, so 994 falls to "other" =
+`---` and the kernel refuses even to traverse into it. arr never scans `immich/` anyway, so
+nothing breaks, and its single `/data/Media` mount (hence hardlinks/atomic-moves) is
+untouched. The old originals subtree (`${mediaRoot}/immich/photos`, still `_media`-owned
+until cleanup) is shielded because arr can't traverse the `0750` parent to reach it.
 
-**Human read still works.** `abe`/`agent` are in `media-readers` → the ACL grants `r-x`;
-they browse the tree normally. `restic` runs as root, so backups read everything regardless
-of the `0750` mode, and it preserves + restores POSIX ACLs and ownership.
+**Human read is umask-proof.** `abe`/`agent` are in `media-readers`; the default ACL on
+`library/` grants `r-x` on every photo Immich writes, independent of the container umask.
+`restic` runs as root, so backups read everything regardless of mode, and it preserves +
+restores POSIX ACLs and ownership.
 
-**The dedicated uid is load-bearing** — it's precisely what lets POSIX distinguish Immich
-from the other media apps. Keeping Immich on `_media` (994) would leave photos readable by
-every 994 workload; that's the status quo we're fixing.
+**The dedicated uid is load-bearing** — it's what lets POSIX/ACL distinguish Immich from the
+other media apps. Keeping Immich on `_media` (994) would leave photos readable by every 994
+workload; that's the status quo we're fixing.
+
+> **Blast-radius notes (operator):** enabling `acltype=posixacl` activates the (previously
+> inert) media-tree ACL rules for the first time, and the per-subtree grants are recursive,
+> so the first `systemd-tmpfiles` pass walks the large media dirs once. Verify after enabling
+> that `getfacl ${mediaRoot}/documents` shows **no** `_media` entry (privacy) and
+> `getfacl ${mediaRoot}/immich` shows `media-readers` but **no** `_media`.
 
 ## Cutover — atomic (operator executes; agent authors + `build`-validates)
 
