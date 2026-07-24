@@ -805,6 +805,28 @@ kubectl -n immich get pods            # server/ML/postgres/redis all Ready
 kubectl -n immich get ingress
 ```
 
+- [ ] **Step 3a: Postgres-as-988 health check (do this FIRST — most likely failure)**
+
+The final review flagged this as the single most-likely-to-trip item: the VectorChord/official
+Postgres image runs `getpwuid()` on its effective uid, and uid 988 has no passwd entry inside
+the container, so `initdb` on a fresh data dir can fail. Check the DB pod before investing in
+the photo re-upload:
+
+```bash
+kubectl -n immich logs deploy/immich-postgres --tail=50
+kubectl -n immich get pod -l app.kubernetes.io/name=immich-postgres   # Running, not CrashLoopBackOff
+```
+
+- **Healthy:** logs show `database system is ready to accept connections`. Proceed.
+- **Failed** with `could not look up local user ID 988`, `initdb: … permission denied`, or a
+  crash loop: this is a **design tweak, not an operator workaround** — stop and hand back to the
+  agent. The fix (validated then, not now): drop the forced `runAsUser`/`runAsGroup` from the
+  `immich-postgres` pod so the image runs its default `root→postgres` entrypoint (which owns a
+  passwd entry and chowns `PGDATA` itself), and adjust the `pgdata` tmpfiles rule so it doesn't
+  fight that ownership on the next switch. Server + ML stay at 988 (they must own `library/`
+  and `model-cache/`). Immich's own `docker-compose.yml` runs Postgres with no user override,
+  so this is the reference-aligned fallback.
+
 - [ ] **Step 4: Behavioural isolation check (the Task 1 deferred check)**
 
 ```bash
