@@ -49,9 +49,9 @@ in {
     "d ${facts.mediaRoot}/apps/audiobookshelf 0775 _media _media -"
     "d ${facts.mediaRoot}/apps/audiobookshelf/config 0775 _media _media -"
     "d ${facts.mediaRoot}/apps/audiobookshelf/metadata 0775 _media _media -"
-    # CWA runs as _media (994); append (A+, not replace) the _media group rwx on
-    # the library so the CWA pod can write (redundant with the recursive _media
-    # ACL above, but kept explicit for clarity).
+    # CWA runs as _media (994); this A+ grants the _media group rwx on the books
+    # library so the CWA pod can write. Now the only _media grant for books — the
+    # blanket recursive rule was removed.
     "A+ ${facts.mediaRoot}/books - - - - group:_media:rwx"
   ];
 
@@ -61,8 +61,14 @@ in {
   systemd.services.zfs-media-posixacl = {
     description = "Ensure acltype=posixacl on pool/media";
     wantedBy = ["local-fs.target"];
-    after = ["zfs-mount.service"];
-    before = ["systemd-tmpfiles-setup.service"];
+    # Order after the dataset is actually mounted (RequiresMountsFor resolves to
+    # the generated data-Media.mount, avoiding the imprecise zfs-mount.service),
+    # and before BOTH tmpfiles units: -setup (boot) AND -resetup (the unit
+    # switch-to-configuration re-runs on `nixos-rebuild switch`). Missing the
+    # resetup ordering lets the ACL rules apply before posixacl is on during a
+    # switch, silently no-opping the reader ACL until the next reboot.
+    before = ["systemd-tmpfiles-setup.service" "systemd-tmpfiles-resetup.service"];
+    unitConfig.RequiresMountsFor = facts.mediaRoot;
     serviceConfig = {
       Type = "oneshot";
       ExecStart = "${pkgs.zfs}/bin/zfs set acltype=posixacl pool/media";

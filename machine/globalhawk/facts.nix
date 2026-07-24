@@ -11,8 +11,9 @@
   mediaUid = 994;
   # The `immich` service uid/gid — Immich's k8s pods run as it and its data tree
   # is owned by it, so photos are isolated from the shared `_media` (994) apps
-  # (radarr/sonarr bind-mount all of mediaRoot). 993 is free; 994 is _media.
-  immichUid = 993;
+  # (radarr/sonarr bind-mount all of mediaRoot). 988 is free in both the uid and
+  # gid namespaces (994 is _media; 993's uid is free but gid 993 is the avahi group).
+  immichUid = 988;
 
   timezone = "America/Denver";
 
