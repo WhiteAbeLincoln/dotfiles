@@ -28,16 +28,6 @@
     hash = "sha256-HVHN7NRC8fX4l4Pp4BabldNyck2iA8x13XpcTlChDOY=";
   };
 
-  # sealed-secrets controller, pinned upstream YAML (no Helm). A SealedSecret is
-  # encrypted to the cluster key and safe in the world-readable store + git; the
-  # controller decrypts it into a real Secret. Fixes the plaintext-in-/nix/store
-  # leak of the Mullvad key (see Task 2.1).
-  sealedSecretsVersion = "0.27.3";
-  sealedSecretsYaml = pkgs.fetchurl {
-    url = "https://github.com/bitnami-labs/sealed-secrets/releases/download/v${sealedSecretsVersion}/controller.yaml";
-    hash = "sha256-NRZkphGadnGanS3l1g1V/JIfvUhaseocrmyYMqKOUco=";
-  };
-
   nixidyCombined = pkgs.runCommand "nixidy-globalhawk.yaml" {} ''
     : > "$out"
     for f in $(${pkgs.findutils}/bin/find -L ${nixidyManifests} -name '*.yaml' -not -path '*/apps/*' | sort); do
@@ -81,13 +71,13 @@ in {
       # Third-party controllers: pinned upstream YAML, applied before our CRs
       # (k3s retries until the CRDs they define are established).
       cert-manager.source = certManagerYaml;
-      sealed-secrets.source = sealedSecretsYaml;
     };
   };
 
-  # kubectl/kubeseal/helm on PATH for the operator. No global KUBECONFIG env: the
+  # kubectl/helm/sops on PATH for the operator. No global KUBECONFIG env: the
   # admin config at /etc/rancher/k3s/k3s.yaml is root-only, so operators use
   # `sudo k3s kubectl ...` (which finds it automatically), and the sandbox agent
   # user gets its own read-only kubeconfig via services.aiAgentSandbox.k3s.
-  environment.systemPackages = [pkgs.kubectl pkgs.kubernetes-helm pkgs.kubeseal];
+  # sops replaces kubeseal — secrets are managed via machine/globalhawk/sops.nix.
+  environment.systemPackages = [pkgs.kubectl pkgs.kubernetes-helm pkgs.sops];
 }
