@@ -1,8 +1,10 @@
 # torrent-vpn: gluetun (Mullvad WireGuard) + qbittorrent in ONE pod, sharing the
 # pod network namespace — the k8s-native replacement for docker's
 # --network=container:vpn. Only qbittorrent egresses via the VPN; the arr apps
-# do not (they reach qbit by cluster DNS). The WG key is a SealedSecret, closing
-# the old plaintext-in-/nix/store leak.
+# do not (they reach qbit by cluster DNS). The WG key is a k8s Secret
+# (mullvad-wg / WIREGUARD_PRIVATE_KEY) rendered by sops-nix into the k3s
+# manifests dir at activation — see machine/globalhawk/sops.nix — never in the
+# store or git. gluetun references it by name via secretKeyRef below.
 {
   lib,
   ingressSuffix,
@@ -223,26 +225,5 @@ in {
         };
       };
     };
-    # SealedSecret: encrypted to the cluster key (safe to commit). Unseals to
-    # Secret/mullvad-wg in the media namespace, consumed by gluetun above.
-    yamls = [
-      (builtins.toJSON {
-        apiVersion = "bitnami.com/v1alpha1";
-        kind = "SealedSecret";
-        metadata = {
-          name = "mullvad-wg";
-          namespace = "media";
-        };
-        spec = {
-          encryptedData.WIREGUARD_PRIVATE_KEY = "AgBYCjVkcBSsrnmeCWhwIQrLCDOExfQOkK6DhBMHguCzo0s8EU28nWaNob3TJwI132QVaDPVI383/U7FhLJFXr0xwjtTNJCd3TLKGlb5bls6E0ipIhwc049DImSW+nSR2qw9R99TK+u3eW3oALS8dwiUeiPWC5FMTqH9uFbdpPyqquBAHj+/B1QuwhUJd2kUT7GnxBNL31EDvnS6ZCPZZqCol2YlzNZYq2+lolvN2WYJKPgbX/CwjW7d0rLgGK9AuC0E+/33sQIqVRAtlXl+39FEN/q+9SDDMS/lJd83C6CdnENsRBsha9Elfvt7BpWdz9S7aYqJB5nroEMEs7tGbjfikOWqLN8RhUNfQaEQEfy2P4H5lrymHYMcaj+oY1HqdNah8cPzU8vnRfp9s2AGownzj1p+YzE0gGEtDPT59JeDed4Ssv0j1xdmHe7W0XjPtcItp5xbe5mST8m4TurIPVFeckPQWoTIBNfGtEVxZLP8zhhu84uXDBWw6e9kwkBKnYLqC8goEZ2x1tD8uXsgKkPog7bO0yyr3/0Wzw8ae6GRWFXWwr+olmKW7iV/Sqy4sv5d5UnrYqTo/k2Gj94e6v48PGpHJvCvg3gS5xd+/Fhl7rUA7Fcbq7E5HeH2ahjB1HQcxAxv1GWYlUJAaWTh/cpc3kG8mrBXXvo/33TcM/o+s3LpLc+9eZqjU9F1fBpvZYkKI7awgyFL2+YnGzKRELkC+K5yaGPK/fPEbWNg9dyo3pMoFeUWe5ZN0Z3gQQ==";
-          template = {
-            metadata = {
-              name = "mullvad-wg";
-              namespace = "media";
-            };
-          };
-        };
-      })
-    ];
   };
 }
