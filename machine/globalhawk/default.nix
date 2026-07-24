@@ -36,6 +36,7 @@ in {
     ./backup.nix
     ./k3s.nix
     ./adguard.nix
+    ./sops.nix
     ../../modules/nixos/ai-agent-sandbox.nix
   ];
 
@@ -126,8 +127,11 @@ in {
   networking.networkmanager.enable = false; # Easiest to use and most distros use this by default.
   networking.wireless = {
     enable = true; # Enables wireless support via wpa_supplicant.
+    # PSK resolved at runtime from the sops-rendered external-password file
+    # (ext_password_backend=file:), so the passphrase stays out of the store.
+    secretsFile = config.sops.templates."wireless.env".path;
     networks = {
-      pokestop.psk = secrets.pokestop_psk;
+      pokestop.pskRaw = "ext:pokestop_psk";
     };
   };
 

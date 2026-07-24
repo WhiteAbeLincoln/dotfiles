@@ -3,7 +3,6 @@
   pkgs,
   ...
 }: let
-  secrets = import ../../secrets/common.nix;
   facts = import ./facts.nix;
 in {
   boot.supportedFilesystems = ["zfs"];
@@ -45,7 +44,10 @@ in {
         host = "smtp.gmail.com";
         port = 587;
         user = "abelincoln.white@gmail.com";
-        password = secrets.gmail_password;
+        # Read at send time from the sops runtime file (root-owned), keeping the
+        # app password out of the world-readable store. Senders (ZED, smartd,
+        # restic failure alert) run as root, which can read /run/secrets.
+        passwordeval = "cat ${config.sops.secrets.gmail_password.path}";
         from = "abelincoln.white@gmail.com";
       };
     };

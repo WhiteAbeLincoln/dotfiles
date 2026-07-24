@@ -4,7 +4,6 @@
   config,
   ...
 }: let
-  secrets = import ../../secrets/globalhawk.nix;
   facts = import ./facts.nix;
   # Immich's UPLOAD_LOCATION, taken from the service config so the two can't
   # drift (becomes services.immich.mediaLocation after the NixOS migration).
@@ -12,30 +11,15 @@
   # Where the newest Immich DB dump is staged for inclusion in the backup.
   stagedDbDump = "/var/lib/restic-media/immich-db-latest.sql.gz";
 in {
-  # Materialize restic credentials from the git-crypt'd secrets file.
-  # NOTE: environment.etc.*.text renders content into the world-readable Nix
-  # store. This matches the repo's existing secret handling (e.g. the msmtp
-  # password in disks.nix); migrating secrets to agenix/sops is the future
-  # hardening path, out of scope here.
-  environment.etc = {
-    "restic/media-password" = {
-      text = secrets.restic.b2.restic_repo_pass;
-      mode = "0600";
-    };
-    "restic/media-env" = {
-      text = ''
-        AWS_ACCESS_KEY_ID=${secrets.restic.b2.key_id}
-        AWS_SECRET_ACCESS_KEY=${secrets.restic.b2.app_key}
-      '';
-      mode = "0600";
-    };
-  };
-
+  # restic credentials come from sops-nix at activation (decrypted to
+  # /run/secrets, never the store). Repo URL + repo password are single-value
+  # secrets; the B2 API creds ride in the sops-rendered EnvironmentFile. See
+  # machine/globalhawk/sops.nix.
   services.restic.backups.media = {
     initialize = true; # create the repo on first run
-    repository = secrets.restic.b2.repo; # S3-compatible B2 endpoint + bucket
-    passwordFile = "/etc/restic/media-password";
-    environmentFile = "/etc/restic/media-env";
+    repositoryFile = config.sops.secrets.restic_repo.path; # S3-compatible B2 endpoint + bucket
+    passwordFile = config.sops.secrets.restic_repo_pass.path;
+    environmentFile = config.sops.templates."restic-env".path;
 
     # Direct path backup (no ZFS snapshot): media is write-once and the Immich
     # dump is an atomically-written file. See the design spec for rationale.
