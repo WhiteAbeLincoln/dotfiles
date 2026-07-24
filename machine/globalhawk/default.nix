@@ -27,7 +27,6 @@ in {
     ./hardware-configuration.nix
     # <home-manager/nixos>
     ../../program/plex
-    ../../program/calibre-web
     ../../program/immich
     # TODO: homebridge has been added to nixos
     # remove custom module
@@ -108,10 +107,6 @@ in {
   # home-manager.useGlobalPkgs = true;
   # home-manager.users.${user} = import ./home.nix;
 
-  users.users.calibre-web.extraGroups = ["_media"];
-  # Host-specific library path for the calibre-web program module.
-  services.calibre-web.options.calibreLibrary = "${facts.mediaRoot}/books";
-
   # Unprivileged user for running AI agents read-only; see
   # docs/superpowers/specs/2026-07-22-agent-user-sandbox-design.md.
   services.aiAgentSandbox = {
@@ -167,7 +162,6 @@ in {
     allowedTCPPorts = [
       80 # Traefik ingress (HTTP -> HTTPS)
       443 # Traefik ingress (HTTPS)
-      8083 # calibre-web (still native, deferred)
       config.services.immich-custom.port # immich (still on docker, deferred)
     ];
     allowedUDPPorts = [
