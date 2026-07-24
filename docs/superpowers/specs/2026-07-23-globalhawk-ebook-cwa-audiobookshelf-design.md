@@ -49,6 +49,9 @@ Two workloads, in a new `library` namespace:
   original "run in parallel" idea — see Cutover; CWA shares the library, so parallel
   writers are unsafe).
 - **Friendly ingress hostnames:** `books.h.abrahamwhite.com`, `audiobooks.h.abrahamwhite.com`.
+- **Pin all workload images.** The new apps ship pinned, and the existing unpinned
+  `:latest` images (prowlarr/radarr/sonarr, qbittorrent, gluetun) are pinned to the
+  version currently running, as part of this change — see Image pinning.
 
 ## Workloads
 
@@ -126,6 +129,23 @@ before and after and diffing the YAML for `prowlarr`/`radarr`/`sonarr`/`torrent-
 `qbittorrent`: only cosmetic differences (key ordering, whitespace) are acceptable — **no
 changes to image, env values, ports, volumes, securityContext, probes, or strategy**. If
 a diff shows a field-value change, the helper is wrong, not the old code.
+
+## Image pinning
+
+Every workload image is pinned to a concrete tag (a `name:tag` where the tag is an
+immutable release version, ideally with an `@sha256:` digest) — no floating `:latest`.
+This covers the **new** apps and retroactively fixes the **existing** unpinned ones so a
+`switch` (or an image re-pull) can't silently roll a workload forward.
+
+- **New:** `crocodilestick/calibre-web-automated`, `ghcr.io/advplyr/audiobookshelf` —
+  pin to the current release at implementation time.
+- **Existing (currently `:latest`):** `lscr.io/linuxserver/{prowlarr,radarr,sonarr}`,
+  `lscr.io/linuxserver/qbittorrent`, `qmcgaw/gluetun`. Pin each to the version **currently
+  running** so pinning is a no-op on live behaviour — read the running image ref/digest
+  from the cluster (`kubectl get pod -n media <pod> -o jsonpath='{.spec.containers[*].image}'`
+  and the resolved digest from `.status.containerStatuses[*].imageID`) before choosing the
+  tag. `cert-manager` is already pinned (`v1.16.2` in `k3s.nix`); leave it.
+- Bumping a pinned image is thereafter a deliberate one-line edit, not an implicit pull.
 
 ## Namespace & network — `k8s/infra/network.nix` (or sibling)
 
@@ -205,7 +225,9 @@ hazard as the arr atomic cutover). Therefore they **must not run concurrently as
 
 - `nix flake check` and the nixidy env evaluate cleanly.
 - **Refactor gate:** rendered-manifest diff for `prowlarr`/`radarr`/`sonarr`/`torrent-vpn`/
-  `qbittorrent` shows only cosmetic changes (no field-value changes).
+  `qbittorrent` shows only cosmetic changes — **except** the intended `image:` tag change
+  from `:latest` to the pinned-current version, which must equal the digest already
+  running (so it is a no-op on the live cluster).
 - `nix run .#k3s-drift` reports no orphans/drift after switch.
 - CWA reachable at `books.h.abrahamwhite.com`; it lists the pre-existing library (proving
   it read the existing `metadata.db`); a web upload and a BookDrop ingest both land in the
