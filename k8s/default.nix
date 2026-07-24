@@ -23,5 +23,6 @@
     ./apps/plex.nix
     ./apps/arr.nix
     ./apps/torrent.nix
+    ./apps/calibre-web-automated.nix
   ];
 }
