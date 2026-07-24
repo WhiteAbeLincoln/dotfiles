@@ -86,9 +86,17 @@ convention. Values below are quoted verbatim from the v3.0.0 release
 - Model cache: hostPath `${mediaRoot}/apps/immich/model-cache` mounted at `/cache`.
   Env: `TRANSFORMERS_CACHE=/cache`, `HF_XET_CACHE=/cache/huggingface-xet`,
   `MPLCONFIGDIR=/cache/matplotlib-config`.
-- `resources.limits.memory` set to protect the 16 GB box (start ~3 Gi; tune after
-  observing CLIP load). The workload is idempotently disable-able (drop the deployment +
-  `IMMICH_MACHINE_LEARNING_URL`) if RAM proves tight — search/faces degrade gracefully.
+- Memory is bursty, not constant: near-idle (a few hundred MB) between jobs, climbing as
+  CLIP/face models load on demand during work, then dropping back after
+  `MACHINE_LEARNING_MODEL_TTL` (default 300 s) unloads idle models. The one sustained
+  spell is the initial import backlog (thousands of assets encoded at once); steady-state
+  after that is occasional (new uploads only).
+- `resources.requests.memory` **low** (~512 Mi–1 Gi) so the scheduler only reserves the
+  idle baseline, not the ceiling; `resources.limits.memory` ~3 Gi as a hard cap to protect
+  the 16 GB box from a runaway spike (it's a limit, not a reservation — actual RSS is what's
+  used). Tune after observing the first CLIP passes. The workload is idempotently
+  disable-able (drop the deployment + `IMMICH_MACHINE_LEARNING_URL`) if RAM proves tight —
+  search/faces degrade gracefully.
 
 ### immich-postgres
 
