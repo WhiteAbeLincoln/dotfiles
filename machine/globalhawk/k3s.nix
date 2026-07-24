@@ -74,10 +74,39 @@ in {
     };
   };
 
-  # kubectl/helm/sops on PATH for the operator. No global KUBECONFIG env: the
-  # admin config at /etc/rancher/k3s/k3s.yaml is root-only, so operators use
-  # `sudo k3s kubectl ...` (which finds it automatically), and the sandbox agent
+  # kubectl/helm/sops on PATH for the operator. The trusted user gets a
+  # ready-to-use admin kubeconfig at ~/.kube/config (below); the sandbox agent
   # user gets its own read-only kubeconfig via services.aiAgentSandbox.k3s.
   # sops replaces kubeseal — secrets are managed via machine/globalhawk/sops.nix.
   environment.systemPackages = [pkgs.kubectl pkgs.kubernetes-helm pkgs.sops];
+
+  # Convenience: give the trusted operator (meta.user) a ready-to-use admin
+  # kubeconfig at ~/.kube/config so kubectl/k9s work with no sudo and no
+  # KUBECONFIG juggling. A root oneshot copies k3s's admin config into the
+  # operator's home once k3s has written it.
+  #
+  # Copy (not a symlink, and NOT --write-kubeconfig-mode=0644): the admin config
+  # is full cluster-admin, and the read-only sandbox agent shares the operator's
+  # `users` group — making /etc/rancher/k3s/k3s.yaml group/world-readable would
+  # hand the agent cluster-admin. An 0600 file in the operator's home is not.
+  systemd.services.operator-kubeconfig = let
+    user = config.meta.user;
+    home = config.users.users.${user}.home;
+  in {
+    description = "Install the k3s admin kubeconfig for ${user}";
+    after = ["k3s.service"];
+    wants = ["k3s.service"];
+    wantedBy = ["multi-user.target"];
+    path = [pkgs.coreutils];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      # k3s writes its admin kubeconfig early in startup; wait briefly for it.
+      for _ in $(seq 1 30); do [ -f /etc/rancher/k3s/k3s.yaml ] && break; sleep 1; done
+      install -d -o ${user} -g users -m 0700 ${home}/.kube
+      install -o ${user} -g users -m 0600 /etc/rancher/k3s/k3s.yaml ${home}/.kube/config
+    '';
+  };
 }
