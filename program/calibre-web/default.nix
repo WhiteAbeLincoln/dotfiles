@@ -5,10 +5,11 @@
 
   # Create the calibre-web user even when the service is disabled, so that
   # per-host modules (e.g. machine/globalhawk) can reference it.
+  # Values mirror what the nixpkgs services.calibre-web module sets (it gates
+  # its own user/group behind enable), so re-enabling merges cleanly — keep in sync.
   users.users.calibre-web = {
     isSystemUser = true;
     group = "calibre-web";
-    createHome = false;
   };
   users.groups.calibre-web = {};
 
@@ -22,6 +23,8 @@
     listen.ip = "0.0.0.0";
     options = {
       enableBookUploading = true;
+      # calibreLibrary is a host-specific path, set by the importing machine
+      # (globalhawk derives it from facts.mediaRoot).
     };
   };
 }
