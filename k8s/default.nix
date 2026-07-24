@@ -26,5 +26,6 @@
     ./apps/torrent.nix
     ./apps/calibre-web-automated.nix
     ./apps/audiobookshelf.nix
+    ./apps/immich.nix
   ];
 }
