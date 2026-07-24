@@ -44,6 +44,16 @@ K3S_ADMIN_KUBECONFIG = "/etc/rancher/k3s/k3s.yaml"
 OWNER_ANNOTATION = "objectset.rio.cattle.io/owner-name"
 OWNER = "nixidy"
 
+# sops-nix delivers a few Secrets through the SAME k3s auto-deploy dir as a
+# parallel Nix authoring lane (machine/globalhawk/sops.nix renders them into
+# /var/lib/rancher/k3s/server/manifests/sops-*.yaml). k3s applies each as its
+# own Addon, stamping the objectset owner-name with the manifest filename
+# (e.g. "sops-mullvad-wg"). These are Nix-authored but never appear in the
+# nixidy render this tool diffs against, so the untracked scan must treat them
+# as authored, not hand-created. Their apply health is covered by their
+# consumers (cert-manager issuance, the gluetun VPN), not by this tool.
+SOPS_OWNER_PREFIX = "sops-"
+
 # Kinds nixidy delivers now or has delivered before. The orphan scan queries the
 # union of this and whatever kinds appear in the current desired set, so a kind
 # that was fully removed (its last object deleted) is still checked for orphans.
@@ -317,7 +327,12 @@ def load_untracked(nixidy_namespaces: set[str], live_certs: set[tuple[str, str]]
             if not items:
                 continue
             for it in items:
-                if owner_of(it) == OWNER or has_controller(it) or _is_boilerplate(kind, it):
+                owner = owner_of(it)
+                if owner == OWNER or has_controller(it) or _is_boilerplate(kind, it):
+                    continue
+                # Authored via sops-nix through the k3s manifests dir (see
+                # SOPS_OWNER_PREFIX) — Nix-owned, just not in the nixidy render.
+                if owner and owner.startswith(SOPS_OWNER_PREFIX):
                     continue
                 meta = it.get("metadata", {})
                 name = meta.get("name", "")
