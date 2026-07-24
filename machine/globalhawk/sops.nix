@@ -30,6 +30,7 @@
       pokestop_psk = {};
       cf_api_token = {};
       mullvad_wg_key = {};
+      immich_db_password = {};
     };
 
     templates = {
@@ -81,6 +82,24 @@
           type: Opaque
           stringData:
             WIREGUARD_PRIVATE_KEY: ${config.sops.placeholder.mullvad_wg_key}
+        '';
+      };
+      # Immich Postgres password. name/key/namespace are load-bearing: the
+      # immich-server (DB_PASSWORD) and immich-postgres (POSTGRES_PASSWORD)
+      # containers in k8s/apps/immich.nix reference immich-db/password.
+      "sops-immich-db.yaml" = {
+        path = "/var/lib/rancher/k3s/server/manifests/sops-immich-db.yaml";
+        mode = "0400";
+        owner = "root";
+        content = ''
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: immich-db
+            namespace: immich
+          type: Opaque
+          stringData:
+            password: ${config.sops.placeholder.immich_db_password}
         '';
       };
     };
