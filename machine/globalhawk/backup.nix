@@ -5,9 +5,10 @@
   ...
 }: let
   facts = import ./facts.nix;
-  # Immich's UPLOAD_LOCATION, taken from the service config so the two can't
-  # drift (becomes services.immich.mediaLocation after the NixOS migration).
-  immichRoot = config.services.immich-custom.uploadDir;
+  # Immich's managed store on k3s (previously derived from the retired custom
+  # Immich module's upload dir). Immich writes originals + its built-in DB
+  # dumps under here (mounted at /data).
+  immichRoot = "${facts.mediaRoot}/immich/library";
   # Where the newest Immich DB dump is staged for inclusion in the backup.
   stagedDbDump = "/var/lib/restic-media/immich-db-latest.sql.gz";
 in {
