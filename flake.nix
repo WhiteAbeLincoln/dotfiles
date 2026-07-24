@@ -30,6 +30,14 @@
     # delivery via services.k3s.manifests (no ArgoCD, no Helm). Tracks its own
     # nixpkgs deliberately — its CRD generators pin against it.
     nixidy.url = "github:arnarg/nixidy/latest";
+    # sops-nix: activation-time secret decryption (age; key derived from the
+    # host's SSH ed25519 key via ssh-to-age). Replaces sealed-secrets (k8s) and
+    # the git-crypt->/nix/store leak for globalhawk's runtime secrets. See
+    # docs/superpowers/specs/2026-07-23-globalhawk-secrets-sops-design.md.
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     # virby.url = "github:quinneden/virby-nix-darwin";
   };
 

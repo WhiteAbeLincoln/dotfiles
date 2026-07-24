@@ -1,0 +1,18 @@
+# sops encryption policy. Public keys only — safe to commit.
+#   host      = globalhawk's SSH host key, via ssh-to-age (decrypts at activation)
+#   operator  = dedicated age key for editing (age-keygen; ~/.config/sops/age/keys.txt)
+# Every secret is wrapped for BOTH, so the host can decrypt on switch and the
+# operator can edit/re-key. The read-only agent is deliberately not a recipient.
+keys:
+  - &host age1fg7x0pcsrwvtk7kyzc8244we33xq6yh0dhsvtaclfecgjv4qupascrtm6u
+  - &operator age1fnqu3jqa72skncjkasdxv5fp3jmepcdth3fx7qheg0r4exemsp5sq7p3j4
+creation_rules:
+  # globalhawk-only runtime secrets. Host secrets read at activation are
+  # globalhawk's alone; if another host ever needs to read a secret at runtime,
+  # add a second file + rule with that host's age key (per-file scoping — every
+  # recipient of a file can read all of its keys).
+  - path_regex: secrets/globalhawk\.sops\.yaml$
+    key_groups:
+      - age:
+          - *host
+          - *operator

@@ -1,2 +1,6 @@
+# git-crypt covers only the remaining plaintext-Nix secret files. The sops data
+# file (secrets/*.sops.yaml) is already age-encrypted to recipients and MUST NOT
+# be double-wrapped by git-crypt — that would make it opaque to `sops` tooling.
 machine/globalhawk/secrets.nix filter=git-crypt diff=git-crypt
-secrets/** filter=git-crypt diff=git-crypt
+secrets/common.nix filter=git-crypt diff=git-crypt
+secrets/globalhawk.nix filter=git-crypt diff=git-crypt
