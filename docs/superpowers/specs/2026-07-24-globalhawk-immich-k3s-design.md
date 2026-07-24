@@ -50,6 +50,16 @@ explicitly disposable.
   intra-namespace + Traefik), mirroring `media`/`library`.
 - **Ingress host:** `photos.h.abrahamwhite.com` (wildcard cert already covers it; mDNS
   alias auto-derived).
+- **Storage isolation via POSIX ownership, not shared uid.** This migration is also the
+  first step of tightening media-file access: today every workload runs as the single
+  `_media` uid (994) and the tree is world-readable (`0755`), so any app can read any
+  other's files — and radarr/sonarr in particular bind-mount the *entire* `/data/Media`
+  root (for hardlinks), so they can read photos. Immich instead gets its **own** service
+  uid (`immich`, 993); its data tree is `0750 immich:immich`, with a new `media-readers`
+  group (`abe` + `agent`) granted read via a default ACL. arr is then denied photos by the
+  kernel (it's "other" on a `0750` dir it doesn't own) **without any change to the arr
+  stack** — see *Isolation & permissions*. Fuller mount-level isolation for arr is
+  deferred (*Deferred future work*).
 
 ## Target architecture
 
@@ -57,6 +67,11 @@ Four workloads in a new `immich` namespace (`k8s/apps/immich.nix`, plus
 `k8s/infra/immich-network.nix` for the NetworkPolicy). All images digest-pinned per repo
 convention. Values below are quoted verbatim from the v3.0.0 release
 `docker/docker-compose.yml`.
+
+All Immich data lives under one isolated tree, **`${mediaRoot}/immich/`** (`library/`,
+`pgdata/`, `model-cache/`), owned `immich:immich` (uid 993) mode `0750` — one owner, one
+ACL, one thing to reason about. All pods run as uid 993 (`runAsUser`/`runAsGroup`/`fsGroup
+= 993`).
 
 ### immich-server — `k8s/apps/immich.nix`
 
@@ -68,11 +83,11 @@ convention. Values below are quoted verbatim from the v3.0.0 release
   mounted at **`/data`** — the modern mount point (`IMMICH_MEDIA_LOCATION` defaults to
   `/data`; do **not** set it). This replaces the old `${uploadDir}:/usr/src/app/upload`
   mount, which no longer applies.
-- Runs as `_media` (994): `runAsUser`/`runAsGroup`/`fsGroup = mediaUid`, so files the
-  server and CLI write stay `_media`-owned (matching audiobookshelf). **Verify at
-  implementation** that the server needs no root operation on `/data`; if it insists,
-  fall back to root + `fsGroup` (LinuxServer-style), but Immich's own image supports an
-  arbitrary UID.
+- Runs as `immich` (993): `runAsUser`/`runAsGroup`/`fsGroup = 993`, so files the server
+  writes are `immich`-owned and readable by `abe`/`agent` through the inherited
+  `media-readers` default ACL. **Verify at implementation** that the server needs no root
+  operation on `/data`; if it insists, fall back to root + `fsGroup = 993`, but Immich's
+  own image supports an arbitrary UID.
 - Env: `DB_HOSTNAME=immich-postgres`, `DB_USERNAME=postgres`, `DB_DATABASE_NAME=immich`,
   `DB_PASSWORD` (from the `immich-db` Secret via `secretKeyRef`), `REDIS_HOSTNAME=immich-redis`,
   `IMMICH_MACHINE_LEARNING_URL=http://immich-machine-learning:3003`, `TZ=<timezone>`.
@@ -83,7 +98,7 @@ convention. Values below are quoted verbatim from the v3.0.0 release
 - Image: `ghcr.io/immich-app/immich-machine-learning:v3.0.0@sha256:…` — **same tag as the
   server** (the one version knob).
 - Port `3003`.
-- Model cache: hostPath `${mediaRoot}/apps/immich/model-cache` mounted at `/cache`.
+- Model cache: hostPath `${mediaRoot}/immich/model-cache` mounted at `/cache`.
   Env: `TRANSFORMERS_CACHE=/cache`, `HF_XET_CACHE=/cache/huggingface-xet`,
   `MPLCONFIGDIR=/cache/matplotlib-config`.
 - Memory is bursty, not constant: near-idle (a few hundred MB) between jobs, climbing as
@@ -103,7 +118,12 @@ convention. Values below are quoted verbatim from the v3.0.0 release
 - Image: `ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23`
   (Immich's official DB image; bundles VectorChord + pgvector). Fresh DB ⇒ no extension
   migration; `DB_VECTOR_EXTENSION` auto-detects VectorChord.
-- Data: hostPath `${mediaRoot}/apps/immich/pgdata` mounted at `/var/lib/postgresql/data`.
+- Data: hostPath `${mediaRoot}/immich/pgdata` mounted at `/var/lib/postgresql/data`.
+  Runs as uid 993 (`runAsUser`/`fsGroup = 993`); **verify** the Immich Postgres image
+  initialises a fresh `PGDATA` as an arbitrary (non-root, non-`postgres`) uid — the
+  official `postgres` base supports this when the data dir is owned by the running uid
+  (which `fsGroup` + the 993-owned hostPath ensure). If it refuses, run Postgres as its
+  default user and set the `pgdata/` subdir ownership to match.
 - Env: `POSTGRES_PASSWORD` (from Secret), `POSTGRES_USER=postgres`, `POSTGRES_DB=immich`,
   `POSTGRES_INITDB_ARGS=--data-checksums`.
 - `/dev/shm`: mount an `emptyDir{medium=Memory, sizeLimit=128Mi}` at `/dev/shm` (the
@@ -130,6 +150,45 @@ reference it. Fresh DB ⇒ we set a **new** password and retire the old `immich_
 Default-deny-ingress NetworkPolicy for the `immich` ns, allowing intra-namespace traffic
 (server↔postgres↔redis↔ML) and Traefik→server:2283, modeled on `library-network.nix`.
 
+## Isolation & permissions
+
+The goal: **only Immich (and `abe`/`agent` read-only) can reach the photo tree; no other
+workload can — including arr, which bind-mounts all of `/data/Media`.** Achieved with host
+POSIX ownership + a reader ACL; no arr change, no hardlink risk.
+
+Declared in the NixOS layer (`machine/globalhawk/default.nix`, or a small dedicated
+module):
+
+- **`immich` service user + group, uid/gid 993** (993 is free; 994 is `_media`). System
+  user, no login. Immich's pods run as it.
+- **`media-readers` group** with members `abe` + `agent`. This is the reusable human-read
+  handle for tightened per-app trees; `abe` already has `_media` (write) elsewhere, and
+  `agent` (the read-only sandbox, uid 1001) is deliberately kept out of `_media` — it only
+  ever gets read, via this group.
+- **Ownership/mode + ACL on `${mediaRoot}/immich`** via `systemd.tmpfiles` (the same
+  mechanism the ebook stack uses):
+  - `d ${mediaRoot}/immich 0750 immich immich` (and `library/`, `pgdata/`, `model-cache/`).
+  - `A+` ACL granting `media-readers` read, **access + default** so files Immich creates
+    inherit it: effectively `g:media-readers:rX` + `d:g:media-readers:rX` (capital `X` =
+    traverse dirs, read files). Use `A+` (append), not `A`, per the ebook-stack lesson
+    about overlapping tmpfiles ACLs.
+
+**Why this denies arr without touching it.** arr's containers run as `_media` (994). The
+dir `${mediaRoot}/immich` is `0750 immich:immich`; 994 is neither owner nor in the `immich`
+group nor in `media-readers`, so it falls to "other" = `---` and the kernel refuses even to
+traverse into it. arr never scans `immich/` anyway, so nothing breaks, and its single
+`/data/Media` mount (hence hardlinks/atomic-moves) is untouched. The old originals subtree
+(`${mediaRoot}/immich/photos`, still `_media`-owned `0755` until cleanup) is likewise
+shielded, because arr can't traverse the now-`0750` parent to reach it.
+
+**Human read still works.** `abe`/`agent` are in `media-readers` → the ACL grants `r-x`;
+they browse the tree normally. `restic` runs as root, so backups read everything regardless
+of the `0750` mode, and it preserves + restores POSIX ACLs and ownership.
+
+**The dedicated uid is load-bearing** — it's precisely what lets POSIX distinguish Immich
+from the other media apps. Keeping Immich on `_media` (994) would leave photos readable by
+every 994 workload; that's the status quo we're fixing.
+
 ## Cutover — atomic (operator executes; agent authors + `build`-validates)
 
 Both installs would contend for the same on-disk tree and the same logical service, so
@@ -138,13 +197,17 @@ The agent (sandbox, uid 1001, read-only) authors the Nix and validates with
 `nixos-rebuild build`; the operator runs every `switch`, `kubectl`, `docker`, and CLI step.
 
 1. **(agent)** Author `k8s/apps/immich.nix`, `k8s/infra/immich-network.nix`, the sops
-   Secret, firewall/backup edits; `nixos-rebuild build --flake .#globalhawk` +
+   Secret, the `immich` user + `media-readers` group + tmpfiles ownership/ACL rules, and
+   the firewall/backup edits; `nixos-rebuild build --flake .#globalhawk` +
    `nix run .#k3s-drift` clean.
 2. **(operator)** Set `services.immich-custom.enable = false`; `switch`. Docker Immich
    (server, ML, redis, postgres, db-dumper) stops and its containers are removed. The old
    originals at `${mediaRoot}/immich/photos/upload` are **not touched** — they stay on disk.
-3. **(operator)** `switch` in the k3s stack. Immich boots **empty**: fresh DB, empty
-   `/data`. Confirm `photos.h.abrahamwhite.com` loads the onboarding screen.
+3. **(operator)** `switch` in the k3s stack. Activation creates the `immich` user +
+   `media-readers` group and the tmpfiles rules set `${mediaRoot}/immich` to
+   `0750 immich:immich` with the reader ACL (immediately shielding the still-present old
+   originals from arr). Immich boots **empty**: fresh DB, empty `/data`. Confirm
+   `photos.h.abrahamwhite.com` loads the onboarding screen.
 4. **(operator)** Create the admin account + the second account in the web UI; mint an API
    key for each.
 5. **(operator)** Run the Immich CLI once per account, each against that account's old
@@ -206,12 +269,38 @@ the chart.
   host nodes carry a DNS *search domain*. globalhawk's host `resolv.conf` has none, so risk
   is low, but if the server/ML can't resolve peers, add a pod `dnsConfig` with
   `options ndots:1` (or use FQDN service names). Verify at bring-up.
-- **Run-as-994 vs root** on `/data` (see server section) — verify no chown/permission
-  errors in the server log; fall back to root+`fsGroup` if needed.
+- **Run-as-993 vs root** on `/data` (see server section) — verify no chown/permission
+  errors in the server log; fall back to root+`fsGroup = 993` if needed.
+- **Postgres as uid 993** — verify the Immich Postgres image initialises `PGDATA` as a
+  non-`postgres` uid (see immich-postgres section); this is the most likely permission
+  snag in the stack.
+- **ACL correctness** — after `switch`, confirm `abe` and `agent` can read
+  `${mediaRoot}/immich` and a file Immich creates under `library/`, while a process as
+  `_media` (994) is denied (`sudo -u <arr-uid> ls ${mediaRoot}/immich` → permission
+  denied). This is the behavioural test for the isolation, not a shape assertion.
 - **ML memory** on a 16 GB box shared with Plex transcodes + Postgres — watch RSS during
   the first CLIP/face passes; tune the limit or disable ML if it causes pressure.
 - **CLI account attribution** — uploading under the wrong API key assigns photos to the
   wrong person; the per-account subfolder mapping above must be followed exactly.
+
+## Deferred future work
+
+The permission model here is the first slice of a broader "each app sees only what it
+needs" tightening. Explicitly **not** done now, but designed to compose with what this
+migration establishes (the `media-readers` group + per-app uid pattern):
+
+- **True mount-level isolation for arr.** Today radarr/sonarr bind-mount all of
+  `/data/Media`; POSIX ownership denies them the tightened trees, but the broad mount
+  remains. Fully removing non-arr dirs from their view requires nesting the arr dirs
+  (`movies`/`tv`/`anime`/`torrents`) under a common parent (e.g. `${mediaRoot}/lib/`) so a
+  single mount can exclude the rest — preserving hardlinks/atomic-moves (which break across
+  separate mounts, `EXDEV`, even on one filesystem). The data moves are instant renames on
+  the same dataset, but Plex library paths, arr root folders, and qBittorrent's save path
+  all need re-pointing — a separate, verifiable change of its own.
+- **Per-app uids for the rest of the stack.** Give qBittorrent, the arr apps, CWA, and
+  Audiobookshelf their own uids (as Immich now has), each owning only its data, with
+  `media-readers` for human read — retiring the shared-994 model entirely. Incremental,
+  one app at a time, no data movement (just chown + securityContext).
 
 ## Out of scope
 
