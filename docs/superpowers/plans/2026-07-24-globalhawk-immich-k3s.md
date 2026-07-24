@@ -776,11 +776,20 @@ true forever). Then prove ACLs are actually live before relying on them:
 
 ```bash
 sudo zfs set acltype=posixacl pool/media
-zfs get -o value acltype pool/media          # posixacl
-# prove the kernel now accepts ACLs on this dataset (immich dir exists after any build/switch,
-# or test on any dir); a clean setfacl + getfacl round-trip means ACLs are live, no remount needed:
-sudo setfacl -m g:media-readers:r-x /data/Media/immich 2>/dev/null && getfacl /data/Media/immich | grep media-readers && echo "ACLs live"
+zfs get -o value acltype pool/media          # -> "posix" (modern OpenZFS alias for posixacl) or "posixacl"
+# Prove the dataset actually accepts ACLs now. Test with `root` — do NOT use
+# `media-readers`/`immich` here: those principals don't exist until you switch to
+# the new config, so setfacl would fail "Invalid argument near character 3" on the
+# unresolvable name, which says nothing about ACL support. A clean round-trip on a
+# throwaway dir means ACLs are live (no remount needed):
+t=$(sudo mktemp -d /data/Media/.acltest.XXXXXX)
+sudo setfacl -m u:root:rwx "$t" && getfacl "$t" | grep -q '^user:root:rwx' && echo "ACLs LIVE"
+sudo rm -rf "$t"
 ```
+
+If `setfacl` here instead errors `Operation not supported`, the mount hasn't picked up the
+new `acltype` — remount (`sudo zfs mount -o remount pool/media`) or defer to the post-cutover
+reboot, then re-test.
 
 If `setfacl` errors with "Operation not supported", the mount hasn't picked up posixacl —
 remount it (`sudo zfs mount -o remount pool/media`, or defer to the reboot after cutover) and
