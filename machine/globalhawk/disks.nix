@@ -25,8 +25,22 @@ in {
     # user rwx, group rwx, other rx
     "d ${facts.mediaRoot} 0775 _media _media -"
     "d ${facts.mediaRoot}/apps 0775 _media _media -"
-    # ensure new files are created with the correct permissions using ACL
-    "A ${facts.mediaRoot} - - - - group:_media:rwx"
+    # Grant the _media group rwx on the SHARED media dirs so the media apps
+    # (which run as _media) can write each other's files despite umask. NOT a
+    # blanket rule over ${mediaRoot}: immich/ (isolated, own uid + media-readers
+    # ACL — see immich-storage.nix) and documents/ (abe-private) are deliberately
+    # omitted so enabling posixacl below doesn't expose them.
+    "A+ ${facts.mediaRoot}/anime - - - - group:_media:rwx"
+    "A+ ${facts.mediaRoot}/apps - - - - group:_media:rwx"
+    "A+ ${facts.mediaRoot}/audiobooks - - - - group:_media:rwx"
+    "A+ ${facts.mediaRoot}/docker-services - - - - group:_media:rwx"
+    "A+ ${facts.mediaRoot}/movies - - - - group:_media:rwx"
+    "A+ ${facts.mediaRoot}/music - - - - group:_media:rwx"
+    "A+ ${facts.mediaRoot}/old_books - - - - group:_media:rwx"
+    "A+ ${facts.mediaRoot}/photos - - - - group:_media:rwx"
+    "A+ ${facts.mediaRoot}/torrents - - - - group:_media:rwx"
+    "A+ ${facts.mediaRoot}/tv - - - - group:_media:rwx"
+    # (books keeps its own A+ line below.)
     # App state for the k3s ebook/audiobook workloads (hostPath ignores fsGroup,
     # so the dirs must pre-exist _media-owned for the pods to write).
     "d ${facts.mediaRoot}/apps/calibre-web-automated 0775 _media _media -"
@@ -40,6 +54,20 @@ in {
     # ACL above, but kept explicit for clarity).
     "A+ ${facts.mediaRoot}/books - - - - group:_media:rwx"
   ];
+
+  # POSIX ACLs are off by default on this pool, which silently no-ops every
+  # tmpfiles `A`/`A+` rule. Enable it before systemd-tmpfiles runs so the media
+  # + immich ACLs actually take effect. `xattr=sa` is already set.
+  systemd.services.zfs-media-posixacl = {
+    description = "Ensure acltype=posixacl on pool/media";
+    wantedBy = ["local-fs.target"];
+    after = ["zfs-mount.service"];
+    before = ["systemd-tmpfiles-setup.service"];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.zfs}/bin/zfs set acltype=posixacl pool/media";
+    };
+  };
 
   programs.msmtp = {
     enable = true;
