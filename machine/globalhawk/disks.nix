@@ -28,6 +28,17 @@ in {
     # ensure new files are created with the correct permissions using ACL
     "A ${facts.mediaRoot} - - - - group:_media:rwx"
     "A ${facts.mediaRoot}/books - - - - group:calibre-web:rwx"
+    # App state for the k3s ebook/audiobook workloads (hostPath ignores fsGroup,
+    # so the dirs must pre-exist _media-owned for the pods to write).
+    "d ${facts.mediaRoot}/apps/calibre-web-automated 0775 _media _media -"
+    "d ${facts.mediaRoot}/apps/calibre-web-automated/config 0775 _media _media -"
+    "d ${facts.mediaRoot}/apps/calibre-web-automated/ingest 0775 _media _media -"
+    "d ${facts.mediaRoot}/apps/audiobookshelf 0775 _media _media -"
+    "d ${facts.mediaRoot}/apps/audiobookshelf/config 0775 _media _media -"
+    "d ${facts.mediaRoot}/apps/audiobookshelf/metadata 0775 _media _media -"
+    # CWA runs as _media (994); grant the _media group rwx on the library so it
+    # can write (the calibre-web-group ACL above is removed at decommission).
+    "A ${facts.mediaRoot}/books - - - - group:_media:rwx"
   ];
 
   programs.msmtp = {
