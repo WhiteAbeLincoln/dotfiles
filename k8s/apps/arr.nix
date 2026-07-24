@@ -29,14 +29,14 @@ in {
     (l.mkLsioApp (facts
       // {
         name = "prowlarr";
-        image = "lscr.io/linuxserver/prowlarr:latest";
+        image = "lscr.io/linuxserver/prowlarr@sha256:2f3d31307beba3ba2dd226d191f5f5c14ee3b4d8b49277c64683f5ed97083179";
         port = 9696;
         configPath = "${mediaRoot}/docker-services/torrent-config/prowlarr";
       }))
     (l.mkLsioApp (facts
       // {
         name = "radarr";
-        image = "lscr.io/linuxserver/radarr:latest";
+        image = "lscr.io/linuxserver/radarr@sha256:e35056574cdc695a9ee745aa1ecda9eab3842450bf4b7b8471b023790fa3861d";
         port = 7878;
         configPath = "${mediaRoot}/docker-services/torrent-config/radarr";
         extraVolumes = [mediaVolume];
@@ -45,7 +45,7 @@ in {
     (l.mkLsioApp (facts
       // {
         name = "sonarr";
-        image = "lscr.io/linuxserver/sonarr:latest";
+        image = "lscr.io/linuxserver/sonarr@sha256:24acea2956a0ccb11f103877d9f4f8576600fb34bff34820ed749c2256dab89f";
         port = 8989;
         configPath = "${mediaRoot}/docker-services/torrent-config/sonarr";
         extraVolumes = [mediaVolume];

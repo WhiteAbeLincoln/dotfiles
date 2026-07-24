@@ -63,7 +63,7 @@ in {
               # and qbit can resolve cluster DNS; FIREWALL_INPUT_PORTS allows
               # inbound to the WebUI port.
               gluetun = {
-                image = "qmcgaw/gluetun";
+                image = "qmcgaw/gluetun@sha256:ad6b604e0cecc917a5cb6a8de55cd167ba415da8b7ec13456abb871a84be3c30";
                 securityContext.capabilities.add = ["NET_ADMIN"];
                 # gluetun self-heals its tunnel; this restarts the container as a
                 # backstop if the VPN stays down (the "silent drop" case) so the
@@ -127,7 +127,7 @@ in {
               # via s6 (required for the VueTorrent docker mod to install).
               qbittorrent = l.mkLsioContainer {
                 name = "qbittorrent";
-                image = "lscr.io/linuxserver/qbittorrent:latest";
+                image = "lscr.io/linuxserver/qbittorrent@sha256:b024436f8ca665d16d9a997d26fd27fdf867ee5566ba09f32764e7b2976d3e02";
                 port = 9091;
                 portName = "webui";
                 inherit mediaUid timezone;
