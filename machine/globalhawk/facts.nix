@@ -9,6 +9,10 @@
   # The `_media` service uid/gid that owns the media tree; k8s workloads run with
   # it as PUID/PGID/fsGroup to preserve on-disk ownership.
   mediaUid = 994;
+  # The `immich` service uid/gid — Immich's k8s pods run as it and its data tree
+  # is owned by it, so photos are isolated from the shared `_media` (994) apps
+  # (radarr/sonarr bind-mount all of mediaRoot). 993 is free; 994 is _media.
+  immichUid = 993;
 
   timezone = "America/Denver";
 

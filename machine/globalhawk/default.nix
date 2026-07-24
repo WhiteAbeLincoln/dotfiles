@@ -36,6 +36,7 @@ in {
     ./k3s.nix
     ./adguard.nix
     ./sops.nix
+    ./immich-storage.nix
     ../../modules/nixos/ai-agent-sandbox.nix
   ];
 
