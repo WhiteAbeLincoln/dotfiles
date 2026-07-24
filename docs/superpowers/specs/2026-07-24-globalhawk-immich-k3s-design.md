@@ -55,7 +55,7 @@ explicitly disposable.
   `_media` uid (994) and the tree is world-readable (`0755`), so any app can read any
   other's files — and radarr/sonarr in particular bind-mount the *entire* `/data/Media`
   root (for hardlinks), so they can read photos. Immich instead gets its **own** service
-  uid (`immich`, 993); its data tree is `0750 immich:immich`, with a new `media-readers`
+  uid (`immich`, 988); its data tree is `0750 immich:immich`, with a new `media-readers`
   group (`abe` + `agent`) granted read via a default ACL. arr is then denied photos by the
   kernel (it's "other" on a `0750` dir it doesn't own) **without any change to the arr
   stack** — see *Isolation & permissions*. Fuller mount-level isolation for arr is
@@ -69,9 +69,9 @@ convention. Values below are quoted verbatim from the v3.0.0 release
 `docker/docker-compose.yml`.
 
 All Immich data lives under one isolated tree, **`${mediaRoot}/immich/`** (`library/`,
-`pgdata/`, `model-cache/`), owned `immich:immich` (uid 993) mode `0750` — one owner, one
-ACL, one thing to reason about. All pods run as uid 993 (`runAsUser`/`runAsGroup`/`fsGroup
-= 993`).
+`pgdata/`, `model-cache/`), owned `immich:immich` (uid 988) mode `0750` — one owner, one
+ACL, one thing to reason about. All pods run as uid 988 (`runAsUser`/`runAsGroup`/`fsGroup
+= 988`).
 
 ### immich-server — `k8s/apps/immich.nix`
 
@@ -83,10 +83,10 @@ ACL, one thing to reason about. All pods run as uid 993 (`runAsUser`/`runAsGroup
   mounted at **`/data`** — the modern mount point (`IMMICH_MEDIA_LOCATION` defaults to
   `/data`; do **not** set it). This replaces the old `${uploadDir}:/usr/src/app/upload`
   mount, which no longer applies.
-- Runs as `immich` (993): `runAsUser`/`runAsGroup`/`fsGroup = 993`, so files the server
+- Runs as `immich` (988): `runAsUser`/`runAsGroup`/`fsGroup = 988`, so files the server
   writes are `immich`-owned and readable by `abe`/`agent` through the inherited
   `media-readers` default ACL. **Verify at implementation** that the server needs no root
-  operation on `/data`; if it insists, fall back to root + `fsGroup = 993`, but Immich's
+  operation on `/data`; if it insists, fall back to root + `fsGroup = 988`, but Immich's
   own image supports an arbitrary UID.
 - Env: `DB_HOSTNAME=immich-postgres`, `DB_USERNAME=postgres`, `DB_DATABASE_NAME=immich`,
   `DB_PASSWORD` (from the `immich-db` Secret via `secretKeyRef`), `REDIS_HOSTNAME=immich-redis`,
@@ -119,10 +119,10 @@ ACL, one thing to reason about. All pods run as uid 993 (`runAsUser`/`runAsGroup
   (Immich's official DB image; bundles VectorChord + pgvector). Fresh DB ⇒ no extension
   migration; `DB_VECTOR_EXTENSION` auto-detects VectorChord.
 - Data: hostPath `${mediaRoot}/immich/pgdata` mounted at `/var/lib/postgresql/data`.
-  Runs as uid 993 (`runAsUser`/`fsGroup = 993`); **verify** the Immich Postgres image
+  Runs as uid 988 (`runAsUser`/`fsGroup = 988`); **verify** the Immich Postgres image
   initialises a fresh `PGDATA` as an arbitrary (non-root, non-`postgres`) uid — the
   official `postgres` base supports this when the data dir is owned by the running uid
-  (which `fsGroup` + the 993-owned hostPath ensure). If it refuses, run Postgres as its
+  (which `fsGroup` + the 988-owned hostPath ensure). If it refuses, run Postgres as its
   default user and set the `pgdata/` subdir ownership to match.
 - Env: `POSTGRES_PASSWORD` (from Secret), `POSTGRES_USER=postgres`, `POSTGRES_DB=immich`,
   `POSTGRES_INITDB_ARGS=--data-checksums`.
@@ -186,8 +186,9 @@ per-subtree grants for the dirs that actually share with `_media` (`anime`, `app
 
 Declared in `machine/globalhawk/immich-storage.nix`:
 
-- **`immich` service user + group, uid/gid 993** (993 is free; 994 is `_media`). System
-  user, no login. Immich's pods run as it (owner of the tree).
+- **`immich` service user + group, uid/gid 988** (988 is free in *both* the uid and gid
+  namespaces — note 993 was rejected: its uid is free but gid 993 belongs to the `avahi`
+  group; 994 is `_media`). System user, no login. Immich's pods run as it (owner of the tree).
 - **`media-readers` group** with members `abe` + `agent`. Reusable human-read handle for
   tightened per-app trees; `abe` already has `_media` (write) elsewhere, and `agent` (the
   read-only sandbox, uid 1001) is deliberately kept out of `_media` — it only ever gets
@@ -302,9 +303,9 @@ the chart.
   host nodes carry a DNS *search domain*. globalhawk's host `resolv.conf` has none, so risk
   is low, but if the server/ML can't resolve peers, add a pod `dnsConfig` with
   `options ndots:1` (or use FQDN service names). Verify at bring-up.
-- **Run-as-993 vs root** on `/data` (see server section) — verify no chown/permission
-  errors in the server log; fall back to root+`fsGroup = 993` if needed.
-- **Postgres as uid 993** — verify the Immich Postgres image initialises `PGDATA` as a
+- **Run-as-988 vs root** on `/data` (see server section) — verify no chown/permission
+  errors in the server log; fall back to root+`fsGroup = 988` if needed.
+- **Postgres as uid 988** — verify the Immich Postgres image initialises `PGDATA` as a
   non-`postgres` uid (see immich-postgres section); this is the most likely permission
   snag in the stack.
 - **ACL correctness** — after `switch`, confirm `abe` and `agent` can read

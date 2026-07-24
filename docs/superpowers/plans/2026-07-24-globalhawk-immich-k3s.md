@@ -4,7 +4,7 @@
 
 **Goal:** Move Immich off the stale `oci-containers` install onto the k3s/nixidy pipeline at v3.0.0, with a fresh DB (re-uploading the on-disk originals) and its own uid-isolated storage.
 
-**Architecture:** Four hand-rolled nixidy workloads (server, machine-learning, Postgres, Valkey) in a new `immich` namespace, backed by hostPath storage under a dedicated `${mediaRoot}/immich/` tree owned by a new `immich` service uid (993, `0750`) with a `media-readers` ACL for `abe`/`agent`. The DB password is a sops-rendered k8s Secret. Cutover is atomic: the operator disables the docker install, switches in the k3s stack, then re-uploads originals via the Immich CLI.
+**Architecture:** Four hand-rolled nixidy workloads (server, machine-learning, Postgres, Valkey) in a new `immich` namespace, backed by hostPath storage under a dedicated `${mediaRoot}/immich/` tree owned by a new `immich` service uid (988, `0750`) with a `media-readers` ACL for `abe`/`agent`. The DB password is a sops-rendered k8s Secret. Cutover is atomic: the operator disables the docker install, switches in the k3s stack, then re-uploads originals via the Immich CLI.
 
 **Tech Stack:** NixOS, nixidy (k8s-as-Nix), k3s + Traefik, sops-nix, systemd-tmpfiles ACLs, restic. This is a Nix repo — the unit of work is a Nix evaluation that succeeds or fails; there is no test framework, so **each authoring task's gate is `nixos-rebuild build --flake .#globalhawk` succeeding**, and isolation/functional checks are behavioural steps the operator runs after `switch`.
 
@@ -12,7 +12,7 @@
 
 - **Roles:** the agent (sandbox user, uid 1001, read-only, no sudo) authors Nix and runs `nixos-rebuild build` to validate. The operator (`abe`) runs every `switch`, `sops` edit, `kubectl`, `docker`, and Immich-CLI step. Tasks are labelled **(agent)** or **(operator)**.
 - **Images digest-pinned:** every image is `repo:tag@sha256:…`. Server + ML share one `version` binding (`v3.0.0`).
-- **All Immich pods run as uid 993** (`runAsUser`/`runAsGroup`/`fsGroup = immichUid`).
+- **All Immich pods run as uid 988** (`runAsUser`/`runAsGroup`/`fsGroup = immichUid`).
 - **All Immich data under `${mediaRoot}/immich/`** (`library/`, `pgdata/`, `model-cache/`), owner `immich:immich`, mode `0750`.
 - **Public repo:** never write a `secrets/*` literal (the DB password, etc.) into an unencrypted committed file. Reference `config.sops.placeholder.<name>` / the Nix attr path only.
 - **Verbatim v3.0.0 image references** (from the release `docker/docker-compose.yml`):
@@ -24,7 +24,7 @@
 
 ## File Structure
 
-- `machine/globalhawk/facts.nix` (modify) — add `immichUid = 993`.
+- `machine/globalhawk/facts.nix` (modify) — add `immichUid = 988`.
 - `machine/globalhawk/immich-storage.nix` (create) — the `immich` user + group, the `media-readers` group, and the tmpfiles ownership/ACL rules for `${mediaRoot}/immich`. Host-side identity only.
 - `machine/globalhawk/default.nix` (modify) — import `./immich-storage.nix`; later (Task 7) drop the `services.immich-custom` block, its `program/immich` import, and its firewall port.
 - `machine/globalhawk/sops.nix` (modify) — declare the `immich_db_password` secret and render the `immich-db` k8s Secret into the k3s manifests dir.
@@ -45,7 +45,7 @@
 - Modify: `machine/globalhawk/disks.nix` (enable `posixacl`; narrow the blanket `_media` ACL off `immich/` + `documents/`)
 
 **Interfaces:**
-- Produces: `facts.immichUid` (= 993); the `immich` user/group (uid/gid 993); the `media-readers` group; the owned/ACL'd `${mediaRoot}/immich/{library,pgdata,model-cache}` tree; `acltype=posixacl` on `pool/media`.
+- Produces: `facts.immichUid` (= 988); the `immich` user/group (uid/gid 988); the `media-readers` group; the owned/ACL'd `${mediaRoot}/immich/{library,pgdata,model-cache}` tree; `acltype=posixacl` on `pool/media`.
 
 - [ ] **Step 1: Add the immich uid fact**
 
@@ -54,8 +54,9 @@ In `machine/globalhawk/facts.nix`, under the `--- media / storage ---` block (ri
 ```nix
   # The `immich` service uid/gid — Immich's k8s pods run as it and its data tree
   # is owned by it, so photos are isolated from the shared `_media` (994) apps
-  # (radarr/sonarr bind-mount all of mediaRoot). 993 is free; 994 is _media.
-  immichUid = 993;
+  # (radarr/sonarr bind-mount all of mediaRoot). 988 is free in both the uid and
+  # gid namespaces (994 is _media; 993's uid is free but gid 993 is the avahi group).
+  immichUid = 988;
 ```
 
 - [ ] **Step 2: Create the storage-identity module**
@@ -120,7 +121,7 @@ In `machine/globalhawk/default.nix`, add `./immich-storage.nix` to the `imports`
 - [ ] **Step 4: Build-validate (agent)**
 
 Run: `nixos-rebuild build --flake .#globalhawk`
-Expected: builds with no evaluation error. (A uid/gid collision or unknown-user error here means 993 or a username is wrong — re-check Step 1/2.)
+Expected: builds with no evaluation error. (A uid/gid collision or unknown-user error here means 988 or a username is wrong — re-check Step 1/2.)
 
 - [ ] **Step 5: Commit**
 
@@ -128,7 +129,7 @@ Expected: builds with no evaluation error. (A uid/gid collision or unknown-user 
 git add machine/globalhawk/facts.nix machine/globalhawk/immich-storage.nix machine/globalhawk/default.nix
 git commit -m "feat(globalhawk): dedicated immich uid + media-readers ACL for photo isolation
 
-Give Immich its own uid (993) and a 0750 data tree with a media-readers
+Give Immich its own uid (988) and a 0750 data tree with a media-readers
 default ACL, so the shared-_media apps that bind-mount all of mediaRoot cannot
 read photos, while abe/agent keep read access. Host-side half of the k3s
 migration."
@@ -165,7 +166,12 @@ omit `immich/` and `documents/` (comment kept/updated, not deleted):
     # (books keeps its own A+ line below.)
 ```
 
-(The `A+ ${facts.mediaRoot}/books …` line already present stays.)
+Keep the existing `A+ ${facts.mediaRoot}/books …` line, **but update its comment** — it
+currently says the grant is "redundant with the recursive `_media` ACL above"; that recursive
+rule is now gone, so this line is the *sole* `_media` grant for `books/`. Reword to reflect
+that (e.g. "grants the `_media` group rwx on the books library so the CWA pod (994) can
+write; this is now the only `_media` grant for books — the blanket recursive rule was
+removed").
 
 Then, in the same file, add a oneshot that ensures `posixacl` is set on the dataset before
 tmpfiles applies any ACLs (idempotent; a dataset property, so it persists):
@@ -177,8 +183,14 @@ tmpfiles applies any ACLs (idempotent; a dataset property, so it persists):
   systemd.services.zfs-media-posixacl = {
     description = "Ensure acltype=posixacl on pool/media";
     wantedBy = ["local-fs.target"];
-    after = ["zfs-mount.service"];
-    before = ["systemd-tmpfiles-setup.service"];
+    # Order after the dataset is actually mounted (RequiresMountsFor resolves to
+    # the generated data-Media.mount, avoiding the imprecise zfs-mount.service),
+    # and before BOTH tmpfiles units: -setup (boot) AND -resetup (the unit
+    # switch-to-configuration re-runs on `nixos-rebuild switch`). Missing the
+    # resetup ordering lets the ACL rules apply before posixacl is on during a
+    # switch, silently no-opping the reader ACL until the next reboot.
+    before = ["systemd-tmpfiles-setup.service" "systemd-tmpfiles-resetup.service"];
+    unitConfig.RequiresMountsFor = facts.mediaRoot;
     serviceConfig = {
       Type = "oneshot";
       ExecStart = "${pkgs.zfs}/bin/zfs set acltype=posixacl pool/media";
@@ -186,7 +198,8 @@ tmpfiles applies any ACLs (idempotent; a dataset property, so it persists):
   };
 ```
 
-`disks.nix` already takes `pkgs` in its module args, so `${pkgs.zfs}` resolves.
+`disks.nix` already takes `pkgs` in its module args, so `${pkgs.zfs}` resolves; `facts` is
+already imported at the top of the module.
 
 - [ ] **Step 7: Build-validate (agent)**
 
@@ -397,7 +410,7 @@ Create `k8s/apps/immich.nix`:
 # Immich on k3s (v3.0.0), fresh DB. Four workloads in the `immich` namespace:
 # server + machine-learning (share ONE version tag — the upgrade knob), the
 # official VectorChord Postgres, and Valkey. All run as the dedicated `immich`
-# uid (993, NOT _media) so the data tree stays isolated; storage is hostPath
+# uid (988, NOT _media) so the data tree stays isolated; storage is hostPath
 # under ${mediaRoot}/immich (owned/ACL'd by machine/globalhawk/immich-storage.nix).
 # DB password from the sops `immich-db` Secret. Mirrors the official Helm chart's
 # shape. See docs/superpowers/specs/2026-07-24-globalhawk-immich-k3s-design.md.
@@ -685,7 +698,7 @@ Expected: builds. (If it complains about `immichUid` being an unexpected argumen
 git add k8s/apps/immich.nix k8s/default.nix flake.nix
 git commit -m "feat(globalhawk): Immich v3.0.0 workloads on k3s (server/ML/postgres/valkey)
 
-Fresh-DB Immich in the immich namespace, all pods as uid 993 on the isolated
+Fresh-DB Immich in the immich namespace, all pods as uid 988 on the isolated
 ${mediaRoot}/immich tree. Server + ML share one version tag; DB image is the
 official VectorChord build; DB password from the sops immich-db Secret."
 ```
@@ -749,6 +762,25 @@ nixos-rebuild build --flake .#globalhawk    # eval clean
 nix run .#k3s-drift                          # current cluster vs desired (pre-switch baseline)
 ```
 
+- [ ] **Step 1a: Enable posixacl on the pool up front (belt-and-suspenders)**
+
+The `zfs-media-posixacl` oneshot enables it declaratively, but the *first* activation's
+systemd ordering + ZFS's live-vs-remount behaviour for an `acltype` change is enough of a
+grey area that we set it by hand once first (it's a persistent dataset property — set once,
+true forever). Then prove ACLs are actually live before relying on them:
+
+```bash
+sudo zfs set acltype=posixacl pool/media
+zfs get -o value acltype pool/media          # posixacl
+# prove the kernel now accepts ACLs on this dataset (immich dir exists after any build/switch,
+# or test on any dir); a clean setfacl + getfacl round-trip means ACLs are live, no remount needed:
+sudo setfacl -m g:media-readers:r-x /data/Media/immich 2>/dev/null && getfacl /data/Media/immich | grep media-readers && echo "ACLs live"
+```
+
+If `setfacl` errors with "Operation not supported", the mount hasn't picked up posixacl —
+remount it (`sudo zfs mount -o remount pool/media`, or defer to the reboot after cutover) and
+re-test before continuing.
+
 - [ ] **Step 2: Stop the docker Immich**
 
 Set `services.immich-custom.enable = false;` in `machine/globalhawk/default.nix` (leave the rest of the block for now), then:
@@ -805,7 +837,7 @@ Checksum de-dup makes each run idempotent/resumable — re-run after any interru
 - Per-account asset counts look right; timeline renders (EXIF dates reconstructed).
 - Administration → Jobs: thumbnail/CLIP/face jobs progressing.
 - Administration → Settings → Backup: enable the built-in database backup (writes to `/data/backups`). Trigger one, confirm a dump appears in `${mediaRoot}/immich/library/backups`, and confirm the restic `backupPrepareCommand` glob (Task 5) matches its filename.
-- `kubectl -n immich logs deploy/immich-server` and `… deploy/immich-postgres` — no permission/crash loops (the **Postgres-as-993** risk; if PGDATA init fails, run Postgres as its default user per the spec's immich-postgres note).
+- `kubectl -n immich logs deploy/immich-server` and `… deploy/immich-postgres` — no permission/crash loops (the **Postgres-as-988** risk; if PGDATA init fails, run Postgres as its default user per the spec's immich-postgres note).
 
 - [ ] **Step 8: STOP — hand back for decommission**
 
@@ -880,7 +912,7 @@ Use `superpowers:finishing-a-development-branch` to merge `globalhawk-immich-k3s
 - New `immich` namespace + NetworkPolicy → Task 3. ✓
 - Ingress `photos.h.…` → Task 4 ingress. ✓
 - Secret via sops → Task 2. ✓
-- Storage isolation (uid 993, 0750, media-readers ACL, arr untouched) → Task 1 + behavioural check in Task 6 Step 4. ✓
+- Storage isolation (uid 988, 0750, media-readers ACL, arr untouched) → Task 1 + behavioural check in Task 6 Step 4. ✓
 - Postgres shm/`--data-checksums`/Recreate → Task 4 postgres. ✓
 - Backup rework → Task 5 + Task 6 Step 7. ✓
 - Atomic cutover + rollback → Task 6. ✓
