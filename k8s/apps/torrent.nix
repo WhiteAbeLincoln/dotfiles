@@ -19,7 +19,6 @@
 }: let
   l = import ../lib.nix {inherit lib;};
   labels = l.appLabels "qbittorrent";
-  host = "qbittorrent${ingressSuffix}";
 in {
   applications.torrent = {
     namespace = "media";
@@ -196,33 +195,15 @@ in {
           };
         };
       };
-      services.qbittorrent.spec = {
-        selector = labels;
-        ports.webui = {
-          port = 9091;
-          targetPort = 9091;
-        };
+      services = l.mkService {
+        name = "qbittorrent";
+        port = 9091;
+        portName = "webui";
       };
-      ingresses.qbittorrent = {
-        spec = {
-          ingressClassName = "traefik";
-          tls = [{hosts = [host];}];
-          rules = [
-            {
-              inherit host;
-              http.paths = [
-                {
-                  path = "/";
-                  pathType = "Prefix";
-                  backend.service = {
-                    name = "qbittorrent";
-                    port.number = 9091;
-                  };
-                }
-              ];
-            }
-          ];
-        };
+      ingresses = l.mkIngress {
+        name = "qbittorrent";
+        port = 9091;
+        host = "qbittorrent${ingressSuffix}";
       };
     };
   };

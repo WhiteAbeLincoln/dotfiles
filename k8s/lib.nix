@@ -6,6 +6,52 @@
     "app.kubernetes.io/name" = name;
     "app.kubernetes.io/managed-by" = "nixidy";
   };
+  # A ClusterIP Service selecting this app's pods on a single named port.
+  # portName defaults to "http"; the torrent pod uses "webui" to match its
+  # existing manifest.
+  mkService = {
+    name,
+    port,
+    portName ? "http",
+  }: {
+    "${name}".spec = {
+      selector = appLabels name;
+      ports.${portName} = {
+        inherit port;
+        targetPort = port;
+      };
+    };
+  };
+
+  # A Traefik Ingress routing `host` to this app's Service on `port`. No
+  # secretName: Traefik serves its default *.h wildcard cert. `host` is passed
+  # explicitly so an app's ingress hostname can differ from its resource name
+  # (e.g. calibre-web-automated -> books.h.…).
+  mkIngress = {
+    name,
+    port,
+    host,
+  }: {
+    "${name}".spec = {
+      ingressClassName = "traefik";
+      tls = [{hosts = [host];}];
+      rules = [
+        {
+          inherit host;
+          http.paths = [
+            {
+              path = "/";
+              pathType = "Prefix";
+              backend.service = {
+                inherit name;
+                port.number = port;
+              };
+            }
+          ];
+        }
+      ];
+    };
+  };
   # mkArrApp builds the Deployment+Service+Ingress triple shared by every
   # linuxserver.io *arr app. Config dir is hostPath-mounted in place (no data
   # copy); PUID/PGID semantics preserved via runAsUser/Group/fsGroup = 994 (the
@@ -22,7 +68,6 @@
     extraMounts ? [],
   }: let
     labels = appLabels name;
-    host = "${name}${ingressSuffix}";
   in {
     "${name}" = {
       namespace = "media";
@@ -80,35 +125,10 @@
             };
           };
         };
-        services."${name}".spec = {
-          selector = labels;
-          ports.http = {
-            port = port;
-            targetPort = port;
-          };
-        };
-        ingresses."${name}" = {
-          spec = {
-            ingressClassName = "traefik";
-            # No secretName: Traefik serves its default cert (the *.h wildcard,
-            # kube-system TLSStore/default). No per-app issuer or cert needed.
-            tls = [{hosts = [host];}];
-            rules = [
-              {
-                inherit host;
-                http.paths = [
-                  {
-                    path = "/";
-                    pathType = "Prefix";
-                    backend.service = {
-                      name = name;
-                      port.number = port;
-                    };
-                  }
-                ];
-              }
-            ];
-          };
+        services = mkService {inherit name port;};
+        ingresses = mkIngress {
+          inherit name port;
+          host = "${name}${ingressSuffix}";
         };
       };
     };
