@@ -271,12 +271,7 @@ In the `templates = { … }` attrset (next to `sops-mullvad-wg.yaml`), add:
       };
 ```
 
-- [ ] **Step 3: Build-validate (agent)**
-
-Run: `nixos-rebuild build --flake .#globalhawk`
-Expected: builds. (Build uses the deterministic sops *placeholder*, not the real value, so it succeeds even before the value exists in the encrypted file.)
-
-- [ ] **Step 4: Commit**
+- [ ] **Step 3: Commit the code**
 
 ```bash
 git add machine/globalhawk/sops.nix
@@ -286,16 +281,26 @@ Immich's fresh Postgres gets a new password delivered as a k8s Secret via the
 same sops->manifests mechanism as the mullvad/cloudflare secrets."
 ```
 
-- [ ] **Step 5: Add the secret value (operator) — required before any `switch`**
+- [ ] **Step 4: Add the secret value (operator) — REQUIRED BEFORE build-validation, not just switch**
 
-The agent cannot edit the encrypted sops file (no key). The operator runs, from the repo root:
+**Important:** `sops-nix` validates that every declared secret *exists* in the encrypted
+file at **build** time (`validateSopsFiles`, part of `system.build.toplevel`) — not only at
+activation. So `nixos-rebuild build` **fails** with `secret immich_db_password ... cannot be
+found` until this value exists. Because the declaration is committed on the branch, this also
+blocks build-validation of every later task. The operator therefore adds the value now, before
+Step 5. From the repo root:
 
 ```bash
 sops secrets/globalhawk.sops.yaml
-# add a line:  immich_db_password: <a fresh strong password>
+# add a top-level line:  immich_db_password: <a fresh strong password, e.g. openssl rand -base64 32>
 ```
 
-Expected: `sops updated the file`. Without this, `switch` fails at activation (`sops-install-secrets: secret immich_db_password not found`). Do **not** reuse the old `immich_pass`; this is a fresh DB.
+Do **not** reuse the old `immich_pass`; this is a fresh DB. (Agent cannot do this — no key.)
+
+- [ ] **Step 5: Build-validate (agent, after Step 4)**
+
+Run: `nixos-rebuild build --flake .#globalhawk`
+Expected: builds cleanly now that the key exists. (Before Step 4 it fails on the missing key — that failure is expected and is *not* a code defect.)
 
 ---
 
