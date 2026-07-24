@@ -138,6 +138,9 @@
           template = {
             metadata.labels = labels;
             spec = {
+              # LinuxServer images START as root and drop to PUID/PGID via s6;
+              # forcing runAsUser breaks their init (mods, permission fixups). So
+              # run as root + PUID/PGID env, with fsGroup for volume ownership.
               securityContext.fsGroup = mediaUid;
               containers."${name}" = mkLsioContainer {
                 inherit name image port portName mediaUid timezone extraEnv extraMounts;
