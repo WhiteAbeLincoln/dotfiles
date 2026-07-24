@@ -24,5 +24,6 @@
     ./apps/arr.nix
     ./apps/torrent.nix
     ./apps/calibre-web-automated.nix
+    ./apps/audiobookshelf.nix
   ];
 }
