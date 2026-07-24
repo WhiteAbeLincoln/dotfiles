@@ -26,25 +26,28 @@
   };
 in {
   applications = lib.mkMerge [
-    (l.mkArrApp (facts
+    (l.mkLsioApp (facts
       // {
         name = "prowlarr";
         image = "lscr.io/linuxserver/prowlarr:latest";
         port = 9696;
+        configPath = "${mediaRoot}/docker-services/torrent-config/prowlarr";
       }))
-    (l.mkArrApp (facts
+    (l.mkLsioApp (facts
       // {
         name = "radarr";
         image = "lscr.io/linuxserver/radarr:latest";
         port = 7878;
+        configPath = "${mediaRoot}/docker-services/torrent-config/radarr";
         extraVolumes = [mediaVolume];
         extraMounts = [mediaMount];
       }))
-    (l.mkArrApp (facts
+    (l.mkLsioApp (facts
       // {
         name = "sonarr";
         image = "lscr.io/linuxserver/sonarr:latest";
         port = 8989;
+        configPath = "${mediaRoot}/docker-services/torrent-config/sonarr";
         extraVolumes = [mediaVolume];
         extraMounts = [mediaMount];
       }))

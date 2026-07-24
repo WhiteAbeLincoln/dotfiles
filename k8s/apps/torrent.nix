@@ -123,50 +123,16 @@ in {
               # VPN, exactly as --network=container:vpn did. VueTorrent installed
               # by the LinuxServer mod at /vuetorrent (matches the existing
               # WebUI\RootFolder=/vuetorrent config).
-              qbittorrent = {
+              # No runAsUser: LinuxServer starts as root and drops to PUID/PGID
+              # via s6 (required for the VueTorrent docker mod to install).
+              qbittorrent = l.mkLsioContainer {
+                name = "qbittorrent";
                 image = "lscr.io/linuxserver/qbittorrent:latest";
-                # No runAsUser: LinuxServer starts as root and drops to PUID/PGID
-                # via s6 (required for the VueTorrent docker mod to install).
-                ports.webui.containerPort = 9091;
-                # Ready only when the WebUI answers, so the ingress doesn't 502
-                # during restarts / the VueTorrent mod install.
-                readinessProbe = {
-                  httpGet = {
-                    path = "/";
-                    port = 9091;
-                  };
-                  initialDelaySeconds = 20;
-                  periodSeconds = 15;
-                  timeoutSeconds = 8;
-                  failureThreshold = 4;
-                };
-                # Restart qbit if it can't reach the internet through the VPN for a
-                # sustained window (after gluetun has had time to recover) — the
-                # automated version of the old manual "restart vpn, then qbit".
-                livenessProbe = {
-                  exec.command = [
-                    "sh"
-                    "-c"
-                    "wget -q -T 8 -O /dev/null http://connectivitycheck.gstatic.com/generate_204 || curl -fsS -m 8 -o /dev/null http://connectivitycheck.gstatic.com/generate_204"
-                  ];
-                  initialDelaySeconds = 90;
-                  periodSeconds = 30;
-                  timeoutSeconds = 12;
-                  failureThreshold = 6;
-                };
-                env = [
-                  {
-                    name = "TZ";
-                    value = timezone;
-                  }
-                  {
-                    name = "PUID";
-                    value = toString mediaUid;
-                  }
-                  {
-                    name = "PGID";
-                    value = toString mediaUid;
-                  }
+                port = 9091;
+                portName = "webui";
+                inherit mediaUid timezone;
+                configVolumeName = "qbt-config";
+                extraEnv = [
                   {
                     name = "WEBUI_PORT";
                     value = "9091";
@@ -180,16 +146,40 @@ in {
                     value = "ghcr.io/gabe565/linuxserver-mod-vuetorrent";
                   }
                 ];
-                volumeMounts = [
-                  {
-                    name = "qbt-config";
-                    mountPath = "/config";
-                  }
+                extraMounts = [
                   {
                     name = "downloads";
                     mountPath = "/data/torrents/downloads";
                   }
                 ];
+                probes = {
+                  # Ready only when the WebUI answers, so the ingress doesn't 502
+                  # during restarts / the VueTorrent mod install.
+                  readinessProbe = {
+                    httpGet = {
+                      path = "/";
+                      port = 9091;
+                    };
+                    initialDelaySeconds = 20;
+                    periodSeconds = 15;
+                    timeoutSeconds = 8;
+                    failureThreshold = 4;
+                  };
+                  # Restart qbit if it can't reach the internet through the VPN for a
+                  # sustained window (after gluetun has had time to recover) — the
+                  # automated version of the old manual "restart vpn, then qbit".
+                  livenessProbe = {
+                    exec.command = [
+                      "sh"
+                      "-c"
+                      "wget -q -T 8 -O /dev/null http://connectivitycheck.gstatic.com/generate_204 || curl -fsS -m 8 -o /dev/null http://connectivitycheck.gstatic.com/generate_204"
+                    ];
+                    initialDelaySeconds = 90;
+                    periodSeconds = 30;
+                    timeoutSeconds = 12;
+                    failureThreshold = 6;
+                  };
+                };
               };
             };
           };

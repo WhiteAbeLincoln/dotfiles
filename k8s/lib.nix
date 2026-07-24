@@ -53,71 +53,101 @@
       ];
     };
   };
-  # mkArrApp builds the Deployment+Service+Ingress triple shared by every
-  # linuxserver.io *arr app. Config dir is hostPath-mounted in place (no data
-  # copy); PUID/PGID semantics preserved via runAsUser/Group/fsGroup = 994 (the
-  # _media uid/gid). Returns an `applications.<name>` fragment for mkMerge.
-  mkArrApp = {
+  # The env every LinuxServer.io image shares: timezone + PUID/PGID set to the
+  # _media uid/gid (994) so files land _media-owned. LSIO images start as root
+  # and drop to PUID/PGID via s6, so no runAsUser.
+  lsioEnv = {
+    mediaUid,
+    timezone,
+  }: [
+    {
+      name = "TZ";
+      value = timezone;
+    }
+    {
+      name = "PUID";
+      value = toString mediaUid;
+    }
+    {
+      name = "PGID";
+      value = toString mediaUid;
+    }
+  ];
+
+  # A single LinuxServer.io container: shared env (+ extraEnv), one named port,
+  # a /config mount (+ extraMounts), optional probes. Used standalone inside the
+  # torrent pod and as the container of mkLsioApp.
+  mkLsioContainer = {
+    name,
+    image,
+    port,
+    mediaUid,
+    timezone,
+    portName ? "http",
+    configVolumeName ? "config",
+    configMountPath ? "/config",
+    extraEnv ? [],
+    extraMounts ? [],
+    probes ? {},
+  }:
+    {
+      inherit image;
+      env = lsioEnv {inherit mediaUid timezone;} ++ extraEnv;
+      ports.${portName}.containerPort = port;
+      volumeMounts =
+        [
+          {
+            name = configVolumeName;
+            mountPath = configMountPath;
+          }
+        ]
+        ++ extraMounts;
+    }
+    // probes;
+
+  # A standalone single-container LSIO app: Deployment (fsGroup=994, Recreate,
+  # /config hostPath from configPath) + Service + Ingress. Replaces mkArrApp.
+  # `host` defaults to name-based but can be overridden (books.h.… for CWA).
+  mkLsioApp = {
     name,
     image,
     port,
     ingressSuffix,
-    mediaRoot,
     mediaUid,
     timezone,
+    configPath,
+    namespace ? "media",
+    portName ? "http",
+    host ? "${name}${ingressSuffix}",
     extraVolumes ? [],
     extraMounts ? [],
+    extraEnv ? [],
+    ...
   }: let
     labels = appLabels name;
   in {
     "${name}" = {
-      namespace = "media";
+      inherit namespace;
       createNamespace = false;
       resources = {
         deployments."${name}".spec = {
           replicas = 1;
           selector.matchLabels = labels;
-          # arr apps hold a SQLite lock on /config; never run two at once.
+          # Holds a SQLite/config lock on /config; never run two at once.
           strategy.type = "Recreate";
           template = {
             metadata.labels = labels;
             spec = {
-              # LinuxServer images START as root and drop to PUID/PGID via s6;
-              # forcing runAsUser breaks their init (mods, permission fixups). So
-              # run as root + PUID/PGID env, with fsGroup for volume ownership.
               securityContext.fsGroup = mediaUid;
-              containers."${name}" = {
-                inherit image;
-                env = [
-                  {
-                    name = "TZ";
-                    value = timezone;
-                  }
-                  {
-                    name = "PUID";
-                    value = toString mediaUid;
-                  }
-                  {
-                    name = "PGID";
-                    value = toString mediaUid;
-                  }
-                ];
-                ports.http.containerPort = port;
-                volumeMounts =
-                  [
-                    {
-                      name = "config";
-                      mountPath = "/config";
-                    }
-                  ]
-                  ++ extraMounts;
+              containers."${name}" = mkLsioContainer {
+                inherit name image port portName mediaUid timezone extraEnv extraMounts;
               };
               volumes =
                 [
                   {
                     name = "config";
                     hostPath = {
-                      path = "${mediaRoot}/docker-services/torrent-config/${name}";
+                      path = configPath;
                       type = "Directory";
                     };
                   }
@@ -126,11 +156,8 @@
             };
           };
         };
-        services = mkService {inherit name port;};
-        ingresses = mkIngress {
-          inherit name port;
-          host = "${name}${ingressSuffix}";
-        };
+        services = mkService {inherit name port portName;};
+        ingresses = mkIngress {inherit name port host;};
       };
     };
   };
