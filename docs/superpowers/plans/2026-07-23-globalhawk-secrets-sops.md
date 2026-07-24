@@ -47,11 +47,29 @@
 
 ```bash
 mkdir -p ~/.config/sops/age
-nix run nixpkgs#age -- -keygen -o ~/.config/sops/age/keys.txt
-# note the "Public key: age1..." line -> OPERATOR_AGE_PUBKEY
+# age-keygen is a SEPARATE binary in the `age` package, not a flag of `age`.
+nix shell nixpkgs#age --command age-keygen -o ~/.config/sops/age/keys.txt
+chmod 600 ~/.config/sops/age/keys.txt
+# age-keygen prints "Public key: age1..." to stderr and embeds it as a
+# "# public key:" comment in the file -> OPERATOR_AGE_PUBKEY
 grep -o 'age1[0-9a-z]*' ~/.config/sops/age/keys.txt
 ```
-Back this file up out-of-band (it is the single point of failure for *editing* secrets; host decryption is independent).
+
+**Key custody & backup (do this now — it is the one thing that must survive a
+total loss):**
+- **Working copy:** `~/.config/sops/age/keys.txt`, mode `0600`, on a
+  full-disk-encrypted machine (FileVault on nighthawk).
+- **Authoritative backup:** paste the key file into the password manager
+  (Bitwarden) as a secure note. This single item is the entire recovery kit —
+  the public git repo holds the encrypted `secrets/globalhawk.sops.yaml`, so
+  operator-key → decrypt → restic/B2 creds → restore.
+- **Do NOT rely on the restic→B2 backup for this key: it is circular** — the B2
+  credentials live *inside* the sops file this key unlocks, so a copy that only
+  exists inside the backup cannot be used to open the backup. Riding along in a
+  home-dir backup is a harmless *extra* copy, never *the* backup.
+- The **host** SSH key needs no backup: on a globalhawk rebuild it regenerates,
+  and `sops updatekeys` (authorized by the operator key) re-encrypts to the new
+  host key.
 
 - [ ] **Step 2: Derive the host age public key from the SSH host key**
 
