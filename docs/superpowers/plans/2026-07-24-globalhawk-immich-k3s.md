@@ -791,30 +791,30 @@ If `setfacl` here instead errors `Operation not supported`, the mount hasn't pic
 new `acltype` — remount (`sudo zfs mount -o remount pool/media`) or defer to the post-cutover
 reboot, then re-test.
 
-If `setfacl` errors with "Operation not supported", the mount hasn't picked up posixacl —
-remount it (`sudo zfs mount -o remount pool/media`, or defer to the reboot after cutover) and
-re-test before continuing.
+- [ ] **Step 2: Cut over in ONE switch (docker off + k3s up)**
 
-- [ ] **Step 2: Stop the docker Immich**
+This is a single switch, not two: the k3s Immich manifests are already on the branch, so the
+same activation that disables the docker install also deploys the k3s stack. (There's no
+data-corruption race — the k3s Immich uses a fresh DB and a fresh, empty `library/`, sharing
+no data with the docker install, whose originals sit untouched at `${mediaRoot}/immich/photos`.)
 
-Set `services.immich-custom.enable = false;` in `machine/globalhawk/default.nix` (leave the rest of the block for now), then:
-
-```bash
-sudo nixos-rebuild switch --flake .#globalhawk
-docker ps | grep immich   # expect: nothing
-```
-
-The old originals at `${mediaRoot}/immich/photos` are untouched.
-
-- [ ] **Step 3: Switch in the k3s stack**
+Set `services.immich-custom.enable = false;` in `machine/globalhawk/default.nix` (leave the
+rest of the block for now — it's removed in Task 7), then:
 
 ```bash
 sudo nixos-rebuild switch --flake .#globalhawk
-kubectl -n immich get pods            # server/ML/postgres/redis all Ready
+docker ps | grep immich                # expect: nothing (docker Immich stopped)
+kubectl -n immich get pods             # server/ML/postgres/redis converging to Ready
 kubectl -n immich get ingress
 ```
 
-- [ ] **Step 3a: Postgres-as-988 health check (do this FIRST — most likely failure)**
+The `immich-storage-dirs` oneshot (not tmpfiles — tmpfiles can't cross the `_media`→`immich`
+owner transition) creates `library/pgdata/model-cache` with the right ownership + ACL on this
+switch, so the hostPath mounts resolve. If pods sit in `ContainerCreating` with
+`FailedMount: … is not a directory`, that oneshot didn't run — check
+`systemctl status immich-storage-dirs.service`.
+
+- [ ] **Step 3: Postgres-as-988 health check (do this FIRST — most likely failure)**
 
 The final review flagged this as the single most-likely-to-trip item: the VectorChord/official
 Postgres image runs `getpwuid()` on its effective uid, and uid 988 has no passwd entry inside
