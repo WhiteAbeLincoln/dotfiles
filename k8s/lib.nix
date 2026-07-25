@@ -33,9 +33,14 @@
     port,
     host,
     annotations ? {},
+    forwardAuth ? false,
   }: {
     "${name}" = {
-      metadata.annotations = annotations;
+      metadata.annotations =
+        annotations
+        // lib.optionalAttrs forwardAuth {
+          "traefik.ingress.kubernetes.io/router.middlewares" = "media-forward-auth@kubernetescrd";
+        };
       spec = {
         ingressClassName = "traefik";
         tls = [{hosts = [host];}];
@@ -127,6 +132,7 @@
     extraMounts ? [],
     extraEnv ? [],
     ingressAnnotations ? {},
+    forwardAuth ? false,
     ...
   }: let
     labels = appLabels name;
@@ -166,7 +172,7 @@
         };
         services = mkService {inherit name port portName;};
         ingresses = mkIngress {
-          inherit name port host;
+          inherit name port host forwardAuth;
           annotations = ingressAnnotations;
         };
       };

@@ -194,9 +194,7 @@ in {
         name = "qbittorrent";
         port = 9091;
         host = "qbittorrent${ingressSuffix}";
-        annotations = {
-          "traefik.ingress.kubernetes.io/router.middlewares" = "media-forward-auth@kubernetescrd";
-        };
+        forwardAuth = true;
       };
     };
   };
