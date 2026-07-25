@@ -217,7 +217,7 @@ pod restarts and stay isolated from other service uids."
 - Modify: `machine/globalhawk/sops.nix`
 
 **Interfaces:**
-- Produces (k8s Secrets in `auth` ns): `authelia-secrets` (keys `jwt`, `session`, `storage-encryption`, `oidc-hmac`, `oidc-issuer-key`, `smtp-password`) and `authelia-users` (key `users_database.yml`). Secret/key names are load-bearing — referenced by the chart values in Task B5.
+- Produces (k8s Secrets in `auth` ns): `authelia-secrets` (`stringData` keys `jwt`, `session`, `storage-encryption`, `oidc-hmac`, `smtp-password` — all single-line), `authelia-oidc-key` (`data` key `issuer.pem`, base64), and `authelia-users` (`data` key `users_database.yml`, base64). Secret/key names are load-bearing — referenced by the chart values in Task B5.
 
 - [ ] **Step 1 (agent): declare the scalar secrets**
 
@@ -228,8 +228,8 @@ In `machine/globalhawk/sops.nix` `secrets = { … }`, add (these render to `/run
       authelia_session = {};
       authelia_storage_encryption = {};
       authelia_oidc_hmac = {};
-      authelia_oidc_issuer_key = {};          # RSA private key PEM (multiline)
-      authelia_users = {};                     # the whole users_database.yml
+      authelia_oidc_issuer_key = {};          # base64 of the RSA private key PEM (multi-line -> data:)
+      authelia_users = {};                     # base64 of the whole users_database.yml (multi-line -> data:)
       # per-app OIDC client secrets (plaintext side lives with the app reconciler
       # in Task D; the HASH used by Authelia is in authelia_oidc_clients below)
       authelia_oidc_clients = {};              # rendered clients config fragment
@@ -261,7 +261,7 @@ In the `templates = { … }` block, add (follows the exact `sops-<name>.yaml` pa
       };
 ```
 
-> The OIDC issuer private key is multiline PEM; k8s `stringData` cannot inline it via a single-line placeholder cleanly. Render it as its own Secret so YAML indentation is controlled:
+> The OIDC issuer key is multi-line PEM. A single-token sops placeholder substituted into a `stringData` block scalar is NOT re-indented by sops-nix, so the block scalar's continuation lines land at the wrong indent and the YAML breaks (this passes `build` but fails at `switch`). Multi-line values MUST use `data:` (base64): the sops value is stored **base64-encoded** (single line), so the placeholder substitutes on one line cleanly. Rendered as its own Secret:
 
 ```nix
       "sops-authelia-oidc-key.yaml" = {
@@ -275,14 +275,11 @@ In the `templates = { … }` block, add (follows the exact `sops-<name>.yaml` pa
             name: authelia-oidc-key
             namespace: auth
           type: Opaque
-          stringData:
-            issuer.pem: |
-          ${lib.concatMapStringsSep "\n" (l: "      " + l) (lib.splitString "\n" config.sops.placeholder.authelia_oidc_issuer_key)}
+          data:
+            issuer.pem: ${config.sops.placeholder.authelia_oidc_issuer_key}
         '';
       };
 ```
-
-> If the indentation helper proves fiddly at eval, the simpler robust alternative is `data:` with a pre-base64'd value in sops — but prefer `stringData` + the indent helper first; validate by inspecting the rendered file on the box in Step 5.
 
 - [ ] **Step 3 (agent): render the users store**
 
@@ -298,24 +295,31 @@ In the `templates = { … }` block, add (follows the exact `sops-<name>.yaml` pa
             name: authelia-users
             namespace: auth
           type: Opaque
-          stringData:
-            users_database.yml: |
-          ${lib.concatMapStringsSep "\n" (l: "      " + l) (lib.splitString "\n" config.sops.placeholder.authelia_users)}
+          data:
+            users_database.yml: ${config.sops.placeholder.authelia_users}
         '';
       };
 ```
+
+> Same rule: `users_database.yml` is multi-line, so it goes in `data:` with the sops value stored base64-encoded.
 
 - [ ] **Step 4 (agent): build-validate**
 
 Run: `nixos-rebuild build --flake .#globalhawk`
 Expected: builds. (Not yet applied — the `auth` namespace does not exist until Task B3+B5 land, so these Secrets should be committed but the operator applies them together with the namespace in Task B5's switch. Ordering is safe: k3s retries applying a Secret until its namespace exists.)
 
-- [ ] **Step 5 (operator): populate the secrets**
+- [ ] **Step 5 (operator): base64-encode the two multi-line values**
+
+The scalar secrets + the RSA key + the `users_database.yml` were already written (raw) by `setup-authelia-secrets.sh`. Because the two MULTI-LINE values are consumed via k8s `data:` fields, their sops values must be **base64**. Re-encode them in place (no re-prompt), then commit:
 
 ```sh
-sops secrets/globalhawk.sops.yaml
+for k in authelia_oidc_issuer_key authelia_users; do
+  v=$(sops -d --extract "[\"$k\"]" secrets/globalhawk.sops.yaml | base64 -w0)
+  sops set secrets/globalhawk.sops.yaml "[\"$k\"]" "$(printf '%s' "$v" | jq -Rs .)"
+done
+git commit -am "chore(globalhawk): base64-encode Authelia multi-line secrets"
 ```
-Add: 64-char random values for `authelia_jwt`, `authelia_session`, `authelia_storage_encryption`, `authelia_oidc_hmac` (`openssl rand -hex 32` each); an RSA private key for `authelia_oidc_issuer_key` (`openssl genrsa 4096`); and `authelia_users` = a `users_database.yml` with two users (operator in group `admins`, wife in group `family`), argon2id hashes from `authelia crypto hash generate argon2` (run in a throwaway `authelia:latest` container). Leave `authelia_oidc_clients` empty until Phase D.
+(The single-line scalars — `authelia_jwt`/`session`/`storage_encryption`/`oidc_hmac` and `smtp_password` — stay raw; they go in `stringData`. `smtp_password` MUST stay raw because host msmtp reads it as a plain file.)
 
 - [ ] **Step 6 (agent): commit**
 
@@ -396,7 +400,7 @@ git commit -m "feat(globalhawk): auth namespace with default-deny-ingress"
 - Modify: `k8s/default.nix` (`nixidy.chartsDir`)
 
 **Interfaces:**
-- Produces: `charts.authelia.authelia` (the chart derivation, via `nixidy.chartsDir` → `lib.helm.mkChartAttrs`), consumed by the release in Task B5.
+- Produces: `charts.authelia` (the chart derivation, via `nixidy.chartsDir` → `lib.helm.mkChartAttrs`), consumed by the release in Task B5.
 
 - [ ] **Step 1 (agent): pin the chart**
 
@@ -458,7 +462,7 @@ build stays pure and offline after fetch."
 - Modify: `flake.nix` (thread `smtpSender`/`smtpUser` into the nixidy env `_module.args`, mirroring `acmeEmail`)
 
 **Interfaces:**
-- Consumes: `charts.authelia.authelia`; the `authelia-secrets` / `authelia-oidc-key` / `authelia-users` Secrets (Task B2); `facts.autheliaUid`, `facts.ingressSuffix`; `smtpSender`/`smtpUser` (git-crypt, threaded via flake).
+- Consumes: `charts.authelia`; the `authelia-secrets` / `authelia-oidc-key` / `authelia-users` Secrets (Task B2); `facts.autheliaUid`, `facts.ingressSuffix`; `smtpSender`/`smtpUser` (git-crypt, threaded via flake).
 - Produces: the Authelia Deployment/Service/ConfigMap/Ingress in `auth` ns, reachable at `auth.h.abrahamwhite.com`; session cookie domain `h.abrahamwhite.com`.
 
 - [ ] **Step 1 (agent): confirm the chart's exact value paths**
@@ -500,7 +504,7 @@ in {
     namespace = "auth";
     createNamespace = false; # created by infra/auth-network.nix
     helm.releases.authelia = {
-      chart = charts.authelia.authelia;
+      chart = charts.authelia;
       values = {
         # Run as the dedicated uid; fsGroup lets it own the mounted state dir.
         pod.securityContext = {
