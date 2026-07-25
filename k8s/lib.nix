@@ -32,25 +32,29 @@
     name,
     port,
     host,
+    annotations ? {},
   }: {
-    "${name}".spec = {
-      ingressClassName = "traefik";
-      tls = [{hosts = [host];}];
-      rules = [
-        {
-          inherit host;
-          http.paths = [
-            {
-              path = "/";
-              pathType = "Prefix";
-              backend.service = {
-                inherit name;
-                port.number = port;
-              };
-            }
-          ];
-        }
-      ];
+    "${name}" = {
+      metadata.annotations = annotations;
+      spec = {
+        ingressClassName = "traefik";
+        tls = [{hosts = [host];}];
+        rules = [
+          {
+            inherit host;
+            http.paths = [
+              {
+                path = "/";
+                pathType = "Prefix";
+                backend.service = {
+                  inherit name;
+                  port.number = port;
+                };
+              }
+            ];
+          }
+        ];
+      };
     };
   };
   # The env every LinuxServer.io image shares: timezone + PUID/PGID set to the
@@ -122,6 +126,7 @@
     extraVolumes ? [],
     extraMounts ? [],
     extraEnv ? [],
+    ingressAnnotations ? {},
     ...
   }: let
     labels = appLabels name;
@@ -160,7 +165,10 @@
           };
         };
         services = mkService {inherit name port portName;};
-        ingresses = mkIngress {inherit name port host;};
+        ingresses = mkIngress {
+          inherit name port host;
+          annotations = ingressAnnotations;
+        };
       };
     };
   };
