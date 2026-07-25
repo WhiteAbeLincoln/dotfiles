@@ -14,9 +14,9 @@
   ...
 }: let
   l = import ../lib.nix {inherit lib;};
-  version = "v3.0.0";
-  serverImage = "ghcr.io/immich-app/immich-server:${version}@sha256:685ba5c93337058ff8a189d3ed89f0ba470ef966b1c94d2eace1a3d991f9816e";
-  mlImage = "ghcr.io/immich-app/immich-machine-learning:${version}@sha256:5b480e92a2b77618d9ccae8c8110b0eae144ec9daf86715d246ec6d39cb7a553";
+  version = "v3.0.3";
+  serverImage = "ghcr.io/immich-app/immich-server:${version}@sha256:c716dc20f957aafd89fa9d284a2ec63e25c9e2d8d8e87c6197d540a3dce237db";
+  mlImage = "ghcr.io/immich-app/immich-machine-learning:${version}@sha256:d76fe88b69282c09a97eac4f82dafa82cfd77bce274bc742591cde974f87dacb";
   pgImage = "ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23";
   valkeyImage = "docker.io/valkey/valkey:9@sha256:8e8d64b405ce18f41b8e5ee20aa4687a8ed0022d1298f2ce31cdcf3a76e09411";
 
