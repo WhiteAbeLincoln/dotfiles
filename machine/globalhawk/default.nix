@@ -27,7 +27,6 @@ in {
     ./hardware-configuration.nix
     # <home-manager/nixos>
     ../../program/plex
-    ../../program/immich
     # TODO: homebridge has been added to nixos
     # remove custom module
     # ../../program/homebridge
@@ -163,7 +162,6 @@ in {
     allowedTCPPorts = [
       80 # Traefik ingress (HTTP -> HTTPS)
       443 # Traefik ingress (HTTPS)
-      config.services.immich-custom.port # immich (still on docker, deferred)
     ];
     allowedUDPPorts = [
       8472 # flannel VXLAN (k3s CNI)
@@ -258,13 +256,6 @@ in {
   programs.nix-ld.enable = true;
 
   services.flatpak.enable = true;
-  services.immich-custom = {
-    enable = true;
-    immichVersion = "v1.124.2";
-    uploadDir = "${facts.mediaRoot}/immich/photos";
-    backupDir = "${facts.mediaRoot}/immich/backups";
-    dbPassword = secrets.immich_pass;
-  };
 
   # services.homebridge = {
   #   enable = true;
