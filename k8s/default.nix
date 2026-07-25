@@ -32,5 +32,6 @@
     ./apps/calibre-web-automated.nix
     ./apps/audiobookshelf.nix
     ./apps/immich.nix
+    ./apps/authelia.nix
   ];
 }

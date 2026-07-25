@@ -133,6 +133,8 @@
                 wireguardAddresses = s.wireguard_addresses;
                 vpnServerCities = s.vpn_server_cities;
                 acmeEmail = s.acme_email;
+                smtpSender = s.mail.fromAddress;
+                smtpUser = s.mail.smtpUser;
                 inherit (facts) ingressSuffix podCidr serviceCidr hostGatewayIp mediaRoot mediaUid timezone immichUid autheliaUid;
               };
             })
