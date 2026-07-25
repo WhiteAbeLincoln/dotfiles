@@ -66,6 +66,8 @@ in {
         secret.additionalSecrets = {
           "authelia-secrets" = {};
           "authelia-users" = {};
+          "authelia-oidc-key" = {};
+          "authelia-oidc-client-hashes" = {};
         };
         configMap = {
           theme = "auto";
@@ -78,7 +80,6 @@ in {
               {
                 subdomain = "auth";
                 domain = cookieDomain;
-                default_redirection_url = "https://${host}";
               }
             ];
             encryption_key = {
@@ -96,6 +97,68 @@ in {
           authentication_backend.file = {
             enabled = true;
             path = "/secrets/authelia-users/users_database.yml";
+          };
+          identity_providers.oidc = {
+            enabled = true;
+            hmac_secret = {
+              secret_name = "authelia-secrets";
+              path = "oidc-hmac";
+            };
+            authorization_policies.family = {
+              default_policy = "deny";
+              rules = [
+                {
+                  policy = "one_factor";
+                  subject = ["group:family" "group:admins"];
+                }
+              ];
+            };
+            jwks = [
+              {
+                key_id = "main";
+                algorithm = "RS256";
+                use = "sig";
+                key.path = "/secrets/authelia-oidc-key/issuer.pem";
+              }
+            ];
+            clients = [
+              {
+                client_id = "immich";
+                client_name = "Immich";
+                client_secret.path = "/secrets/authelia-oidc-client-hashes/immich";
+                authorization_policy = "family";
+                redirect_uris = [
+                  "app.immich:///oauth-callback"
+                  "https://photos${ingressSuffix}/auth/login"
+                  "https://photos${ingressSuffix}/user-settings"
+                ];
+                scopes = ["openid" "profile" "email"];
+                token_endpoint_auth_method = "client_secret_post";
+              }
+              {
+                client_id = "audiobookshelf";
+                client_name = "Audiobookshelf";
+                client_secret.path = "/secrets/authelia-oidc-client-hashes/audiobookshelf";
+                authorization_policy = "family";
+                redirect_uris = [
+                  "https://audiobooks${ingressSuffix}/auth/openid/callback"
+                  "https://audiobooks${ingressSuffix}/auth/openid/mobile-redirect"
+                ];
+                scopes = ["openid" "profile" "email"];
+                token_endpoint_auth_method = "client_secret_basic";
+              }
+              {
+                client_id = "calibre-web";
+                client_name = "Calibre-Web";
+                client_secret.path = "/secrets/authelia-oidc-client-hashes/calibre-web";
+                authorization_policy = "family";
+                redirect_uris = [
+                  "https://books${ingressSuffix}/login/generic/authorized"
+                ];
+                scopes = ["openid" "profile" "email"];
+                token_endpoint_auth_method = "client_secret_basic";
+              }
+            ];
           };
           notifier.smtp = {
             enabled = true;

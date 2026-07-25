@@ -34,5 +34,6 @@
     ./apps/audiobookshelf.nix
     ./apps/immich.nix
     ./apps/authelia.nix
+    ./apps/oidc-reconcilers.nix
   ];
 }

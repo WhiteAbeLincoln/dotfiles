@@ -39,11 +39,19 @@
       authelia_session = {};
       authelia_storage_encryption = {};
       authelia_oidc_hmac = {};
-      authelia_oidc_issuer_key = {};          # base64 of the RSA private key PEM (multi-line -> data:)
-      authelia_users = {};                     # base64 of the whole users_database.yml (multi-line -> data:)
+      authelia_oidc_issuer_key = {}; # base64 of the RSA private key PEM (multi-line -> data:)
+      authelia_users = {}; # base64 of the whole users_database.yml (multi-line -> data:)
       # per-app OIDC client secrets (plaintext side lives with the app reconciler
       # in Task D; the HASH used by Authelia is in authelia_oidc_clients below)
-      authelia_oidc_clients = {};              # rendered clients config fragment
+      authelia_oidc_clients = {}; # rendered clients config fragment
+      immich_oidc_client_secret = {};
+      immich_oidc_client_secret_hash = {};
+      immich_admin_api_key = {};
+      abs_oidc_client_secret = {};
+      abs_oidc_client_secret_hash = {};
+      abs_admin_token = {};
+      cwa_oidc_client_secret = {};
+      cwa_oidc_client_secret_hash = {};
     };
 
     templates = {
@@ -172,6 +180,72 @@
           type: Opaque
           data:
             users_database.yml: ${config.sops.placeholder.authelia_users}
+        '';
+      };
+      # Authelia reads the argon2 client-secret hashes while each relying party
+      # receives only its matching plaintext secret below.
+      "sops-authelia-oidc-client-hashes.yaml" = {
+        path = "/var/lib/rancher/k3s/server/manifests/sops-authelia-oidc-client-hashes.yaml";
+        mode = "0400";
+        owner = "root";
+        content = ''
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: authelia-oidc-client-hashes
+            namespace: auth
+          type: Opaque
+          stringData:
+            immich: ${config.sops.placeholder.immich_oidc_client_secret_hash}
+            audiobookshelf: ${config.sops.placeholder.abs_oidc_client_secret_hash}
+            calibre-web: ${config.sops.placeholder.cwa_oidc_client_secret_hash}
+        '';
+      };
+      "sops-immich-oidc.yaml" = {
+        path = "/var/lib/rancher/k3s/server/manifests/sops-immich-oidc.yaml";
+        mode = "0400";
+        owner = "root";
+        content = ''
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: immich-oidc
+            namespace: immich
+          type: Opaque
+          stringData:
+            client-secret: ${config.sops.placeholder.immich_oidc_client_secret}
+            admin-api-key: ${config.sops.placeholder.immich_admin_api_key}
+        '';
+      };
+      "sops-abs-oidc.yaml" = {
+        path = "/var/lib/rancher/k3s/server/manifests/sops-abs-oidc.yaml";
+        mode = "0400";
+        owner = "root";
+        content = ''
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: abs-oidc
+            namespace: library
+          type: Opaque
+          stringData:
+            client-secret: ${config.sops.placeholder.abs_oidc_client_secret}
+            admin-token: ${config.sops.placeholder.abs_admin_token}
+        '';
+      };
+      "sops-cwa-oidc.yaml" = {
+        path = "/var/lib/rancher/k3s/server/manifests/sops-cwa-oidc.yaml";
+        mode = "0400";
+        owner = "root";
+        content = ''
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: cwa-oidc
+            namespace: library
+          type: Opaque
+          stringData:
+            client-secret: ${config.sops.placeholder.cwa_oidc_client_secret}
         '';
       };
     };
