@@ -79,7 +79,8 @@
         authOpenIDAutoLaunch: false,
         authOpenIDAutoRegister: true,
         authOpenIDMatchExistingBy: "email",
-        authOpenIDMobileRedirectURIs: ["audiobookshelf://oauth"]
+        authOpenIDMobileRedirectURIs: ["audiobookshelf://oauth"],
+        authOpenIDSubfolderForRedirectURLs: ""
       }')
 
     until curl -fsS -X PATCH \
