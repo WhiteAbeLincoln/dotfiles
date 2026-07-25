@@ -164,36 +164,65 @@ unchanged.
 - **MFA:** TOTP (issuer `auth.h.abrahamwhite.com`) with WebAuthn available; the
   operator enrolls once. Family stays one-factor.
 
-## OIDC client delivery
+## OIDC client delivery — script OIDC only, keep every app's UI editable
 
 Each OIDC client needs a `client_id` + a client secret: Authelia stores the
-**hash**; the app holds the **plaintext**. Redirect URIs are pinned per client
-(exact values confirmed at implementation from each app's OIDC docs).
+**hash**; the app holds the **plaintext**. Redirect URIs are pinned per client.
 
-- **Client definitions in Authelia** (issuer JWKS private key + the per-client
-  hashed secrets) are rendered by sops as a **second config file** merged via an
-  additional `--config` argument, so the hashes never enter the world-readable
-  Nix store. The non-secret Authelia config (server, access rules, policies,
-  authentication backend path, notifier host) is authored in Nix via the chart
-  values.
-- **Immich** consumes its OIDC config declaratively via **`IMMICH_CONFIG_FILE`**:
-  a sops-rendered JSON (the `oauth` block incl. the plaintext client secret) is
-  mounted, and `IMMICH_CONFIG_FILE` points at it. This keeps the config GitOps and
-  the secret out of the store; it makes Immich's admin-UI config read-only, which
-  is the intended as-code path. Immich's **local password login stays enabled**
-  alongside OIDC until the family login is validated, so a bad OIDC config cannot
-  lock anyone out. Requires editing `k8s/apps/immich.nix` (mount + env).
-- **Audiobookshelf** has no config-as-code path — its OIDC settings live in its
-  own DB (on its `/config` hostPath). It is configured **once via the admin UI**
-  post-deploy (client id/secret pasted from the sops-held plaintext). Documented
-  as a manual step. **Known caveat:** an open (Oct-2025) ABS bug leaves
-  OIDC-created users unable to log into some mobile player apps ("User has no
-  password set"); ABS **web** OIDC is unaffected. Carried as a risk, not a
-  blocker.
-- **Calibre-Web-Automated** is configured via its OAuth settings (client id/secret
-  + `config_oauth_redirect_host` for the `books.h` hostname). Whether these can be
-  seeded declaratively or need a one-time UI step is resolved during
-  implementation; the plaintext secret is sops-held either way.
+**Authelia side.** The client definitions (issuer JWKS private key + the
+per-client hashed secrets) are rendered by sops as a **second config file** merged
+via an additional `--config` argument, so the hashes never enter the world-readable
+Nix store. The non-secret Authelia config (server, access rules, policies,
+authentication backend path, notifier host) is authored in Nix via the chart
+values.
+
+**App side — the design goal is discoverability.** A static, whole-config
+approach (e.g. Immich's `IMMICH_CONFIG_FILE`) would make the app's settings UI
+**entirely read-only** — a real loss when the operator wants to explore options in
+the GUI. Verified against primary sources, all three OIDC apps keep their config
+in a **mutable server-side store (DB)** with a **programmatic write path** — the
+same one the web UI uses. So we script **only the OIDC block** and leave
+everything else editable and discoverable in each app's UI:
+
+- **Immich** — `PUT /api/system-config` (admin), *not* `IMMICH_CONFIG_FILE`. The
+  reconciler authenticates with an admin API key, `GET`s the current config,
+  merges the `oauth` block, and `PUT`s it back (the endpoint is a full-object
+  replace). With no config file set, the admin settings page stays fully editable.
+  The `oauth` fields are exactly those in the [official docs](https://docs.immich.app/administration/oauth):
+  `issuerUrl`, `clientId`, `clientSecret`, `scope`, claim mappings
+  (`storageLabelClaim`/`roleClaim`/`storageQuotaClaim`), `buttonText`,
+  `autoRegister`, `autoLaunch`, `mobileRedirectUriOverride`, etc. Redirect URIs
+  registered in Authelia: `app.immich:///oauth-callback` (mobile),
+  `https://photos.h.abrahamwhite.com/auth/login`, and `…/user-settings`.
+- **Audiobookshelf** — OIDC settings live in the mutable server settings; the
+  reconciler writes them via the admin settings API the UI uses (the
+  `/auth/openid/config` route is only a read-only discovery-populate helper).
+  Mobile redirect via `/auth/openid/mobile-redirect`. **Known caveat:** an open
+  (Oct-2025) ABS bug leaves OIDC-created users unable to log into some mobile
+  player apps ("User has no password set"); ABS **web** OIDC is unaffected.
+  Carried as a risk, not a blocker.
+- **Calibre-Web-Automated** — config lives in `app.db` (ConfigSQL); no REST
+  settings API. The reconciler either POSTs CWA's `/admin/config` form (preferred
+  — survives schema changes) or, as a fallback, UPSERTs the OIDC columns directly
+  in `app.db`. Either sets `config_oauth_redirect_host` for the `books.h`
+  hostname. CWA is web-only, so no mobile redirect concerns.
+
+**Reconciler mechanism.** A small per-app reconciler — a stock image
+(`curl`+`jq`, or `sqlite3` for the CWA fallback) running a script from a ConfigMap
+— waits for the app to be ready, reads the client secret **and** a bootstrap admin
+credential from a mounted sops Secret, and applies the OIDC block idempotently. It
+is a **Job keyed by a hash of the desired OIDC config**, so it re-applies on a
+GitOps *change* rather than continuously fighting an admin who is editing other
+settings in the UI. (A CronJob is the alternative if drift-healing is later
+wanted.) It touches only OIDC — the rest of each app's config remains
+GUI-managed. This keeps `k8s/apps/immich.nix` (and the arr/ABS/CWA apps) unchanged
+except for the reconciler workload alongside them; Immich's **local password login
+stays enabled** so a bad OIDC config can never lock the family out.
+
+**Bootstrap credential.** Each reconciler needs an admin credential for its app
+(Immich/ABS API key; CWA admin session). On these fresh installs the first admin
+already exists, so the operator generates the key/credential once, stores it in
+sops, and the reconciler consumes it thereafter. Documented as a one-time step.
 
 ## Forward-auth wiring
 
@@ -215,15 +244,20 @@ Self-service password reset needs an SMTP notifier. The operator is moving off
 Gmail to **iCloud Mail with a custom domain**, and this switch is taken
 **host-wide**, not just for Authelia:
 
-- One new sops secret holds the **Apple app-specific password**; `gmail_password`
-  is retired.
+- One new sops secret, **`smtp_password`**, holds the outbound SMTP password (an
+  Apple app-specific password today). The name is deliberately provider-neutral —
+  iCloud is the current provider, not a permanent one — so a future provider swap
+  is a value change, not a rename. `gmail_password` is retired. The
+  provider-specific host/username/`from` are ordinary config (in `secrets/` where
+  they carry the operator's address), not baked into the secret name.
 - The existing host `msmtp` (ZFS ZED, smartd, and restic backup-failure alerts in
   `disks.nix` / `backup.nix`) is repointed from `smtp.gmail.com` to
   **`smtp.mail.me.com:587`** (STARTTLS), authenticating with the Apple ID / custom
   -domain address, `from` = the custom-domain address. `/etc/aliases` root target
   is updated to the new address.
-- Authelia's `notifier.smtp` uses the same server and the same secret
-  (`AUTHELIA_NOTIFIER_SMTP_PASSWORD_FILE`), sender = the custom-domain address.
+- Authelia's `notifier.smtp` uses the same server and the same `smtp_password`
+  secret (`AUTHELIA_NOTIFIER_SMTP_PASSWORD_FILE`), sender = the custom-domain
+  address.
 
 The email addresses and the app-specific password live in `secrets/` (git-crypt /
 sops) and are referenced by attribute path — never written into any committed
@@ -242,9 +276,9 @@ Rendered as k8s Secrets into k3s's manifests dir, or as host files:
 | `authelia_oidc_issuer_key` | Authelia OIDC issuer (RSA private key / JWKS) |
 | `authelia_users` (whole `users_database.yml`) | Authelia auth backend (argon2 hashes + emails) |
 | `authelia_oidc_clients` (merged config fragment) | Authelia OIDC clients (hashed secrets) |
-| `icloud_smtp_password` (Apple app-specific pw) | host msmtp **and** Authelia notifier |
-| Immich OIDC config JSON (plaintext client secret) | `k8s/apps/immich.nix` via `IMMICH_CONFIG_FILE` |
-| ABS / CWA client secrets (plaintext) | pasted into the app once (source of truth in sops) |
+| `smtp_password` (provider-neutral name) | host msmtp **and** Authelia notifier |
+| per-app OIDC client secret (plaintext) | the app's reconciler (Immich/ABS/CWA) |
+| per-app bootstrap admin credential | the app's reconciler (Immich/ABS API key, CWA admin) |
 
 No secret is ever rendered into `/nix/store`.
 
@@ -263,9 +297,10 @@ one working, so no phase can lock the operator or family out.
   bypass; validate SSO with no double login; fan out to sonarr/prowlarr/qbit
   (qbit subnet whitelist). **Gate:** each admin app reachable only after
   two-factor; no second app login.
-- **D — OIDC clients.** Immich (`IMMICH_CONFIG_FILE`), then Audiobookshelf and
-  CWA (UI/OAuth settings). Immich local login stays on. **Gate:** the wife logs
-  into the Immich **app** via OIDC; ABS/CWA web login via SSO.
+- **D — OIDC clients.** The reconcilers apply the OIDC block to Immich (system-
+  config API), then Audiobookshelf and CWA. Each app's UI stays editable; Immich
+  local login stays on. **Gate:** the wife logs into the Immich **app** via OIDC;
+  ABS/CWA web login via SSO; each app's settings page still editable in the GUI.
 - **E — AdGuard surfacing + tighten.** Add the AdGuard ExternalName/EndpointSlice
   + plain Ingress. Confirm `default_policy: deny`, two-factor on admin, one-factor
   on family. **Gate:** `k3s-drift` clean; `nmap` shows only the intended ports;
@@ -286,9 +321,13 @@ one working, so no phase can lock the operator or family out.
 
 ## Open items (resolved during implementation, not blocking the design)
 
-- Exact redirect URIs per OIDC client (from each app's current OIDC docs).
-- Whether CWA's OAuth settings can be seeded declaratively or need a one-time UI
-  step.
+- Confirm the Immich `PUT /api/system-config` payload shape and that an admin API
+  key is sufficient (full-object replace → GET/merge/PUT).
+- Confirm the exact Audiobookshelf admin endpoint that **writes** OIDC settings
+  (the UI's save call), vs. the read-only `/auth/openid/config` helper.
+- Decide the CWA reconciler mechanism: POST `/admin/config` (preferred) vs.
+  seeding `app.db` — confirm the OAuth field/column names for the deployed CWA
+  version.
 - Confirm iCloud custom-domain SMTP `from`/username constraints (must be a
   verified iCloud alias).
 
