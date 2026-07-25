@@ -13,6 +13,10 @@
   nixidy.target.repository = "file:///dev/null";
   nixidy.target.branch = "main";
 
+  # Vendored Helm charts (FODs). mkChartAttrs walks this dir for default.nix
+  # files and exposes them as the `charts` arg to every module.
+  nixidy.chartsDir = ../charts;
+
   imports = [
     # apps and infra modules are added task-by-task:
     ./infra/network.nix
