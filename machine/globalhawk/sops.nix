@@ -24,7 +24,11 @@
     secrets = {
       restic_repo_pass = {};
       restic_repo = {};
-      gmail_password = {};
+      # Outbound SMTP password (an Apple app-specific password today). Named for
+      # the ROLE, not the provider — a future mail-provider swap is a value
+      # change, not a rename. Consumed by host msmtp (disks.nix) and Authelia's
+      # notifier (k8s/apps/authelia.nix, via the authelia-secrets Secret).
+      smtp_password = {};
       restic_b2_key_id = {};
       restic_b2_app_key = {};
       pokestop_psk = {};

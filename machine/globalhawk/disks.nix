@@ -4,6 +4,7 @@
   ...
 }: let
   facts = import ./facts.nix;
+  secrets = import ../../secrets/globalhawk.nix;
 in {
   boot.supportedFilesystems = ["zfs"];
   boot.zfs.forceImportRoot = false;
@@ -95,14 +96,19 @@ in {
     accounts = {
       default = {
         auth = "on";
-        host = "smtp.gmail.com";
+        host = "smtp.mail.me.com";
         port = 587;
-        user = "abelincoln.white@gmail.com";
+        tls = true;
+        tls_starttls = true;
+        # The account username + From must be the operator's iCloud custom-domain
+        # address (kept in secrets/, git-crypt). Reference the attr path, never
+        # the literal — this is a public repo.
+        user = secrets.mail.smtpUser;
         # Read at send time from the sops runtime file (root-owned), keeping the
         # app password out of the world-readable store. Senders (ZED, smartd,
         # restic failure alert) run as root, which can read /run/secrets.
-        passwordeval = "cat ${config.sops.secrets.gmail_password.path}";
-        from = "abelincoln.white@gmail.com";
+        passwordeval = "cat ${config.sops.secrets.smtp_password.path}";
+        from = secrets.mail.fromAddress;
       };
     };
   };
@@ -110,7 +116,7 @@ in {
   environment.etc = {
     "aliases" = {
       text = ''
-        root: abelincoln.white@gmail.com
+        root: ${secrets.mail.fromAddress}
       '';
       mode = "0644";
     };
