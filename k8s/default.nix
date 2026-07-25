@@ -29,6 +29,7 @@
     ./infra/wildcard-tls.nix
     # ./apps/whoami.nix  # debugging canary; enable to test ingress/TLS/routing
     ./apps/plex.nix
+    ./apps/adguard.nix
     ./apps/arr.nix
     ./apps/torrent.nix
     ./apps/calibre-web-automated.nix
