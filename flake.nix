@@ -72,6 +72,8 @@
             # k3s. `switch` already prunes removed workloads (single-combined-
             # file lane), so this is trust-but-verify, not a delete mechanism.
             k3s-drift = pkgs.callPackage ./packages/k3s-drift.nix {};
+            # Schema-driven generated, derived, and operator-managed sops fields.
+            populate-sops = pkgs.callPackage ./packages/populate-sops.nix {};
           }
           // pkgs.lib.optionalAttrs pkgs.stdenv.isDarwin {
             # always include the --flake argument pointing to the current working
