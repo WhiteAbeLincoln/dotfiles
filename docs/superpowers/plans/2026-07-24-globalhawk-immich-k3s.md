@@ -895,9 +895,17 @@ Do not delete anything yet. Confirm to the agent that the import is verified; pr
 
 In `machine/globalhawk/default.nix`, delete the `services.immich-custom = { … };` block, remove `../../program/immich` from `imports`, and remove the firewall line `config.services.immich-custom.port` from `allowedTCPPorts`.
 
-- [ ] **Step 2: Remove the old secret**
+- [ ] **Step 2: Old secret — LEAVE IT (operator prunes later)**
 
-In `machine/globalhawk/sops.nix`, remove `immich_pass = {};` from `secrets`. (Operator separately drops the value from the encrypted file with `sops secrets/globalhawk.sops.yaml` — optional cleanup.)
+Correction: `immich_pass` is **not** in `sops.nix`; it's a plaintext value in the git-crypt'd
+`secrets/globalhawk.nix` (`immich_pass = "…"`), read by the `services.immich-custom` block
+being removed in Step 1. Once that block is gone, the attribute is simply unused — Nix does
+not error on an unused attr, so the build stays green. **Do not have the agent edit
+`secrets/globalhawk.nix`**: committing a git-crypt file relies on the clean filter being
+correctly configured, and a misconfiguration would leak the plaintext into this public repo.
+The value is a dead credential (the old docker DB is gone), so leaving it encrypted-and-unused
+is harmless. The operator prunes it later via their normal secrets workflow if desired.
+(`immich_db_password` — the NEW sops secret — stays; it's live.)
 
 - [ ] **Step 3: Delete the custom module**
 
