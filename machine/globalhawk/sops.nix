@@ -35,6 +35,15 @@
       cf_api_token = {};
       mullvad_wg_key = {};
       immich_db_password = {};
+      authelia_jwt = {};
+      authelia_session = {};
+      authelia_storage_encryption = {};
+      authelia_oidc_hmac = {};
+      authelia_oidc_issuer_key = {};          # base64 of the RSA private key PEM (multi-line -> data:)
+      authelia_users = {};                     # base64 of the whole users_database.yml (multi-line -> data:)
+      # per-app OIDC client secrets (plaintext side lives with the app reconciler
+      # in Task D; the HASH used by Authelia is in authelia_oidc_clients below)
+      authelia_oidc_clients = {};              # rendered clients config fragment
     };
 
     templates = {
@@ -104,6 +113,65 @@
           type: Opaque
           stringData:
             password: ${config.sops.placeholder.immich_db_password}
+        '';
+      };
+      # Authelia's scalar secrets (JWT/session/storage-encryption keys, OIDC HMAC,
+      # SMTP password). All single-line, so plain stringData is safe. name/keys
+      # are load-bearing: referenced by the Authelia chart values in Task B5.
+      "sops-authelia-secrets.yaml" = {
+        path = "/var/lib/rancher/k3s/server/manifests/sops-authelia-secrets.yaml";
+        mode = "0400";
+        owner = "root";
+        content = ''
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: authelia-secrets
+            namespace: auth
+          type: Opaque
+          stringData:
+            jwt: ${config.sops.placeholder.authelia_jwt}
+            session: ${config.sops.placeholder.authelia_session}
+            storage-encryption: ${config.sops.placeholder.authelia_storage_encryption}
+            oidc-hmac: ${config.sops.placeholder.authelia_oidc_hmac}
+            smtp-password: ${config.sops.placeholder.smtp_password}
+        '';
+      };
+      # OIDC issuer RSA private key. Multi-line PEM, so it MUST use data: (base64)
+      # rather than stringData: — a single-token placeholder substituted into a
+      # stringData block scalar is not re-indented by sops-nix, which breaks the
+      # YAML at switch (passes build, fails switch). The sops value is stored
+      # base64-encoded so the placeholder substitutes on one line cleanly.
+      "sops-authelia-oidc-key.yaml" = {
+        path = "/var/lib/rancher/k3s/server/manifests/sops-authelia-oidc-key.yaml";
+        mode = "0400";
+        owner = "root";
+        content = ''
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: authelia-oidc-key
+            namespace: auth
+          type: Opaque
+          data:
+            issuer.pem: ${config.sops.placeholder.authelia_oidc_issuer_key}
+        '';
+      };
+      # Authelia's users_database.yml (two-user store). Multi-line, so same rule
+      # as the OIDC key above: data: with the sops value stored base64-encoded.
+      "sops-authelia-users.yaml" = {
+        path = "/var/lib/rancher/k3s/server/manifests/sops-authelia-users.yaml";
+        mode = "0400";
+        owner = "root";
+        content = ''
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: authelia-users
+            namespace: auth
+          type: Opaque
+          data:
+            users_database.yml: ${config.sops.placeholder.authelia_users}
         '';
       };
     };
