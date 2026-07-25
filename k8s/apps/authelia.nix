@@ -98,6 +98,7 @@ in {
             path = "/secrets/authelia-users/users_database.yml";
           };
           notifier.smtp = {
+            enabled = true;
             address = "smtp://smtp.mail.me.com:587";
             sender = smtpSender;
             username = smtpUser;
