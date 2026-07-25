@@ -21,7 +21,7 @@
 
 ## File Structure
 
-- `machine/globalhawk/facts.nix` (modify) — add `autheliaUid = 987`.
+- `machine/globalhawk/facts.nix` (modify) — add `autheliaUid = 989`.
 - `machine/globalhawk/sops.nix` (modify) — retire `gmail_password`; add `smtp_password`; add the Authelia secret scalars + the two-user store; render the `authelia-secrets`, `authelia-users`, and per-app OIDC-client k8s Secrets.
 - `machine/globalhawk/disks.nix` (modify) — repoint msmtp from Gmail to the new provider; `passwordeval` → `smtp_password`.
 - `machine/globalhawk/backup.nix` (modify) — update the root alias / `from` address.
@@ -138,7 +138,7 @@ rather than the provider keeps a future swap to a value change."
 - Modify: `flake.nix` (thread `autheliaUid` into the nixidy env args)
 
 **Interfaces:**
-- Produces: `facts.autheliaUid` (= 987); the `authelia` user/group; the owned dir `/var/lib/authelia` (mode 0750) for the SQLite storage volume.
+- Produces: `facts.autheliaUid` (= 989); the `authelia` user/group; the owned dir `/var/lib/authelia` (mode 0750) for the SQLite storage volume.
 
 - [ ] **Step 1 (agent): add the uid fact**
 
@@ -146,9 +146,12 @@ In `machine/globalhawk/facts.nix`, under `--- media / storage ---` (after `immic
 
 ```nix
   # The `authelia` service uid/gid — Authelia's k8s pod runs as it and its
-  # SQLite state dir (/var/lib/authelia) is owned by it. 987 is free in both
-  # namespaces (988 = immich, 994 = _media).
-  autheliaUid = 987;
+  # SQLite state dir (/var/lib/authelia) is owned by it. 989 was verified free in
+  # both namespaces against the LIVE host's /etc/passwd + /etc/group — NOT just
+  # the repo's static facts: NixOS dynamically allocates system uids/gids
+  # descending from 999 (flatpak=987, immich=988, xrdp=991, _media=994, …), so a
+  # new static id MUST be checked against the running host, not eyeballed.
+  autheliaUid = 989;
 ```
 
 - [ ] **Step 2 (agent): create the storage-identity module**

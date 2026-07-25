@@ -16,9 +16,12 @@
   immichUid = 988;
 
   # The `authelia` service uid/gid — Authelia's k8s pod runs as it and its
-  # SQLite state dir (/var/lib/authelia) is owned by it. 987 is free in both
-  # namespaces (988 = immich, 994 = _media).
-  autheliaUid = 987;
+  # SQLite state dir (/var/lib/authelia) is owned by it. 989 was verified free in
+  # both namespaces against the LIVE host's /etc/passwd + /etc/group — NOT just
+  # the repo's static facts: NixOS dynamically allocates system uids/gids
+  # descending from 999 (flatpak=987, immich=988, xrdp=991, _media=994, …), so a
+  # new static id MUST be checked against the running host, not eyeballed.
+  autheliaUid = 989;
 
   timezone = "America/Denver";
 
