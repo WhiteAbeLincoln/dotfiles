@@ -24,6 +24,7 @@
     ./infra/immich-network.nix
     ./infra/auth-network.nix
     ./infra/forward-auth.nix
+    ./infra/coredns-custom.nix
     ./infra/cert-manager.nix
     ./infra/wildcard-tls.nix
     # ./apps/whoami.nix  # debugging canary; enable to test ingress/TLS/routing
