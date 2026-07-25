@@ -76,9 +76,8 @@ in {
   # resolve in the service's PATH.
   systemd.services.restic-backups-media.path = [pkgs.coreutils];
 
-  # Make a failed backup loud: email root (aliased to secrets.mail.fromAddress
-  # via /etc/aliases) through the msmtp setup already configured in disks.nix
-  # for ZED/smartd.
+  # Make a failed backup loud: email root through the host-wide transport in
+  # mail.nix (also used by ZED and smartd).
   systemd.services.restic-backups-media.onFailure = ["restic-media-failure.service"];
   systemd.services.restic-media-failure = {
     description = "Alert on restic media backup failure";

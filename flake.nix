@@ -137,7 +137,7 @@
                 acmeEmail = s.acme_email;
                 smtpSender = s.mail.fromAddress;
                 smtpUser = s.mail.smtpUser;
-                inherit (facts) ingressSuffix podCidr serviceCidr hostGatewayIp mediaRoot mediaUid timezone immichUid autheliaUid;
+                inherit (facts) ingressSuffix podCidr serviceCidr hostGatewayIp mediaRoot mediaUid timezone immichUid autheliaUid smtp;
               };
             })
           ];

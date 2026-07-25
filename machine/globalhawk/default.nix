@@ -31,6 +31,7 @@ in {
     # remove custom module
     # ../../program/homebridge
     ./disks.nix
+    ./mail.nix
     ./backup.nix
     ./k3s.nix
     ./adguard.nix
@@ -433,4 +434,3 @@ in {
   system.stateVersion = "23.11"; # Did you read the comment?
 }
 # vim:ft=nix foldmethod=marker foldlevel=0
-

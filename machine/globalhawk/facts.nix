@@ -25,6 +25,13 @@
 
   timezone = "America/Denver";
 
+  # --- outbound mail ---
+  # Shared by the host-wide msmtp transport and Authelia's SMTP notifier.
+  smtp = {
+    host = "smtp.mail.me.com";
+    port = 587;
+  };
+
   # The LAN network interface (hardware-stable for this box). avahi is restricted
   # to it so mDNS isn't advertised/resolved across docker bridges and k3s veths.
   lanInterface = "enp1s0";

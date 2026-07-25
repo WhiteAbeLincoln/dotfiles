@@ -12,6 +12,7 @@
   autheliaUid,
   smtpSender,
   smtpUser,
+  smtp,
   ...
 }: let
   host = "auth${ingressSuffix}"; # auth.h.abrahamwhite.com
@@ -162,7 +163,7 @@ in {
           };
           notifier.smtp = {
             enabled = true;
-            address = "smtp://smtp.mail.me.com:587";
+            address = "smtp://${smtp.host}:${toString smtp.port}";
             sender = smtpSender;
             username = smtpUser;
             password = {

@@ -1,10 +1,8 @@
 {
-  config,
   pkgs,
   ...
 }: let
   facts = import ./facts.nix;
-  secrets = import ../../secrets/globalhawk.nix;
 in {
   boot.supportedFilesystems = ["zfs"];
   boot.zfs.forceImportRoot = false;
@@ -82,43 +80,6 @@ in {
     serviceConfig = {
       Type = "oneshot";
       ExecStart = "${pkgs.zfs}/bin/zfs set acltype=posixacl pool/media";
-    };
-  };
-
-  programs.msmtp = {
-    enable = true;
-    setSendmail = true;
-    defaults = {
-      tls = "on";
-      aliases = "/etc/aliases";
-      tls_trust_file = "/etc/ssl/certs/ca-certificates.crt";
-    };
-    accounts = {
-      default = {
-        auth = "on";
-        host = "smtp.mail.me.com";
-        port = 587;
-        tls = true;
-        tls_starttls = true;
-        # The account username + From must be the operator's iCloud custom-domain
-        # address (kept in secrets/, git-crypt). Reference the attr path, never
-        # the literal — this is a public repo.
-        user = secrets.mail.smtpUser;
-        # Read at send time from the sops runtime file (root-owned), keeping the
-        # app password out of the world-readable store. Senders (ZED, smartd,
-        # restic failure alert) run as root, which can read /run/secrets.
-        passwordeval = "cat ${config.sops.secrets.smtp_password.path}";
-        from = secrets.mail.fromAddress;
-      };
-    };
-  };
-
-  environment.etc = {
-    "aliases" = {
-      text = ''
-        root: ${secrets.mail.fromAddress}
-      '';
-      mode = "0644";
     };
   };
 
