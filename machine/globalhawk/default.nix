@@ -36,6 +36,7 @@ in {
     ./adguard.nix
     ./sops.nix
     ./immich-storage.nix
+    ./authelia-storage.nix
     ../../modules/nixos/ai-agent-sandbox.nix
   ];
 

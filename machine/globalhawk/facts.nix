@@ -15,6 +15,11 @@
   # gid namespaces (994 is _media; 993's uid is free but gid 993 is the avahi group).
   immichUid = 988;
 
+  # The `authelia` service uid/gid — Authelia's k8s pod runs as it and its
+  # SQLite state dir (/var/lib/authelia) is owned by it. 987 is free in both
+  # namespaces (988 = immich, 994 = _media).
+  autheliaUid = 987;
+
   timezone = "America/Denver";
 
   # The LAN network interface (hardware-stable for this box). avahi is restricted
