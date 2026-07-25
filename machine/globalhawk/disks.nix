@@ -68,6 +68,15 @@ in {
     # resetup ordering lets the ACL rules apply before posixacl is on during a
     # switch, silently no-opping the reader ACL until the next reboot.
     before = ["systemd-tmpfiles-setup.service" "systemd-tmpfiles-resetup.service"];
+    # A default-dependencies service implicitly gains After=sysinit.target and
+    # After=basic.target. Combined with the Before=systemd-tmpfiles-setup above
+    # (tmpfiles-setup is itself ordered Before=sysinit.target), that forms a boot
+    # ordering cycle. systemd breaks the cycle by dropping the tmpfiles-setup job,
+    # which then skips the `d /run/avahi-daemon - avahi avahi -` rule — so the
+    # avahi socket auto-creates that dir as root and avahi-daemon dies with
+    # "Failed to create runtime directory". Dropping the default deps lets this
+    # oneshot sit cleanly between the media mount and tmpfiles in early boot.
+    unitConfig.DefaultDependencies = false;
     unitConfig.RequiresMountsFor = facts.mediaRoot;
     serviceConfig = {
       Type = "oneshot";
