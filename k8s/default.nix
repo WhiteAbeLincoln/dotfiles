@@ -21,8 +21,6 @@
     # apps and infra modules are added task-by-task:
     ./infra/network.nix
     ./infra/library-network.nix
-    ./infra/auth-network.nix
-    ./infra/forward-auth.nix
     ./infra/coredns-custom.nix
     ./infra/cert-manager.nix
     ./infra/wildcard-tls.nix
@@ -32,7 +30,6 @@
     ./apps/calibre-web-automated.nix
     ./apps/audiobookshelf.nix
     ./apps/libation.nix
-    ./apps/authelia.nix
     ./apps/oidc-reconcilers.nix
   ];
 }
