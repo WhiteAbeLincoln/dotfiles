@@ -6,5 +6,6 @@
     ./calibre-web-automated.nix
     ./immich.nix
     ./plex.nix
+    ./torrent.nix
   ];
 }
