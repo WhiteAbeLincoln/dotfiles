@@ -4,22 +4,10 @@
   config,
   pkgs,
   lib,
-  inputs,
   ...
 }: let
-  net = import ./facts.nix;
-  # The nixidy-rendered YAML tree. nixidy rev deb28dc exposes this as
-  # `environmentPackage` (there is no `build` attr) — its build output is the
-  # apps/ + <namespace>/ YAML tree.
-  nixidyManifests = inputs.self.nixidyEnvs.x86_64-linux.globalhawk.environmentPackage;
-
-  # Bridge: concatenate every rendered document into one multi-doc manifest,
-  # EXCLUDING nixidy's apps/ dir (those are ArgoCD Application CRs whose kind
-  # k3s does not know — we deliver the workloads directly, not via ArgoCD).
-  # -L: nixidy's environmentPackage is a tree of SYMLINKS (env/<ns> ->
-  # /nix/store/nixidy-app-<ns>), so find must follow them or it descends into
-  # nothing. The -path exclusion still matches the logical prefix, so apps/
-  # (ArgoCD Application CRs) stays excluded.
+  lan = config.homelab.network;
+  clusterNetwork = config.services.k3s.clusterNetwork;
   # cert-manager controller, installed from pinned upstream release YAML (plain
   # YAML, no Helm). Includes its CRDs + namespace + deployments.
   certManagerVersion = "v1.16.2";
@@ -27,15 +15,33 @@
     url = "https://github.com/cert-manager/cert-manager/releases/download/${certManagerVersion}/cert-manager.yaml";
     hash = "sha256-HVHN7NRC8fX4l4Pp4BabldNyck2iA8x13XpcTlChDOY=";
   };
-
-  nixidyCombined = pkgs.runCommand "nixidy-globalhawk.yaml" {} ''
-    : > "$out"
-    for f in $(${pkgs.findutils}/bin/find -L ${nixidyManifests} -name '*.yaml' -not -path '*/apps/*' | sort); do
-      cat "$f" >> "$out"
-      printf '\n---\n' >> "$out"
-    done
-  '';
 in {
+  services.k3s.workloads = {
+    enable = true;
+    module = let
+      secrets = import ../../secrets/globalhawk.nix;
+    in {
+      imports = [../../k8s];
+      _module.args = {
+        wireguardAddresses = secrets.wireguard_addresses;
+        vpnServerCities = secrets.vpn_server_cities;
+        acmeEmail = secrets.acme_email;
+        smtpSender = secrets.mail.fromAddress;
+        smtpUser = secrets.mail.smtpUser;
+        ingressSuffix = config.homelab.ingressSuffix;
+        inherit (clusterNetwork) podCidr serviceCidr hostGatewayIp;
+        mediaRoot = config.homelab.media.root;
+        timezone = config.time.timeZone;
+        mediaUid = config.users.users._media.uid;
+        immichUid = config.users.users.immich.uid;
+        autheliaUid = config.users.users.authelia.uid;
+        smtp = {
+          inherit (config.programs.msmtp.accounts.default) host port;
+        };
+      };
+    };
+  };
+
   services.k3s = {
     enable = true;
     role = "server";
@@ -46,16 +52,16 @@ in {
     # cluster-net.nix's hostGatewayIp a guaranteed constant. These match k3s's
     # current defaults, so pinning them is a no-op on the running cluster.
     extraFlags = [
-      "--cluster-cidr=${net.podCidr}"
-      "--service-cidr=${net.serviceCidr}"
+      "--cluster-cidr=${clusterNetwork.podCidr}"
+      "--service-cidr=${clusterNetwork.serviceCidr}"
       # Pin the node IP + flannel interface to the static LAN address. Without
       # this k3s auto-detects from the default route, which broke when the node's
-      # IP moved from its old DHCP lease to the static facts.lanIp: a running k3s
+      # IP moved from its old DHCP lease to the typed static LAN IP: a running k3s
       # kept the stale IP for the Node InternalIP, flannel public-ip, and the
       # kubernetes apiserver endpoint, so pods hit "no route to host" on service
       # IPs. Pinning also prevents picking the wrong NIC (wlo1 is also up).
-      "--node-ip=${net.lanIp}"
-      "--flannel-iface=${net.lanInterface}"
+      "--node-ip=${lan.lanIp}"
+      "--flannel-iface=${lan.lanInterface}"
     ];
     manifests = {
       # Our nixidy-authored workloads, delivered as ONE always-present multi-doc
@@ -64,10 +70,11 @@ in {
       # (WithOwner+WithGVK), which PRUNES by default. So removing a workload from
       # k8s/** is a content change to this file — which k3s prunes automatically
       # on the next `switch` (verified 2026-07-23) — NOT a file deletion. Pruning
-      # only breaks if the Addon itself vanishes: don't remove this source entry
-      # or set enable=false to "clean up" — that orphans every child. Use
-      # `nix run .#k3s-drift` to verify live vs desired.
-      nixidy.source = nixidyCombined;
+      # only breaks if the Addon itself vanishes. `services.k3s.workloads.enable`
+      # and the imported integration module own the always-present
+      # `services.k3s.manifests.nixidy` Addon; don't disable or remove them to
+      # "clean up" — that orphans every child. Use `nix run .#k3s-drift` to
+      # verify live vs desired.
       # Third-party controllers: pinned upstream YAML, applied before our CRs
       # (k3s retries until the CRDs they define are established).
       cert-manager.source = certManagerYaml;

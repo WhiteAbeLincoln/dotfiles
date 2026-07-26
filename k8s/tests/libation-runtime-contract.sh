@@ -3,7 +3,7 @@ set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel)"
 out="$(nix build --no-link --print-out-paths \
-  "$repo_root#nixidyEnvs.x86_64-linux.globalhawk.environmentPackage")"
+  "$repo_root#nixosConfigurations.globalhawk.config.services.k3s.workloads.renderedPackage")"
 manifest="$(find -L "$out/libation" -type f -name 'CronJob-libation-reconcile.yaml' -print -quit)"
 
 test_root="$(mktemp -d)"

@@ -6,7 +6,7 @@
     # interactive shell is a remote one. Let zellij's own fish integration
     # auto-start a session on login instead of gating on SSH detection
     # ourselves (which is what the tmux path in program/fish tries to do).
-    enableFishIntegration = true;
+    enableFishIntegration = false;
     # Close the shell once zellij exits so detaching/quitting ends the SSH
     # session instead of leaving a bare fish behind (sets ZELLIJ_AUTO_EXIT).
     exitShellOnExit = true;

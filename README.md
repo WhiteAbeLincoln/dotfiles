@@ -51,6 +51,52 @@ after the daemon script resets NIX_PATH.
 
 ## Maintenance
 
+### Globalhawk k3s workloads
+
+The globalhawk NixOS configuration owns the complete workload render.
+Cluster-only modules remain under `k8s/`. Host-coupled bridges may instead live
+beside the NixOS service that owns their inputs, as AdGuard's bridge does. Both
+receive the evaluated host configuration, so Kubernetes resources can consume
+host-owned values without a parallel facts file:
+
+```nix
+services.k3s.workloads.module = {nixosConfig, ...}: {
+  applications.example = {
+    # Kubernetes resources may read host-owned configuration here.
+  };
+};
+```
+
+Runtime credentials use the host-owned sops-nix interface. Workloads name the
+Kubernetes Secret they consume, while NixOS owns decryption and materialization:
+
+```nix
+services.k3s.runtimeSecrets.example = {
+  namespace = "example";
+  stringData.password.sopsSecret = "example_password";
+};
+```
+
+Inspect or build the canonical rendered output with:
+
+```sh
+nix build .#nixosConfigurations.globalhawk.config.services.k3s.workloads.renderedPackage
+```
+
+The host delivers that single rendered manifest through its always-present
+`services.k3s.manifests.nixidy` Addon. Keep workload definitions in the
+host-owned module and runtime secrets in `services.k3s.runtimeSecrets`; do not
+create a second workload output or hand-maintain live resources.
+
+Keep the dependency graph acyclic: foundational host values flow into
+workloads. Additive derived host behavior may inspect
+`services.k3s.workloads.evaluatedConfig`, but a host value must never be derived
+from a workload definition that consumes that value.
+
+After deployment, `nix run .#k3s-drift` provides a read-only comparison against
+the live cluster. It requires access to a live kubeconfig and is deliberately
+not part of automated verification.
+
 ### Finding dead `.nix` files
 
 `misc/find_dead_nix.py` reports every git-tracked `.nix` file that is **not**

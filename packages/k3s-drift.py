@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""k3s-drift — read-only reconciliation check for globalhawk's nixidy lane.
+"""k3s-drift — read-only reconciliation check for globalhawk's workload lane.
 
 `services.k3s.manifests` prunes resources removed from the *contents* of the
 single combined nixidy manifest (proven: adding then removing a workload and
@@ -28,9 +28,9 @@ import subprocess
 import sys
 from dataclasses import dataclass, field
 
-# The flake output that machine/globalhawk/k3s.nix delivers via
+# The NixOS-owned workload output that machine/globalhawk/k3s.nix delivers via
 # services.k3s.manifests.nixidy.source.
-FLAKE_ATTR = ".#nixidyEnvs.x86_64-linux.globalhawk.environmentPackage"
+FLAKE_ATTR = ".#nixosConfigurations.globalhawk.config.services.k3s.workloads.renderedPackage"
 
 # k3s writes the admin kubeconfig here, root-readable only. Plain kubectl (unlike
 # `k3s kubectl`) doesn't auto-detect it, so we point KUBECONFIG at it when run as
@@ -183,7 +183,7 @@ def preflight() -> None:
 
 
 def build_manifest_dir(flake_ref: str) -> str:
-    """Realise the nixidy environment and return its store path."""
+    """Realise the NixOS-owned workload render and return its store path."""
     attr = flake_ref + FLAKE_ATTR[1:] if flake_ref != "." else FLAKE_ATTR
     try:
         cp = run(["nix", "build", "--no-link", "--print-out-paths", attr])
@@ -359,9 +359,9 @@ def report(title: str, refs, *, hint: str = "") -> None:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Read-only drift check between the nixidy desired state and live k3s.")
+    ap = argparse.ArgumentParser(description="Read-only drift check between the host-owned workload render and live k3s.")
     ap.add_argument("--manifest-dir", help="Use an already-rendered manifest tree instead of building the flake.")
-    ap.add_argument("--flake", default=".", help="Flake ref to build the nixidy env from (default: current dir).")
+    ap.add_argument("--flake", default=".", help="Flake ref containing the NixOS workload output (default: current dir).")
     ap.add_argument("--kubeconfig", help=f"kubeconfig to use (default: $KUBECONFIG, else {K3S_ADMIN_KUBECONFIG} if readable).")
     args = ap.parse_args()
 

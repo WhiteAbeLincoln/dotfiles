@@ -1,11 +1,8 @@
 # Host-wide outbound mail transport. ZED, smartd, restic, and anything using
 # sendmail(1) deliver through this shared msmtp account; Authelia consumes the
-# same non-secret endpoint from facts.nix through the nixidy module arguments.
-{
-  config,
-  ...
-}: let
-  facts = import ./facts.nix;
+# same non-secret endpoint from the configured account through the nixidy module
+# arguments.
+{config, ...}: let
   secrets = import ../../secrets/globalhawk.nix;
 in {
   programs.msmtp = {
@@ -18,7 +15,8 @@ in {
     };
     accounts.default = {
       auth = "on";
-      inherit (facts.smtp) host port;
+      host = "smtp.mail.me.com";
+      port = 587;
       tls = true;
       tls_starttls = true;
       # The account username + From must be the operator's iCloud custom-domain

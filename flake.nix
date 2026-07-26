@@ -60,6 +60,14 @@
         ...
       }: {
         formatter = pkgs.alejandra;
+        checks = pkgs.lib.optionalAttrs pkgs.stdenv.isLinux {
+          k3s-workloads-module = import ./k8s/tests/workloads-module.nix {
+            inherit inputs pkgs;
+          };
+          k3s-runtime-secrets-module = import ./k8s/tests/runtime-secrets-module.nix {
+            inherit inputs pkgs;
+          };
+        };
         packages =
           {
             decrypt-secrets = pkgs.writeShellScriptBin "decrypt-secrets" ''
@@ -68,8 +76,8 @@
             # Read-only audit of the globalhawk AI-agent sandbox. Deliberately NOT
             # part of `nix flake check` — it must never block activation.
             audit-agent-access = pkgs.callPackage ./packages/audit-agent-access.nix {};
-            # Read-only drift check: diffs the nixidy desired state against live
-            # k3s. `switch` already prunes removed workloads (single-combined-
+            # Read-only drift check: diffs the host-owned workload render against
+            # live k3s. `switch` already prunes removed workloads (single-combined-
             # file lane), so this is trust-but-verify, not a delete mechanism.
             k3s-drift = pkgs.callPackage ./packages/k3s-drift.nix {};
             # Schema-driven generated, derived, and operator-managed sops fields.
@@ -118,33 +126,6 @@
           };
         };
       in {
-        # nixidy environment for globalhawk's in-cluster workloads. Rendered to
-        # plain YAML and consumed by machine/globalhawk/k3s.nix via
-        # services.k3s.manifests — ArgoCD is never involved.
-        nixidyEnvs.x86_64-linux = inputs.nixidy.lib.mkEnvs {
-          pkgs = nixpkgs.legacyPackages."x86_64-linux";
-          envs.globalhawk.modules = [
-            ./k8s
-            (let
-              s = import ./secrets/globalhawk.nix;
-              facts = import ./machine/globalhawk/facts.nix;
-            in {
-              # Inject secret-derived values from the git-crypt'd secrets (so no
-              # literal lands in a committed unencrypted file) and the host facts
-              # (media/uid/tz + pinned cluster network) — the single sources of
-              # truth shared with the NixOS layer.
-              _module.args = {
-                wireguardAddresses = s.wireguard_addresses;
-                vpnServerCities = s.vpn_server_cities;
-                acmeEmail = s.acme_email;
-                smtpSender = s.mail.fromAddress;
-                smtpUser = s.mail.smtpUser;
-                inherit (facts) ingressSuffix podCidr serviceCidr hostGatewayIp mediaRoot mediaUid timezone immichUid autheliaUid smtp;
-              };
-            })
-          ];
-        };
-
         nixosConfigurations.globalhawk = nixpkgs.lib.nixosSystem {
           specialArgs = sysArgs;
           modules = [

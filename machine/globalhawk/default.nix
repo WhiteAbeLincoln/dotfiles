@@ -8,7 +8,8 @@
 }: let
   lib = pkgs.lib;
   user = config.meta.user;
-  facts = import ./facts.nix;
+  lan = config.homelab.network;
+  mediaRoot = config.homelab.media.root;
   secrets = (import ../../secrets/common.nix) // (import ../../secrets/globalhawk.nix);
   mkMediaFs = uuid: fsType: {
     device = "/dev/disk/by-uuid/" + uuid;
@@ -23,6 +24,7 @@
   linuxPkgs = pkgs.linuxKernel.packages.linux_6_12;
 in {
   imports = [
+    ./options.nix
     # Include the results of the hardware scan.
     ./hardware-configuration.nix
     # <home-manager/nixos>
@@ -39,6 +41,8 @@ in {
     ./immich-storage.nix
     ./authelia-storage.nix
     ../../modules/nixos/ai-agent-sandbox.nix
+    ../../modules/nixos/k3s-runtime-secrets.nix
+    ../../modules/nixos/k3s-workloads.nix
   ];
 
   nix.settings = {
@@ -92,12 +96,12 @@ in {
 
   # {{{ Users
   # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.groups._media = {gid = facts.mediaUid;};
+  users.groups._media = {gid = config.users.users._media.uid;};
   users.users._media = {
     isSystemUser = true;
     group = "_media";
     createHome = false;
-    uid = facts.mediaUid;
+    uid = 994;
   };
   programs.fish.enable = true;
   users.users.${user} = {
@@ -134,19 +138,19 @@ in {
 
   # Static LAN IP on the wired interface. The Fiber router only leases .100+, so
   # a static below the pool cannot collide — no DHCP reservation needed. AdGuard
-  # answers the ingress wildcard with facts.lanIp, so it must be stable. Host
+  # answers the ingress wildcard with the typed LAN IP, so it must be stable. Host
   # resolution uses public resolvers directly (independent of AdGuard, so the
   # host still resolves if AdGuard restarts). wlo1 stays on DHCP as a fallback.
-  networking.interfaces.${facts.lanInterface} = {
+  networking.interfaces.${lan.lanInterface} = {
     useDHCP = false;
     ipv4.addresses = [
       {
-        address = facts.lanIp;
+        address = lan.lanIp;
         prefixLength = 24;
       }
     ];
   };
-  networking.defaultGateway = facts.lanGateway;
+  networking.defaultGateway = lan.lanGateway;
   networking.nameservers = ["1.1.1.1" "9.9.9.9"];
 
   # Firewall re-enabled after the torrent/arr migration (was wide open). Traefik
@@ -173,13 +177,13 @@ in {
   # AdGuard Home DNS: reachable on the LAN interface and (implicitly, via the
   # trusted tailscale0 interface) the tailnet. The web UI (:3000) is deliberately
   # NOT opened here, so it stays off the LAN.
-  networking.firewall.interfaces.${facts.lanInterface} = {
+  networking.firewall.interfaces.${lan.lanInterface} = {
     allowedTCPPorts = [53];
     allowedUDPPorts = [53];
   };
 
   # Set your time zone.
-  time.timeZone = facts.timezone;
+  time.timeZone = "America/Denver";
 
   # Configure network proxy if necessary
   # networking.proxy.default = "http://user:password@proxy:port/";
@@ -314,7 +318,7 @@ in {
     # Only advertise/resolve mDNS on the LAN interface. Without this, avahi
     # publishes across the docker bridges and dozens of k3s veths, so even
     # globalhawk.local resolves to link-local/bridge junk instead of the LAN IP.
-    allowInterfaces = [facts.lanInterface];
+    allowInterfaces = [lan.lanInterface];
     publish = {
       enable = true;
       userServices = true;
@@ -345,7 +349,7 @@ in {
         "unix extensions" = "no";
       };
       Media = {
-        path = facts.mediaRoot;
+        path = mediaRoot;
         browseable = "yes";
         "read only" = "yes";
         "guest ok" = "yes";

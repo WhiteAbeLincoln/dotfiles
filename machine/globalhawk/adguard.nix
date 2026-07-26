@@ -5,8 +5,13 @@
 # The web UI (:3000) is bound on all interfaces but only reachable over
 # tailscale0 (a trusted firewall interface) + localhost — port 53 is the only
 # thing opened to the LAN, and only on the LAN interface (see default.nix).
-{...}: let
-  facts = import ./facts.nix;
+{
+  config,
+  lib,
+  ...
+}: let
+  lan = config.homelab.network;
+  clusterNetwork = config.services.k3s.clusterNetwork;
   secrets = import ../../secrets/globalhawk.nix;
 in {
   services.adguardhome = {
@@ -47,8 +52,8 @@ in {
         # These A records exist ONLY here — never in public DNS.
         rewrites = [
           {
-            domain = "*${facts.ingressSuffix}";
-            answer = facts.lanIp;
+            domain = "*${config.homelab.ingressSuffix}";
+            answer = lan.lanIp;
             enabled = true;
           }
         ];
@@ -61,6 +66,67 @@ in {
           url = "https://adguardteam.github.io/HostlistsRegistry/assets/filter_1.txt";
           id = 1;
         }
+      ];
+    };
+  };
+
+  # AdGuard Home stays host-native (above) and is SSO-EXCEPTED (no proxy-header
+  # trust -> forward-auth would only double-login one admin page). We only give
+  # it a hostname + TLS + a routing-table row, exactly like Plex: Traefik ->
+  # selector-less Service -> manual EndpointSlice -> the host's AdGuard web UI
+  # (reachable from pods over the trusted cni0 bridge; no firewall change).
+  # AdGuard's own admin login remains the gate.
+  services.k3s.workloads.module = {nixosConfig, ...}: let
+    host = "adguard${config.homelab.ingressSuffix}";
+    port = nixosConfig.services.adguardhome.port;
+  in {
+    applications.adguard = {
+      namespace = "adguard";
+      createNamespace = true;
+      resources = {
+        services.adguard.spec.ports.web = {
+          inherit port;
+          targetPort = port;
+        };
+        ingresses.adguard.spec = {
+          ingressClassName = "traefik";
+          tls = [{hosts = [host];}];
+          rules = [
+            {
+              inherit host;
+              http.paths = [
+                {
+                  path = "/";
+                  pathType = "Prefix";
+                  backend.service = {
+                    name = "adguard";
+                    port.number = port;
+                  };
+                }
+              ];
+            }
+          ];
+        };
+      };
+      yamls = [
+        (builtins.toJSON {
+          apiVersion = "discovery.k8s.io/v1";
+          kind = "EndpointSlice";
+          metadata = {
+            name = "adguard";
+            namespace = "adguard";
+            labels."kubernetes.io/service-name" = "adguard";
+          };
+          addressType = "IPv4";
+          endpoints = [{addresses = [clusterNetwork.hostGatewayIp];}];
+          ports = [
+            {
+              name = "web";
+              inherit port;
+              protocol = "TCP";
+            }
+          ];
+        })
       ];
     };
   };

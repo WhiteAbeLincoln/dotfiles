@@ -4,14 +4,18 @@
 # of mediaRoot (radarr/sonarr) are denied it by the kernel — no arr change, and
 # hardlinks stay intact. `abe`/`agent` keep read access via the media-readers
 # group + a default ACL. See docs/superpowers/specs/2026-07-24-globalhawk-immich-k3s-design.md.
-{pkgs, ...}: let
-  facts = import ./facts.nix;
-  immichRoot = "${facts.mediaRoot}/immich";
+{
+  config,
+  pkgs,
+  ...
+}: let
+  mediaRoot = config.homelab.media.root;
+  immichRoot = "${mediaRoot}/immich";
 in {
-  users.groups.immich.gid = facts.immichUid;
+  users.groups.immich.gid = config.users.users.immich.uid;
   users.users.immich = {
     isSystemUser = true;
-    uid = facts.immichUid;
+    uid = 988;
     group = "immich";
     description = "Immich service account (k8s workload uid)";
   };
@@ -39,7 +43,7 @@ in {
     description = "Create + own + ACL the Immich data tree (tmpfiles can't cross the _media->immich owner transition)";
     wantedBy = ["local-fs.target"];
     after = ["zfs-media-posixacl.service"];
-    unitConfig.RequiresMountsFor = facts.mediaRoot;
+    unitConfig.RequiresMountsFor = mediaRoot;
     path = [pkgs.coreutils pkgs.acl];
     serviceConfig = {
       Type = "oneshot";

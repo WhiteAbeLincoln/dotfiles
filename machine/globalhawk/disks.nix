@@ -1,5 +1,9 @@
-{pkgs, ...}: let
-  facts = import ./facts.nix;
+{
+  config,
+  pkgs,
+  ...
+}: let
+  mediaRoot = config.homelab.media.root;
 in {
   boot.supportedFilesystems = ["zfs"];
   boot.zfs.forceImportRoot = false;
@@ -12,47 +16,47 @@ in {
     trim.enable = true;
   };
 
-  fileSystems.${facts.mediaRoot} = {
+  fileSystems.${mediaRoot} = {
     device = "pool/media";
     fsType = "zfs";
   };
 
   systemd.tmpfiles.rules = [
     # user rwx, group rwx, other rx
-    "d ${facts.mediaRoot} 0775 _media _media -"
-    "d ${facts.mediaRoot}/apps 0775 _media _media -"
+    "d ${mediaRoot} 0775 _media _media -"
+    "d ${mediaRoot}/apps 0775 _media _media -"
     # Grant the _media group rwx on the SHARED media dirs so the media apps
     # (which run as _media) can write each other's files despite umask. NOT a
     # blanket rule over ${mediaRoot}: immich/ (isolated, own uid + media-readers
     # ACL — see immich-storage.nix) and documents/ (abe-private) are deliberately
     # omitted so enabling posixacl below doesn't expose them.
-    "A+ ${facts.mediaRoot}/anime - - - - group:_media:rwx"
-    "A+ ${facts.mediaRoot}/apps - - - - group:_media:rwx"
-    "A+ ${facts.mediaRoot}/audiobooks - - - - group:_media:rwx"
-    "A+ ${facts.mediaRoot}/docker-services - - - - group:_media:rwx"
-    "A+ ${facts.mediaRoot}/movies - - - - group:_media:rwx"
-    "A+ ${facts.mediaRoot}/music - - - - group:_media:rwx"
-    "A+ ${facts.mediaRoot}/old_books - - - - group:_media:rwx"
-    "A+ ${facts.mediaRoot}/photos - - - - group:_media:rwx"
-    "A+ ${facts.mediaRoot}/torrents - - - - group:_media:rwx"
-    "A+ ${facts.mediaRoot}/tv - - - - group:_media:rwx"
+    "A+ ${mediaRoot}/anime - - - - group:_media:rwx"
+    "A+ ${mediaRoot}/apps - - - - group:_media:rwx"
+    "A+ ${mediaRoot}/audiobooks - - - - group:_media:rwx"
+    "A+ ${mediaRoot}/docker-services - - - - group:_media:rwx"
+    "A+ ${mediaRoot}/movies - - - - group:_media:rwx"
+    "A+ ${mediaRoot}/music - - - - group:_media:rwx"
+    "A+ ${mediaRoot}/old_books - - - - group:_media:rwx"
+    "A+ ${mediaRoot}/photos - - - - group:_media:rwx"
+    "A+ ${mediaRoot}/torrents - - - - group:_media:rwx"
+    "A+ ${mediaRoot}/tv - - - - group:_media:rwx"
     # (books keeps its own A+ line below.)
     # App state for the k3s ebook/audiobook workloads (hostPath ignores fsGroup,
     # so the dirs must pre-exist _media-owned for the pods to write).
-    "d ${facts.mediaRoot}/apps/calibre-web-automated 0775 _media _media -"
-    "d ${facts.mediaRoot}/apps/calibre-web-automated/config 0775 _media _media -"
-    "d ${facts.mediaRoot}/apps/calibre-web-automated/ingest 0775 _media _media -"
-    "d ${facts.mediaRoot}/apps/audiobookshelf 0775 _media _media -"
-    "d ${facts.mediaRoot}/apps/audiobookshelf/config 0775 _media _media -"
-    "d ${facts.mediaRoot}/apps/audiobookshelf/metadata 0775 _media _media -"
-    "d ${facts.mediaRoot}/apps/libation 0775 _media _media -"
-    "d ${facts.mediaRoot}/apps/libation/config 0770 _media _media -"
-    "d ${facts.mediaRoot}/apps/libation/db 0770 _media _media -"
-    "d ${facts.mediaRoot}/apps/libation/in-progress 0770 _media _media -"
+    "d ${mediaRoot}/apps/calibre-web-automated 0775 _media _media -"
+    "d ${mediaRoot}/apps/calibre-web-automated/config 0775 _media _media -"
+    "d ${mediaRoot}/apps/calibre-web-automated/ingest 0775 _media _media -"
+    "d ${mediaRoot}/apps/audiobookshelf 0775 _media _media -"
+    "d ${mediaRoot}/apps/audiobookshelf/config 0775 _media _media -"
+    "d ${mediaRoot}/apps/audiobookshelf/metadata 0775 _media _media -"
+    "d ${mediaRoot}/apps/libation 0775 _media _media -"
+    "d ${mediaRoot}/apps/libation/config 0770 _media _media -"
+    "d ${mediaRoot}/apps/libation/db 0770 _media _media -"
+    "d ${mediaRoot}/apps/libation/in-progress 0770 _media _media -"
     # CWA runs as _media (994); this A+ grants the _media group rwx on the books
     # library so the CWA pod can write. Now the only _media grant for books — the
     # blanket recursive rule was removed.
-    "A+ ${facts.mediaRoot}/books - - - - group:_media:rwx"
+    "A+ ${mediaRoot}/books - - - - group:_media:rwx"
   ];
 
   # POSIX ACLs are off by default on this pool, which silently no-ops every
@@ -77,7 +81,7 @@ in {
     # "Failed to create runtime directory". Dropping the default deps lets this
     # oneshot sit cleanly between the media mount and tmpfiles in early boot.
     unitConfig.DefaultDependencies = false;
-    unitConfig.RequiresMountsFor = facts.mediaRoot;
+    unitConfig.RequiresMountsFor = mediaRoot;
     serviceConfig = {
       Type = "oneshot";
       ExecStart = "${pkgs.zfs}/bin/zfs set acltype=posixacl pool/media";

@@ -1,8 +1,8 @@
-# Read-only reconciliation check between the nixidy desired state and live k3s.
+# Read-only reconciliation check between the host-owned workload render and live k3s.
 # Never mutates; safe to run against any kubeconfig. See ./k3s-drift.py for the
 # three drift buckets it reports. Deliberately NOT part of `nix flake check`
 # (needs a live cluster) — exposed as `nix run .#k3s-drift`, run from the repo
-# root so its `nix build` of the nixidy env resolves the working tree.
+# root so its `nix build` of the NixOS-owned output resolves the working tree.
 {
   writeShellApplication,
   python3,

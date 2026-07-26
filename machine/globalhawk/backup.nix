@@ -4,11 +4,11 @@
   config,
   ...
 }: let
-  facts = import ./facts.nix;
+  mediaRoot = config.homelab.media.root;
   # Immich's managed store on k3s (previously derived from the retired custom
   # Immich module's upload dir). Immich writes originals + its built-in DB
   # dumps under here (mounted at /data).
-  immichRoot = "${facts.mediaRoot}/immich/library";
+  immichRoot = "${mediaRoot}/immich/library";
   # Where the newest Immich DB dump is staged for inclusion in the backup.
   stagedDbDump = "/var/lib/restic-media/immich-db-latest.sql.gz";
 in {
@@ -27,19 +27,19 @@ in {
     paths = [
       immichRoot
       stagedDbDump
-      "${facts.mediaRoot}/photos"
-      "${facts.mediaRoot}/books"
-      "${facts.mediaRoot}/old_books"
-      "${facts.mediaRoot}/audiobooks"
-      "${facts.mediaRoot}/documents"
-      "${facts.mediaRoot}/music"
+      "${mediaRoot}/photos"
+      "${mediaRoot}/books"
+      "${mediaRoot}/old_books"
+      "${mediaRoot}/audiobooks"
+      "${mediaRoot}/documents"
+      "${mediaRoot}/music"
       # App state for the k3s ebook/audiobook workloads. SQLite databases and
       # Libation's refreshable account material are captured as a filesystem
       # snapshot (crash-consistent-ish); a sqlite3 .backup pre-hook is a
       # possible later hardening (see design spec).
-      "${facts.mediaRoot}/apps/calibre-web-automated"
-      "${facts.mediaRoot}/apps/audiobookshelf"
-      "${facts.mediaRoot}/apps/libation"
+      "${mediaRoot}/apps/calibre-web-automated"
+      "${mediaRoot}/apps/audiobookshelf"
+      "${mediaRoot}/apps/libation"
     ];
 
     # thumbs/ and encoded-video/ are regenerable from originals; backups/ holds

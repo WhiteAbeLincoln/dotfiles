@@ -11,6 +11,82 @@
 }: {
   imports = [inputs.sops-nix.nixosModules.sops];
 
+  # Kubernetes Secrets are declared through the typed runtime-secret interface.
+  # The module renders these into k3s's auto-deploy directory at activation.
+  services.k3s.runtimeSecrets = {
+    # These names and keys are load-bearing: cert-manager reads
+    # cloudflare-api-token/api-token, and gluetun reads
+    # mullvad-wg/WIREGUARD_PRIVATE_KEY.
+    cloudflare-api-token = {
+      namespace = "cert-manager";
+      # Preserve the existing activation output consumed by the running host.
+      manifestStem = "cloudflare-token";
+      stringData.api-token.sopsSecret = "cf_api_token";
+    };
+    mullvad-wg = {
+      namespace = "media";
+      stringData.WIREGUARD_PRIVATE_KEY.sopsSecret = "mullvad_wg_key";
+    };
+    # Both immich-server (DB_PASSWORD) and immich-postgres
+    # (POSTGRES_PASSWORD) read immich-db/password.
+    immich-db = {
+      namespace = "immich";
+      stringData.password.sopsSecret = "immich_db_password";
+    };
+    # Authelia's JWT, session, storage-encryption, OIDC HMAC, and SMTP secrets
+    # are single-line values, so the runtime-secret module emits stringData.
+    authelia-secrets = {
+      namespace = "auth";
+      stringData = {
+        jwt.sopsSecret = "authelia_jwt";
+        session.sopsSecret = "authelia_session";
+        storage-encryption.sopsSecret = "authelia_storage_encryption";
+        oidc-hmac.sopsSecret = "authelia_oidc_hmac";
+        smtp-password.sopsSecret = "smtp_password";
+      };
+    };
+    # Kubernetes data requires base64 input. Keep the multi-line issuer PEM
+    # pre-base64-encoded in sops so activation can substitute it as one value.
+    authelia-oidc-key = {
+      namespace = "auth";
+      data."issuer.pem".sopsSecret = "authelia_oidc_issuer_key";
+    };
+    # The complete multi-line users database is likewise stored pre-base64 in
+    # sops and must remain under data rather than stringData.
+    authelia-users = {
+      namespace = "auth";
+      data."users_database.yml".sopsSecret = "authelia_users";
+    };
+    # Authelia receives only the argon2 client-secret hashes here; each relying
+    # party receives its matching plaintext client secret in its Secret below.
+    authelia-oidc-client-hashes = {
+      namespace = "auth";
+      stringData = {
+        immich.sopsSecret = "immich_oidc_client_secret_hash";
+        audiobookshelf.sopsSecret = "abs_oidc_client_secret_hash";
+        calibre-web.sopsSecret = "cwa_oidc_client_secret_hash";
+      };
+    };
+    immich-oidc = {
+      namespace = "immich";
+      stringData = {
+        client-secret.sopsSecret = "immich_oidc_client_secret";
+        admin-api-key.sopsSecret = "immich_admin_api_key";
+      };
+    };
+    abs-oidc = {
+      namespace = "library";
+      stringData = {
+        client-secret.sopsSecret = "abs_oidc_client_secret";
+        admin-token.sopsSecret = "abs_admin_token";
+      };
+    };
+    cwa-oidc = {
+      namespace = "library";
+      stringData.client-secret.sopsSecret = "cwa_oidc_client_secret";
+    };
+  };
+
   sops = {
     defaultSopsFile = ../../secrets/globalhawk.sops.yaml;
     # Derive the age identity from the SSH host key — nothing else to manage.
@@ -18,8 +94,9 @@
 
     # Every key is declared here so it renders to /run/secrets/<name> for direct
     # file consumers AND so config.sops.placeholder.<name> exists for the
-    # composite templates below — sops-nix only defines a placeholder for a
-    # declared secret. The template-only keys (b2 creds, psk, k8s tokens) get an
+    # templates below and typed runtime-secret declarations above — sops-nix
+    # only defines a placeholder for a declared secret. The template-only keys
+    # (b2 creds, psk, k8s tokens) get an
     # unused /run/secrets file too; harmless (root-only tmpfs).
     secrets = {
       restic_repo_pass = {};
@@ -69,185 +146,6 @@
       "wireless.env".content = ''
         pokestop_psk=${config.sops.placeholder.pokestop_psk}
       '';
-
-      # k8s Secrets rendered straight into k3s's auto-deploy dir (root 0400,
-      # never in the store or git); k3s applies them — no controller, which is
-      # what lets us drop sealed-secrets. name/key/namespace are load-bearing:
-      # referenced by cert-manager (cloudflare-api-token/api-token) and gluetun
-      # (mullvad-wg/WIREGUARD_PRIVATE_KEY).
-      "sops-cloudflare-token.yaml" = {
-        path = "/var/lib/rancher/k3s/server/manifests/sops-cloudflare-token.yaml";
-        mode = "0400";
-        owner = "root";
-        content = ''
-          apiVersion: v1
-          kind: Secret
-          metadata:
-            name: cloudflare-api-token
-            namespace: cert-manager
-          type: Opaque
-          stringData:
-            api-token: ${config.sops.placeholder.cf_api_token}
-        '';
-      };
-      "sops-mullvad-wg.yaml" = {
-        path = "/var/lib/rancher/k3s/server/manifests/sops-mullvad-wg.yaml";
-        mode = "0400";
-        owner = "root";
-        content = ''
-          apiVersion: v1
-          kind: Secret
-          metadata:
-            name: mullvad-wg
-            namespace: media
-          type: Opaque
-          stringData:
-            WIREGUARD_PRIVATE_KEY: ${config.sops.placeholder.mullvad_wg_key}
-        '';
-      };
-      # Immich Postgres password. name/key/namespace are load-bearing: the
-      # immich-server (DB_PASSWORD) and immich-postgres (POSTGRES_PASSWORD)
-      # containers in k8s/apps/immich.nix reference immich-db/password.
-      "sops-immich-db.yaml" = {
-        path = "/var/lib/rancher/k3s/server/manifests/sops-immich-db.yaml";
-        mode = "0400";
-        owner = "root";
-        content = ''
-          apiVersion: v1
-          kind: Secret
-          metadata:
-            name: immich-db
-            namespace: immich
-          type: Opaque
-          stringData:
-            password: ${config.sops.placeholder.immich_db_password}
-        '';
-      };
-      # Authelia's scalar secrets (JWT/session/storage-encryption keys, OIDC HMAC,
-      # SMTP password). All single-line, so plain stringData is safe. name/keys
-      # are load-bearing: referenced by the Authelia chart values in Task B5.
-      "sops-authelia-secrets.yaml" = {
-        path = "/var/lib/rancher/k3s/server/manifests/sops-authelia-secrets.yaml";
-        mode = "0400";
-        owner = "root";
-        content = ''
-          apiVersion: v1
-          kind: Secret
-          metadata:
-            name: authelia-secrets
-            namespace: auth
-          type: Opaque
-          stringData:
-            jwt: ${config.sops.placeholder.authelia_jwt}
-            session: ${config.sops.placeholder.authelia_session}
-            storage-encryption: ${config.sops.placeholder.authelia_storage_encryption}
-            oidc-hmac: ${config.sops.placeholder.authelia_oidc_hmac}
-            smtp-password: ${config.sops.placeholder.smtp_password}
-        '';
-      };
-      # OIDC issuer RSA private key. Multi-line PEM, so it MUST use data: (base64)
-      # rather than stringData: — a single-token placeholder substituted into a
-      # stringData block scalar is not re-indented by sops-nix, which breaks the
-      # YAML at switch (passes build, fails switch). The sops value is stored
-      # base64-encoded so the placeholder substitutes on one line cleanly.
-      "sops-authelia-oidc-key.yaml" = {
-        path = "/var/lib/rancher/k3s/server/manifests/sops-authelia-oidc-key.yaml";
-        mode = "0400";
-        owner = "root";
-        content = ''
-          apiVersion: v1
-          kind: Secret
-          metadata:
-            name: authelia-oidc-key
-            namespace: auth
-          type: Opaque
-          data:
-            issuer.pem: ${config.sops.placeholder.authelia_oidc_issuer_key}
-        '';
-      };
-      # Authelia's users_database.yml (two-user store). Multi-line, so same rule
-      # as the OIDC key above: data: with the sops value stored base64-encoded.
-      "sops-authelia-users.yaml" = {
-        path = "/var/lib/rancher/k3s/server/manifests/sops-authelia-users.yaml";
-        mode = "0400";
-        owner = "root";
-        content = ''
-          apiVersion: v1
-          kind: Secret
-          metadata:
-            name: authelia-users
-            namespace: auth
-          type: Opaque
-          data:
-            users_database.yml: ${config.sops.placeholder.authelia_users}
-        '';
-      };
-      # Authelia reads the argon2 client-secret hashes while each relying party
-      # receives only its matching plaintext secret below.
-      "sops-authelia-oidc-client-hashes.yaml" = {
-        path = "/var/lib/rancher/k3s/server/manifests/sops-authelia-oidc-client-hashes.yaml";
-        mode = "0400";
-        owner = "root";
-        content = ''
-          apiVersion: v1
-          kind: Secret
-          metadata:
-            name: authelia-oidc-client-hashes
-            namespace: auth
-          type: Opaque
-          stringData:
-            immich: ${config.sops.placeholder.immich_oidc_client_secret_hash}
-            audiobookshelf: ${config.sops.placeholder.abs_oidc_client_secret_hash}
-            calibre-web: ${config.sops.placeholder.cwa_oidc_client_secret_hash}
-        '';
-      };
-      "sops-immich-oidc.yaml" = {
-        path = "/var/lib/rancher/k3s/server/manifests/sops-immich-oidc.yaml";
-        mode = "0400";
-        owner = "root";
-        content = ''
-          apiVersion: v1
-          kind: Secret
-          metadata:
-            name: immich-oidc
-            namespace: immich
-          type: Opaque
-          stringData:
-            client-secret: ${config.sops.placeholder.immich_oidc_client_secret}
-            admin-api-key: ${config.sops.placeholder.immich_admin_api_key}
-        '';
-      };
-      "sops-abs-oidc.yaml" = {
-        path = "/var/lib/rancher/k3s/server/manifests/sops-abs-oidc.yaml";
-        mode = "0400";
-        owner = "root";
-        content = ''
-          apiVersion: v1
-          kind: Secret
-          metadata:
-            name: abs-oidc
-            namespace: library
-          type: Opaque
-          stringData:
-            client-secret: ${config.sops.placeholder.abs_oidc_client_secret}
-            admin-token: ${config.sops.placeholder.abs_admin_token}
-        '';
-      };
-      "sops-cwa-oidc.yaml" = {
-        path = "/var/lib/rancher/k3s/server/manifests/sops-cwa-oidc.yaml";
-        mode = "0400";
-        owner = "root";
-        content = ''
-          apiVersion: v1
-          kind: Secret
-          metadata:
-            name: cwa-oidc
-            namespace: library
-          type: Opaque
-          stringData:
-            client-secret: ${config.sops.placeholder.cwa_oidc_client_secret}
-        '';
-      };
     };
   };
 }
