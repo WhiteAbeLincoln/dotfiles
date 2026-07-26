@@ -21,23 +21,25 @@ in {
     module = let
       secrets = import ../../../secrets/globalhawk.nix;
     in {
-      imports = [../../../k8s];
+      # nixidy requires a target repo/branch even when we consume the rendered
+      # YAML directly. These values are never pushed anywhere.
+      nixidy.target.repository = "file:///dev/null";
+      nixidy.target.branch = "main";
+
+      # Vendored Helm charts (FODs). mkChartAttrs walks this dir for default.nix
+      # files and exposes them as the `charts` arg to every module.
+      nixidy.chartsDir = ../../../charts;
+
+      imports = [
+        ./infra/cert-manager.nix
+        ./infra/wildcard-tls.nix
+      ];
+
       _module.args = {
         k8sLib = import ./lib.nix { inherit lib; };
-        wireguardAddresses = secrets.wireguard_addresses;
-        vpnServerCities = secrets.vpn_server_cities;
-        acmeEmail = secrets.acme_email;
-        smtpSender = secrets.mail.fromAddress;
-        smtpUser = secrets.mail.smtpUser;
-        ingressSuffix = config.homelab.ingressSuffix;
-        inherit (clusterNetwork) podCidr serviceCidr hostGatewayIp;
-        mediaRoot = config.homelab.media.root;
-        timezone = config.time.timeZone;
-        mediaUid = config.users.users._media.uid;
-        immichUid = config.users.users.immich.uid;
-        autheliaUid = config.users.users.authelia.uid;
-        smtp = {
-          inherit (config.programs.msmtp.accounts.default) host port;
+        common = {
+          acmeEmail = secrets.acme_email;
+          ingressSuffix = config.homelab.ingressSuffix;
         };
       };
     };

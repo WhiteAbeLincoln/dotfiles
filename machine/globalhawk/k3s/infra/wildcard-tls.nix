@@ -8,7 +8,7 @@
 # DNS-01 path first; flipped to prod once issuance was proven. To re-validate on
 # staging, switch this back and delete the `wildcard-h-tls` secret to force a
 # reissue.
-{ingressSuffix, ...}: {
+{common, ...}: {
   applications.wildcard-tls = {
     namespace = "kube-system";
     createNamespace = false;
@@ -22,7 +22,7 @@
         };
         spec = {
           secretName = "wildcard-h-tls";
-          dnsNames = ["*${ingressSuffix}"];
+          dnsNames = ["*${common.ingressSuffix}"];
           issuerRef = {
             name = "letsencrypt-prod";
             kind = "ClusterIssuer";

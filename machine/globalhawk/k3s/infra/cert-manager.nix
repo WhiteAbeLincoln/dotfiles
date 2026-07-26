@@ -10,7 +10,7 @@
 # manifests dir at activation — see machine/globalhawk/sops.nix. The issuers
 # below reference it by name only. Authored as raw CRs via `yamls` (nixidy has
 # no typed options for the cert-manager CRDs).
-{acmeEmail, ...}: let
+{common, ...}: let
   acmeSolver = {
     dns01.cloudflare.apiTokenSecretRef = {
       name = "cloudflare-api-token";
@@ -23,7 +23,7 @@
     metadata.name = name;
     spec.acme = {
       inherit server;
-      email = acmeEmail;
+      email = common.acmeEmail;
       privateKeySecretRef.name = privateKeyRef;
       solvers = [acmeSolver];
     };
