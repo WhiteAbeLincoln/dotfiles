@@ -27,8 +27,6 @@ in {
     ./options.nix
     # Include the results of the hardware scan.
     ./hardware-configuration.nix
-    # <home-manager/nixos>
-    ../../program/plex
     # TODO: homebridge has been added to nixos
     # remove custom module
     # ../../program/homebridge
@@ -36,10 +34,8 @@ in {
     ./mail.nix
     ./backup.nix
     ./k3s.nix
-    ./adguard.nix
     ./sops.nix
-    ./immich-storage.nix
-    ./authelia-storage.nix
+    ./services
     ../../modules/nixos/ai-agent-sandbox.nix
     ../../modules/nixos/k3s-runtime-secrets.nix
     ../../modules/nixos/k3s-workloads.nix

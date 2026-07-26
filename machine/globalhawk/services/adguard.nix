@@ -12,7 +12,7 @@
 }: let
   lan = config.homelab.network;
   clusterNetwork = config.services.k3s.clusterNetwork;
-  secrets = import ../../secrets/globalhawk.nix;
+  secrets = import ../../../secrets/globalhawk.nix;
 in {
   services.adguardhome = {
     enable = true;

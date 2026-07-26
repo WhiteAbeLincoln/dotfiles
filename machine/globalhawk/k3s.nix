@@ -85,7 +85,7 @@ in {
   # ready-to-use admin kubeconfig at ~/.kube/config (below); the sandbox agent
   # user gets its own read-only kubeconfig via services.aiAgentSandbox.k3s.
   # sops replaces kubeseal — secrets are managed via machine/globalhawk/sops.nix.
-  environment.systemPackages = [pkgs.kubectl pkgs.kubernetes-helm pkgs.sops];
+  environment.systemPackages = [pkgs.kubectl pkgs.kubernetes-helm pkgs.sops pkgs.k9s];
 
   # Convenience: give the trusted operator (meta.user) a ready-to-use admin
   # kubeconfig at ~/.kube/config so kubectl/k9s work with no sudo and no

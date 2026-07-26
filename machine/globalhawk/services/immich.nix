@@ -56,4 +56,35 @@ in {
       setfacl -m g:media-readers:r-x,d:g:media-readers:r-x,m::r-x,d:m::r-x ${immichRoot}/library
     '';
   };
+
+  services.k3s.workloads.module = {nixosConfig, ...}: {
+    applications.immich-network = {
+      namespace = "immich";
+      createNamespace = true;
+      yamls = [
+        (builtins.toJSON {
+          apiVersion = "networking.k8s.io/v1";
+          kind = "NetworkPolicy";
+          metadata = {
+            name = "allow-intra-and-ingress";
+            namespace = "immich";
+          };
+          spec = {
+            podSelector = {};
+            policyTypes = ["Ingress"];
+            ingress = [
+              {from = [{podSelector = {};}];}
+              {
+                from = [
+                  {
+                    namespaceSelector.matchLabels."kubernetes.io/metadata.name" = "kube-system";
+                  }
+                ];
+              }
+            ];
+          };
+        })
+      ];
+    };
+  };
 }
