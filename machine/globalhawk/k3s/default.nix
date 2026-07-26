@@ -19,10 +19,11 @@ in {
   services.k3s.workloads = {
     enable = true;
     module = let
-      secrets = import ../../secrets/globalhawk.nix;
+      secrets = import ../../../secrets/globalhawk.nix;
     in {
-      imports = [../../k8s];
+      imports = [../../../k8s];
       _module.args = {
+        k8sLib = import ./lib.nix { inherit lib; };
         wireguardAddresses = secrets.wireguard_addresses;
         vpnServerCities = secrets.vpn_server_cities;
         acmeEmail = secrets.acme_email;

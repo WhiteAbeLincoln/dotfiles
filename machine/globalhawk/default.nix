@@ -33,7 +33,7 @@ in {
     ./disks.nix
     ./mail.nix
     ./backup.nix
-    ./k3s.nix
+    ./k3s
     ./sops.nix
     ./services
     ../../modules/nixos/ai-agent-sandbox.nix
