@@ -23,8 +23,6 @@
     ./infra/cert-manager.nix
     ./infra/wildcard-tls.nix
     # ./apps/whoami.nix  # debugging canary; enable to test ingress/TLS/routing
-    ./apps/audiobookshelf.nix
-    ./apps/libation.nix
     ./apps/oidc-reconcilers.nix
   ];
 }
