@@ -74,6 +74,8 @@
             k3s-drift = pkgs.callPackage ./packages/k3s-drift.nix {};
             # Schema-driven generated, derived, and operator-managed sops fields.
             populate-sops = pkgs.callPackage ./packages/populate-sops.nix {};
+            libation-reconcile = pkgs.callPackage ./packages/libation-reconcile.nix {};
+            libation-auth = pkgs.callPackage ./packages/libation-auth.nix {};
           }
           // pkgs.lib.optionalAttrs pkgs.stdenv.isDarwin {
             # always include the --flake argument pointing to the current working

@@ -34,6 +34,7 @@
     ./apps/torrent.nix
     ./apps/calibre-web-automated.nix
     ./apps/audiobookshelf.nix
+    ./apps/libation.nix
     ./apps/immich.nix
     ./apps/authelia.nix
     ./apps/oidc-reconcilers.nix

@@ -33,11 +33,13 @@ in {
       "${facts.mediaRoot}/audiobooks"
       "${facts.mediaRoot}/documents"
       "${facts.mediaRoot}/music"
-      # App state for the k3s ebook/audiobook workloads. SQLite files are
-      # captured as a filesystem snapshot (crash-consistent-ish); a sqlite3
-      # .backup pre-hook is a possible later hardening (see design spec).
+      # App state for the k3s ebook/audiobook workloads. SQLite databases and
+      # Libation's refreshable account material are captured as a filesystem
+      # snapshot (crash-consistent-ish); a sqlite3 .backup pre-hook is a
+      # possible later hardening (see design spec).
       "${facts.mediaRoot}/apps/calibre-web-automated"
       "${facts.mediaRoot}/apps/audiobookshelf"
+      "${facts.mediaRoot}/apps/libation"
     ];
 
     # thumbs/ and encoded-video/ are regenerable from originals; backups/ holds

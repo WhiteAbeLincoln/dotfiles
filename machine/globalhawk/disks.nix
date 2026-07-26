@@ -1,7 +1,4 @@
-{
-  pkgs,
-  ...
-}: let
+{pkgs, ...}: let
   facts = import ./facts.nix;
 in {
   boot.supportedFilesystems = ["zfs"];
@@ -48,6 +45,10 @@ in {
     "d ${facts.mediaRoot}/apps/audiobookshelf 0775 _media _media -"
     "d ${facts.mediaRoot}/apps/audiobookshelf/config 0775 _media _media -"
     "d ${facts.mediaRoot}/apps/audiobookshelf/metadata 0775 _media _media -"
+    "d ${facts.mediaRoot}/apps/libation 0775 _media _media -"
+    "d ${facts.mediaRoot}/apps/libation/config 0770 _media _media -"
+    "d ${facts.mediaRoot}/apps/libation/db 0770 _media _media -"
+    "d ${facts.mediaRoot}/apps/libation/in-progress 0770 _media _media -"
     # CWA runs as _media (994); this A+ grants the _media group rwx on the books
     # library so the CWA pod can write. Now the only _media grant for books — the
     # blanket recursive rule was removed.
