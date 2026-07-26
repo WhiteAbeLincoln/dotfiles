@@ -1,8 +1,9 @@
 {...}: {
   imports = [
     ./adguard.nix
-    ./plex.nix
-    ./immich.nix
+    ./arr.nix
     ./authelia.nix
+    ./immich.nix
+    ./plex.nix
   ];
 }

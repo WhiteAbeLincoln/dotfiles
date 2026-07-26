@@ -19,13 +19,11 @@
 
   imports = [
     # apps and infra modules are added task-by-task:
-    ./infra/network.nix
     ./infra/library-network.nix
     ./infra/coredns-custom.nix
     ./infra/cert-manager.nix
     ./infra/wildcard-tls.nix
     # ./apps/whoami.nix  # debugging canary; enable to test ingress/TLS/routing
-    ./apps/arr.nix
     ./apps/torrent.nix
     ./apps/calibre-web-automated.nix
     ./apps/audiobookshelf.nix
