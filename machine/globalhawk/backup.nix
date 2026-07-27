@@ -11,6 +11,7 @@
   immichRoot = "${mediaRoot}/immich/library";
   # Where the newest Immich DB dump is staged for inclusion in the backup.
   stagedDbDump = "/var/lib/restic-media/immich-db-latest.sql.gz";
+  textfileDir = "/var/lib/prometheus-node-exporter-text-files";
 in {
   # restic credentials come from sops-nix at activation (decrypted to
   # /run/secrets, never the store). Repo URL + repo password are single-value
@@ -60,6 +61,18 @@ in {
       fi
     '';
 
+    backupCleanupCommand = ''
+      metrics_dir=${textfileDir}
+      metrics_tmp="$metrics_dir/restic-media.prom.$$"
+      finished="$(date +%s)"
+      {
+        printf 'restic_backup_last_success_timestamp_seconds{backup="media"} %s\n' "$finished"
+        printf 'restic_backup_last_status{backup="media"} 1\n'
+      } > "$metrics_tmp"
+      chmod 0644 "$metrics_tmp"
+      mv -f "$metrics_tmp" "$metrics_dir/restic-media.prom"
+    '';
+
     # Run after Immich's built-in 02:00 dump so the staged dump is same-day fresh.
     timerConfig = {
       OnCalendar = "*-*-* 03:30:00";
@@ -76,7 +89,10 @@ in {
 
   # The prepare command uses coreutils (ls/head/cp/mkdir/dirname); ensure they
   # resolve in the service's PATH.
-  systemd.services.restic-backups-media.path = [pkgs.coreutils];
+  systemd.services.restic-backups-media = {
+    path = [pkgs.coreutils];
+    serviceConfig.ReadWritePaths = [textfileDir];
+  };
 
   # Make a failed backup loud: email root through the host-wide transport in
   # mail.nix (also used by ZED and smartd).
@@ -85,6 +101,12 @@ in {
     description = "Alert on restic media backup failure";
     serviceConfig.Type = "oneshot";
     script = ''
+      metrics_dir=${textfileDir}
+      metrics_tmp="$metrics_dir/restic-media.prom.$$"
+      printf 'restic_backup_last_status{backup="media"} 0\n' > "$metrics_tmp"
+      chmod 0644 "$metrics_tmp"
+      mv -f "$metrics_tmp" "$metrics_dir/restic-media.prom"
+
       printf '%s\n' \
         'Subject: [globalhawk] restic media backup FAILED' \
         "" \
