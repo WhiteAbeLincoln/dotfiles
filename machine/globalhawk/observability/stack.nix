@@ -134,9 +134,12 @@
           };
           gateway = {
             enabled = true;
+            replicas = 1;
             # Reserved for host Alloy; verified unused on 2026-07-26.
             service.clusterIP = "10.43.0.50";
           };
+          chunksCache.enabled = false;
+          resultsCache.enabled = false;
           minio.enabled = false;
           backend.replicas = 0;
           read.replicas = 0;
