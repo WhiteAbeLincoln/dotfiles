@@ -69,6 +69,14 @@ in {
                 gluetun = {
                   image = "qmcgaw/gluetun@sha256:ad6b604e0cecc917a5cb6a8de55cd167ba415da8b7ec13456abb871a84be3c30";
                   securityContext.capabilities.add = ["NET_ADMIN"];
+                  # Container restarts retain the pod network namespace. Remove
+                  # WireGuard policy rules left by an interrupted prior process
+                  # before gluetun configures table 51820 again.
+                  lifecycle.postStart.exec.command = [
+                    "/bin/sh"
+                    "-c"
+                    "(ip rule del table 51820; ip -6 rule del table 51820) || true"
+                  ];
                   # gluetun self-heals its tunnel; this restarts the container as a
                   # backstop if the VPN stays down (the "silent drop" case) so the
                   # netns's WireGuard interface is rebuilt.
