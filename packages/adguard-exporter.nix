@@ -6,7 +6,7 @@
   symlinkJoin,
   cacert,
 }: let
-  version = "1.0.0";
+  version = "1.0.1";
   source = symlinkJoin {
     name = "adguard-exporter-source";
     paths = [
@@ -19,6 +19,8 @@
         package main
 
         import (
+            "bytes"
+            "context"
             "encoding/json"
             "errors"
             "fmt"
@@ -42,17 +44,17 @@
         }
 
         type statsResponse struct {
-            Queries           float64 `json:"num_dns_queries"`
-            Blocked           float64 `json:"num_blocked_filtering"`
-            AverageDuration   float64 `json:"avg_processing_time"`
+            Queries         *float64 `json:"num_dns_queries"`
+            Blocked         *float64 `json:"num_blocked_filtering"`
+            AverageDuration *float64 `json:"avg_processing_time"`
         }
 
         type statusResponse struct {
-            ProtectionEnabled bool `json:"protection_enabled"`
+            ProtectionEnabled *bool `json:"protection_enabled"`
         }
 
         type filteringResponse struct {
-            Enabled bool `json:"enabled"`
+            Enabled *bool `json:"enabled"`
         }
 
         type metrics struct {
@@ -65,12 +67,12 @@
             filterEnabled     float64
         }
 
-        func (c *adguardClient) get(path string, target any) error {
+        func (c *adguardClient) get(ctx context.Context, path string, target any) error {
             endpoint, err := url.Parse(c.baseURL + path)
             if err != nil {
                 return fmt.Errorf("parse endpoint: %w", err)
             }
-            req, err := http.NewRequest(http.MethodGet, endpoint.String(), nil)
+            req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint.String(), nil)
             if err != nil {
                 return fmt.Errorf("create request: %w", err)
             }
@@ -91,57 +93,105 @@
             return nil
         }
 
-        func (c *adguardClient) collect() (metrics, error) {
+        func (c *adguardClient) collect(ctx context.Context) (metrics, error) {
             started := time.Now()
             var stats statsResponse
             var status statusResponse
             var filtering filteringResponse
-            if err := c.get("/control/stats", &stats); err != nil {
+            if err := c.get(ctx, "/control/stats", &stats); err != nil {
                 return metrics{duration: time.Since(started).Seconds()}, err
             }
-            if err := c.get("/control/status", &status); err != nil {
+            if stats.Queries == nil || stats.Blocked == nil || stats.AverageDuration == nil {
+                return metrics{duration: time.Since(started).Seconds()}, errors.New("AdGuard stats response omitted required fields")
+            }
+            if *stats.Queries < 0 || *stats.Blocked < 0 || *stats.AverageDuration < 0 {
+                return metrics{duration: time.Since(started).Seconds()}, errors.New("AdGuard stats response contained negative values")
+            }
+            if err := c.get(ctx, "/control/status", &status); err != nil {
                 return metrics{duration: time.Since(started).Seconds()}, err
             }
-            if err := c.get("/control/filtering/status", &filtering); err != nil {
+            if status.ProtectionEnabled == nil {
+                return metrics{duration: time.Since(started).Seconds()}, errors.New("AdGuard status response omitted protection_enabled")
+            }
+            if err := c.get(ctx, "/control/filtering/status", &filtering); err != nil {
                 return metrics{duration: time.Since(started).Seconds()}, err
+            }
+            if filtering.Enabled == nil {
+                return metrics{duration: time.Since(started).Seconds()}, errors.New("AdGuard filtering response omitted enabled")
             }
             result := metrics{
                 up:            1,
                 duration:      time.Since(started).Seconds(),
-                queries:       stats.Queries,
-                blocked:       stats.Blocked,
-                queryDuration: stats.AverageDuration,
+                queries:       *stats.Queries,
+                blocked:       *stats.Blocked,
+                queryDuration: *stats.AverageDuration,
             }
-            if status.ProtectionEnabled {
+            if *status.ProtectionEnabled {
                 result.protectionEnabled = 1
             }
-            if filtering.Enabled {
+            if *filtering.Enabled {
                 result.filterEnabled = 1
             }
             return result, nil
         }
 
-        func writeMetric(w io.Writer, name, help, kind string, value float64) {
-            fmt.Fprintf(w, "# HELP %s %s\n# TYPE %s %s\n%s %s\n",
+        func writeMetric(w io.Writer, name, help, kind string, value float64) error {
+            _, err := fmt.Fprintf(w, "# HELP %s %s\n# TYPE %s %s\n%s %s\n",
                 name, help, name, kind, name, strconv.FormatFloat(value, 'g', -1, 64))
+            return err
         }
 
-        func metricsHandler(client *adguardClient, logger *log.Logger) http.Handler {
-            return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-                result, err := client.collect()
+        func writeMetrics(w io.Writer, result metrics) error {
+            values := []struct {
+                name  string
+                help  string
+                kind  string
+                value float64
+            }{
+                {"service_up", "Whether the AdGuard API collection succeeded.", "gauge", result.up},
+                {"service_api_request_duration_seconds", "Duration of the AdGuard API collection.", "gauge", result.duration},
+                {"adguard_queries_total", "Total DNS queries handled by AdGuard.", "counter", result.queries},
+                {"adguard_blocked_queries_total", "Total DNS queries blocked by AdGuard.", "counter", result.blocked},
+                {"adguard_query_duration_seconds", "Average AdGuard DNS query duration.", "gauge", result.queryDuration},
+                {"adguard_protection_enabled", "Whether AdGuard protection is enabled.", "gauge", result.protectionEnabled},
+                {"adguard_filter_enabled", "Whether AdGuard filtering is enabled.", "gauge", result.filterEnabled},
+            }
+            for _, value := range values {
+                if err := writeMetric(w, value.name, value.help, value.kind, value.value); err != nil {
+                    return fmt.Errorf("write %s: %w", value.name, err)
+                }
+            }
+            return nil
+        }
+
+        func metricsHandler(client *adguardClient, logger *log.Logger, scrapeTimeout time.Duration) http.Handler {
+            gate := make(chan struct{}, 1)
+            return http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+                select {
+                case gate <- struct{}{}:
+                    defer func() { <-gate }()
+                default:
+                    http.Error(w, "AdGuard metrics collection already in progress", http.StatusServiceUnavailable)
+                    return
+                }
+                ctx, cancel := context.WithTimeout(request.Context(), scrapeTimeout)
+                defer cancel()
+                result, err := client.collect(ctx)
                 if err != nil {
                     logger.Printf("collect AdGuard metrics: %v", err)
                     http.Error(w, "AdGuard metrics collection failed", http.StatusInternalServerError)
                     return
                 }
+                var output bytes.Buffer
+                if err := writeMetrics(&output, result); err != nil {
+                    logger.Printf("render AdGuard metrics: %v", err)
+                    http.Error(w, "AdGuard metrics rendering failed", http.StatusInternalServerError)
+                    return
+                }
                 w.Header().Set("Content-Type", "text/plain; version=0.0.4")
-                writeMetric(w, "service_up", "Whether the AdGuard API collection succeeded.", "gauge", result.up)
-                writeMetric(w, "service_api_request_duration_seconds", "Duration of the AdGuard API collection.", "gauge", result.duration)
-                writeMetric(w, "adguard_queries_total", "Total DNS queries handled by AdGuard.", "counter", result.queries)
-                writeMetric(w, "adguard_blocked_queries_total", "Total DNS queries blocked by AdGuard.", "counter", result.blocked)
-                writeMetric(w, "adguard_query_duration_seconds", "Average AdGuard DNS query duration.", "gauge", result.queryDuration)
-                writeMetric(w, "adguard_protection_enabled", "Whether AdGuard protection is enabled.", "gauge", result.protectionEnabled)
-                writeMetric(w, "adguard_filter_enabled", "Whether AdGuard filtering is enabled.", "gauge", result.filterEnabled)
+                if _, err := io.Copy(w, &output); err != nil {
+                    logger.Printf("write AdGuard metrics response: %v", err)
+                }
             })
         }
 
@@ -167,7 +217,7 @@
                 client: &http.Client{Timeout: 15 * time.Second},
             }
             mux := http.NewServeMux()
-            mux.Handle("/metrics", metricsHandler(client, log.Default()))
+            mux.Handle("/metrics", metricsHandler(client, log.Default(), 25*time.Second))
             server := &http.Server{
                 Addr:              ":9100",
                 Handler:           mux,
@@ -190,12 +240,16 @@
         package main
 
         import (
+            "context"
+            "errors"
             "io"
             "log"
             "net/http"
             "net/http/httptest"
             "strings"
+            "sync"
             "testing"
+            "time"
         )
 
         func TestMetricsExcludeQueryDetails(t *testing.T) {
@@ -214,7 +268,7 @@
             defer api.Close()
             client := &adguardClient{baseURL: api.URL, username: "admin", password: "secret", client: api.Client()}
             recorder := httptest.NewRecorder()
-            metricsHandler(client, log.New(io.Discard, "", 0)).ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/metrics", nil))
+            metricsHandler(client, log.New(io.Discard, "", 0), time.Second).ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/metrics", nil))
             body := recorder.Body.String()
             if recorder.Code != http.StatusOK {
                 t.Fatalf("unexpected status %d: %s", recorder.Code, body)
@@ -238,9 +292,118 @@
             defer api.Close()
             client := &adguardClient{baseURL: api.URL, username: "admin", password: "secret", client: api.Client()}
             recorder := httptest.NewRecorder()
-            metricsHandler(client, log.New(io.Discard, "", 0)).ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/metrics", nil))
+            metricsHandler(client, log.New(io.Discard, "", 0), time.Second).ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/metrics", nil))
             if recorder.Code != http.StatusInternalServerError {
                 t.Fatalf("got status %d, want 500", recorder.Code)
+            }
+        }
+
+        func TestMetricsRejectMissingRequiredField(t *testing.T) {
+            api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+                switch r.URL.Path {
+                case "/control/stats":
+                    io.WriteString(w, `{"num_dns_queries":12,"avg_processing_time":0.003}`)
+                case "/control/status":
+                    io.WriteString(w, `{"protection_enabled":true}`)
+                case "/control/filtering/status":
+                    io.WriteString(w, `{"enabled":true}`)
+                }
+            }))
+            defer api.Close()
+            client := &adguardClient{baseURL: api.URL, username: "admin", password: "secret", client: api.Client()}
+            recorder := httptest.NewRecorder()
+            metricsHandler(client, log.New(io.Discard, "", 0), time.Second).ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/metrics", nil))
+            if recorder.Code != http.StatusInternalServerError {
+                t.Fatalf("got status %d, want 500 for a partial API response", recorder.Code)
+            }
+        }
+
+        func TestScrapeDeadlineCancelsUpstreamRequests(t *testing.T) {
+            canceled := make(chan struct{})
+            api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+                <-r.Context().Done()
+                close(canceled)
+            }))
+            defer api.Close()
+            client := &adguardClient{baseURL: api.URL, username: "admin", password: "secret", client: api.Client()}
+            recorder := httptest.NewRecorder()
+            metricsHandler(client, log.New(io.Discard, "", 0), 20*time.Millisecond).ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/metrics", nil))
+            if recorder.Code != http.StatusInternalServerError {
+                t.Fatalf("got status %d, want 500 after scrape deadline", recorder.Code)
+            }
+            select {
+            case <-canceled:
+            case <-time.After(time.Second):
+                t.Fatal("upstream request continued after scrape deadline")
+            }
+        }
+
+        func TestRequestCancellationStopsCollection(t *testing.T) {
+            started := make(chan struct{})
+            canceled := make(chan struct{})
+            api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+                close(started)
+                <-r.Context().Done()
+                close(canceled)
+            }))
+            defer api.Close()
+            client := &adguardClient{baseURL: api.URL, username: "admin", password: "secret", client: api.Client()}
+            requestContext, cancel := context.WithCancel(context.Background())
+            request := httptest.NewRequest(http.MethodGet, "/metrics", nil).WithContext(requestContext)
+            done := make(chan struct{})
+            go func() {
+                metricsHandler(client, log.New(io.Discard, "", 0), time.Second).ServeHTTP(httptest.NewRecorder(), request)
+                close(done)
+            }()
+            <-started
+            cancel()
+            select {
+            case <-canceled:
+            case <-time.After(time.Second):
+                t.Fatal("upstream request continued after client cancellation")
+            }
+            <-done
+        }
+
+        func TestOverlappingScrapeIsRejected(t *testing.T) {
+            started := make(chan struct{})
+            release := make(chan struct{})
+            api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+                if r.URL.Path == "/control/stats" {
+                    close(started)
+                    <-release
+                }
+                io.WriteString(w, `{}`)
+            }))
+            defer api.Close()
+            client := &adguardClient{baseURL: api.URL, username: "admin", password: "secret", client: api.Client()}
+            handler := metricsHandler(client, log.New(io.Discard, "", 0), time.Second)
+            var group sync.WaitGroup
+            group.Add(1)
+            go func() {
+                defer group.Done()
+                handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/metrics", nil))
+            }()
+            <-started
+            overlapping := httptest.NewRecorder()
+            handler.ServeHTTP(overlapping, httptest.NewRequest(http.MethodGet, "/metrics", nil))
+            close(release)
+            group.Wait()
+            if overlapping.Code != http.StatusServiceUnavailable {
+                t.Fatalf("overlapping scrape got status %d, want 503", overlapping.Code)
+            }
+        }
+
+        type failingWriter struct{}
+
+        func (failingWriter) Write([]byte) (int, error) {
+            return 0, errors.New("write failed")
+        }
+
+        func TestMetricsWriterReturnsErrors(t *testing.T) {
+            err := writeMetrics(failingWriter{}, metrics{})
+            if err == nil {
+                t.Fatal("writeMetrics ignored a writer error")
             }
         }
       '')
@@ -251,6 +414,8 @@
     inherit version;
     src = source;
     vendorHash = null;
+    doCheck = true;
+    preBuild = "go test ./...";
     ldflags = ["-s" "-w"];
     meta = {
       description = "Privacy-preserving aggregate AdGuard Home metrics exporter";

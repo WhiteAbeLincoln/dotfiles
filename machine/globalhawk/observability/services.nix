@@ -187,7 +187,7 @@ in {
       yamls =
         (mkAdapter {
           name = "plex-exporter";
-          image = "localhost/plex-exporter:1.0.0";
+          image = "localhost/plex-exporter:1.0.1";
           secretName = "plex-exporter";
           secretKey = "token";
           secretMount = "/run/credentials/plex-token";
@@ -211,7 +211,7 @@ in {
         })
         ++ (mkAdapter {
           name = "adguard-exporter";
-          image = "localhost/adguard-exporter:1.0.0";
+          image = "localhost/adguard-exporter:1.0.1";
           secretName = "adguard-exporter";
           secretKey = "password";
           secretMount = "/run/credentials/adguard-password";
