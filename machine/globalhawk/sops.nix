@@ -65,6 +65,7 @@
         immich.sopsSecret = "immich_oidc_client_secret_hash";
         audiobookshelf.sopsSecret = "abs_oidc_client_secret_hash";
         calibre-web.sopsSecret = "cwa_oidc_client_secret_hash";
+        grafana.sopsSecret = "grafana_oidc_client_secret_hash";
       };
     };
     immich-oidc = {
@@ -84,6 +85,21 @@
     cwa-oidc = {
       namespace = "library";
       stringData.client-secret.sopsSecret = "cwa_oidc_client_secret";
+    };
+    grafana-secrets = {
+      namespace = "monitoring";
+      stringData = {
+        admin-password.sopsSecret = "grafana_admin_password";
+        oidc-client-secret.sopsSecret = "grafana_oidc_client_secret";
+      };
+    };
+    plex-exporter = {
+      namespace = "monitoring";
+      stringData.token.sopsSecret = "plex_api_token";
+    };
+    adguard-exporter = {
+      namespace = "monitoring";
+      stringData.password.sopsSecret = "adguard_metrics_password";
     };
   };
 
@@ -129,6 +145,11 @@
       abs_admin_token = {};
       cwa_oidc_client_secret = {};
       cwa_oidc_client_secret_hash = {};
+      grafana_admin_password = {};
+      grafana_oidc_client_secret = {};
+      grafana_oidc_client_secret_hash = {};
+      plex_api_token = {};
+      adguard_metrics_password = {};
     };
 
     templates = {
