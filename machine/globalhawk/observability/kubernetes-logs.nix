@@ -1,5 +1,7 @@
 {...}: {
-  services.k3s.workloads.module = {charts, ...}: {
+  services.k3s.workloads.module = {charts, ...}: let
+    mkManifest = value: builtins.toJSON value;
+  in {
     applications.kubernetes-logs = {
       namespace = "monitoring";
       createNamespace = false;
@@ -12,6 +14,7 @@
 
           alloy = {
             enableReporting = false;
+            storagePath = "/var/lib/alloy";
             extraEnv = [
               {
                 name = "HOST_NODE_NAME";
@@ -53,7 +56,7 @@
                 }
                 rule {
                   source_labels = ["workload"]
-                  regex         = "^(.+)-[0-9a-f]{8,10}$"
+                  regex         = "^(.+)-[bcdfghjklmnpqrstvwxz2456789]{8,10}$"
                   replacement   = "$1"
                   target_label  = "workload"
                 }
@@ -72,6 +75,12 @@
                 forward_to = [loki.write.monitoring.receiver]
 
                 stage.cri {}
+
+                stage.labels {
+                  values = {
+                    stream = "",
+                  }
+                }
               }
 
               loki.source.kubernetes_events "cluster" {
@@ -100,6 +109,12 @@
             mounts = {
               varlog = false;
               dockercontainers = false;
+              extra = [
+                {
+                  name = "alloy-state";
+                  mountPath = "/var/lib/alloy";
+                }
+              ];
             };
             resources = {
               requests = {
@@ -109,6 +124,13 @@
               limits.memory = "512Mi";
             };
           };
+
+          controller.volumes.extra = [
+            {
+              name = "alloy-state";
+              persistentVolumeClaim.claimName = "alloy-state";
+            }
+          ];
 
           rbac = {
             create = true;
@@ -135,6 +157,22 @@
           serviceMonitor.enabled = true;
         };
       };
+
+      yamls = [
+        (mkManifest {
+          apiVersion = "v1";
+          kind = "PersistentVolumeClaim";
+          metadata = {
+            name = "alloy-state";
+            namespace = "monitoring";
+          };
+          spec = {
+            accessModes = ["ReadWriteOnce"];
+            storageClassName = "local-path";
+            resources.requests.storage = "1Gi";
+          };
+        })
+      ];
     };
   };
 }
