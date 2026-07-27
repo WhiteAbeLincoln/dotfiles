@@ -43,7 +43,10 @@
           alertmanager = {
             enabled = true;
             config = {
-              route.receiver = "discard";
+              route = {
+                receiver = "discard";
+                routes = [];
+              };
               receivers = [{name = "discard";}];
             };
           };
