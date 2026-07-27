@@ -199,15 +199,32 @@ in {
                 secret_name = "authelia-secrets";
                 path = "oidc-hmac";
               };
-              authorization_policies.family = {
-                default_policy = "deny";
-                rules = [
-                  {
-                    policy = "one_factor";
-                    subject = ["group:family" "group:admins"];
-                  }
-                ];
+              authorization_policies = {
+                family = {
+                  default_policy = "deny";
+                  rules = [
+                    {
+                      policy = "one_factor";
+                      subject = ["group:family" "group:admins"];
+                    }
+                  ];
+                };
+                admin = {
+                  default_policy = "deny";
+                  rules = [
+                    {
+                      policy = "two_factor";
+                      subject = ["group:admins"];
+                    }
+                  ];
+                };
               };
+              claims_policies.grafana.id_token = [
+                "email"
+                "name"
+                "groups"
+                "preferred_username"
+              ];
               jwks = [
                 {
                   key_id = "main";
@@ -252,6 +269,25 @@ in {
                   ];
                   scopes = ["openid" "profile" "email"];
                   token_endpoint_auth_method = "client_secret_basic";
+                }
+                {
+                  client_id = "grafana";
+                  client_name = "Grafana";
+                  client_secret.path = "/secrets/authelia-oidc-client-hashes/grafana";
+                  authorization_policy = "admin";
+                  claims_policy = "grafana";
+                  public = false;
+                  require_pkce = true;
+                  pkce_challenge_method = "S256";
+                  redirect_uris = [
+                    "https://grafana${ingressSuffix}/login/generic_oauth"
+                  ];
+                  scopes = ["openid" "profile" "email" "groups"];
+                  response_types = ["code"];
+                  grant_types = ["authorization_code"];
+                  token_endpoint_auth_method = "client_secret_basic";
+                  access_token_signed_response_alg = "none";
+                  userinfo_signed_response_alg = "none";
                 }
               ];
             };
