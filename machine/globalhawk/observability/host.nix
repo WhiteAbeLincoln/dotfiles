@@ -116,38 +116,26 @@ in {
       metadata = {
         inherit name;
         namespace = "monitoring";
-        labels = labels // {"kubernetes.io/service-name" = name;};
+        labels =
+          labels
+          // {
+            "endpointslice.kubernetes.io/managed-by" = "globalhawk.nixos";
+            "kubernetes.io/service-name" = name;
+          };
       };
       addressType = "IPv4";
-      endpoints = [{addresses = [hostGatewayIp];}];
+      endpoints = [
+        {
+          addresses = [hostGatewayIp];
+          conditions.ready = true;
+          nodeName = "globalhawk";
+        }
+      ];
       ports = [
         {
           name = "metrics";
           inherit port;
           protocol = "TCP";
-        }
-      ];
-    };
-    # Prometheus Operator currently defaults ServiceMonitor discovery to the
-    # legacy Endpoints API. Publish both forms so the host targets work now and
-    # are already ready for a future cluster-wide move to EndpointSlice discovery.
-    mkEndpoints = name: port: {
-      apiVersion = "v1";
-      kind = "Endpoints";
-      metadata = {
-        inherit name labels;
-        namespace = "monitoring";
-      };
-      subsets = [
-        {
-          addresses = [{ip = hostGatewayIp;}];
-          ports = [
-            {
-              name = "metrics";
-              inherit port;
-              protocol = "TCP";
-            }
-          ];
         }
       ];
     };
@@ -201,7 +189,6 @@ in {
           endpoint:
             map mkManifest [
               (mkService endpoint.name endpoint.port)
-              (mkEndpoints endpoint.name endpoint.port)
               (mkEndpointSlice endpoint.name endpoint.port)
               (mkServiceMonitor endpoint.name endpoint.interval)
             ]

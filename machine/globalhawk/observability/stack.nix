@@ -20,6 +20,7 @@
             retentionSize = "17GB";
             scrapeInterval = "30s";
             evaluationInterval = "30s";
+            serviceDiscoveryRole = "EndpointSlice";
             serviceMonitorSelectorNilUsesHelmValues = false;
             podMonitorSelectorNilUsesHelmValues = false;
             ruleSelectorNilUsesHelmValues = false;
