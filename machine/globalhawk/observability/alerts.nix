@@ -114,20 +114,20 @@
             rules = [
               (mkRule {
                 alert = "GlobalhawkResticBackupStale";
-                expr = ''time() - restic_backup_last_success_timestamp_seconds{cluster="globalhawk",backup="media"} > 30 * 60 * 60'';
+                expr = ''time() - restic_backup_last_success_timestamp_seconds{cluster="globalhawk",backup="media"} > 30 * 60 * 60 or absent(restic_backup_last_success_timestamp_seconds{cluster="globalhawk",backup="media"})'';
                 for = "5m";
                 severity = "warning";
                 summary = "Globalhawk restic backup is stale";
-                description = "The last successful media backup is more than 30 hours old.";
+                description = "The last successful media backup is more than 30 hours old or its success telemetry is missing.";
                 dashboardUid = "globalhawk-host";
               })
               (mkRule {
                 alert = "GlobalhawkResticBackupFailed";
-                expr = ''restic_backup_last_status{cluster="globalhawk",backup="media"} == 0 or time() - restic_backup_last_success_timestamp_seconds{cluster="globalhawk",backup="media"} > 48 * 60 * 60'';
+                expr = ''restic_backup_last_status{cluster="globalhawk",backup="media"} == 0 or time() - restic_backup_last_success_timestamp_seconds{cluster="globalhawk",backup="media"} > 48 * 60 * 60 or absent(restic_backup_last_success_timestamp_seconds{cluster="globalhawk",backup="media"}) or absent(restic_backup_last_status{cluster="globalhawk",backup="media"})'';
                 for = "5m";
                 severity = "critical";
                 summary = "Globalhawk restic backup failed or is critically stale";
-                description = "The media backup reports failure or has not succeeded for more than 48 hours.";
+                description = "The media backup reports failure, has not succeeded for more than 48 hours, or its telemetry is missing.";
                 dashboardUid = "globalhawk-host";
               })
               (mkRule {
