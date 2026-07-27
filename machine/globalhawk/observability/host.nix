@@ -70,7 +70,7 @@ in {
       forward_to = [loki.write.monitoring.receiver]
 
       stage.match {
-        selector = "{unit!~=\"k3s|plex|adguardhome|smartd|zfs-(import.*|mount.*|zed|scrub.*|trim.*|media-posixacl)|restic-backups-media|restic-media-failure|nixos-upgrade|nix-gc|nix-optimise|network-addresses-enp1s0|wpa_supplicant\", priority!~=\"warning|err|crit|alert|emerg\"}"
+        selector = "{unit!~=\"(k3s|plex|adguardhome|smartd|zfs-(import.*|mount.*|zed|scrub.*|trim.*|media-posixacl)|restic-backups-media|restic-media-failure|nixos-upgrade|nix-gc|nix-optimise|network-addresses-enp1s0|wpa_supplicant)\\.service\", priority!~=\"warning|err|crit|alert|emerg\"}"
         action   = "drop"
       }
     }
