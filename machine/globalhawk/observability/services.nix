@@ -13,6 +13,12 @@ in {
     plexExporterImage
     adguardExporterImage
   ];
+  # k3s imports image archives only while starting. Tie local image changes to
+  # the unit so a switch cannot roll out a tag before containerd has imported it.
+  systemd.services.k3s.restartTriggers = [
+    plexExporterImage
+    adguardExporterImage
+  ];
 
   services.k3s.workloads.module = {k8sLib, ...}: let
     mkManifest = value: builtins.toJSON value;
