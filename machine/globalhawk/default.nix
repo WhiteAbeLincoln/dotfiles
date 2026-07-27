@@ -34,6 +34,7 @@ in {
     ./mail.nix
     ./backup.nix
     ./k3s
+    ./observability
     ./sops.nix
     ./services
     ../../modules/nixos/ai-agent-sandbox.nix
