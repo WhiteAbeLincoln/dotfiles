@@ -1,0 +1,35 @@
+{
+  "annotations": {"list": []},
+  "editable": false,
+  "graphTooltip": 1,
+  "links": [
+    {"title": "Host Health", "type": "link", "url": "/d/globalhawk-host"},
+    {"title": "Plex and AdGuard", "type": "link", "url": "/d/globalhawk-services"},
+    {"title": "Logs and Events", "type": "link", "url": "/d/globalhawk-logs"},
+    {"title": "Observability Stack", "type": "link", "url": "/d/globalhawk-telemetry"}
+  ],
+  "panels": [
+    {"id": 1, "title": "Active warning / critical alerts", "type": "table", "gridPos": {"h": 7, "w": 24, "x": 0, "y": 0}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "ALERTS{alertstate=\"firing\",severity=~\"warning|critical\"}", "format": "table", "instant": true, "refId": "A"}]},
+    {"id": 2, "title": "Node ready", "type": "stat", "gridPos": {"h": 5, "w": 4, "x": 0, "y": 7}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "min(kube_node_status_condition{condition=\"Ready\",status=\"true\"})", "refId": "A"}]},
+    {"id": 3, "title": "Pods ready", "type": "stat", "gridPos": {"h": 5, "w": 4, "x": 4, "y": 7}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "100 * sum(kube_pod_status_ready{condition=\"true\"}) / count(kube_pod_status_ready{condition=\"true\"})", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "percent", "min": 0, "max": 100}}},
+    {"id": 4, "title": "Restarts (24h)", "type": "stat", "gridPos": {"h": 5, "w": 4, "x": 8, "y": 7}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum(increase(kube_pod_container_status_restarts_total[24h]))", "refId": "A"}]},
+    {"id": 5, "title": "CPU busy", "type": "stat", "gridPos": {"h": 5, "w": 4, "x": 12, "y": 7}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "100 * (1 - avg(rate(node_cpu_seconds_total{cluster=\"globalhawk\",mode=\"idle\"}[5m])))", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "percent", "min": 0, "max": 100}}},
+    {"id": 6, "title": "Memory used", "type": "stat", "gridPos": {"h": 5, "w": 4, "x": 16, "y": 7}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "100 * (1 - node_memory_MemAvailable_bytes{cluster=\"globalhawk\"} / node_memory_MemTotal_bytes{cluster=\"globalhawk\"})", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "percent", "min": 0, "max": 100}}},
+    {"id": 7, "title": "Root used", "type": "stat", "gridPos": {"h": 5, "w": 4, "x": 20, "y": 7}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "100 * (1 - node_filesystem_avail_bytes{cluster=\"globalhawk\",mountpoint=\"/\",fstype!~\"tmpfs|overlay\"} / node_filesystem_size_bytes{cluster=\"globalhawk\",mountpoint=\"/\",fstype!~\"tmpfs|overlay\"})", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "percent", "min": 0, "max": 100}}},
+    {"id": 8, "title": "ZFS used", "type": "stat", "gridPos": {"h": 5, "w": 4, "x": 0, "y": 12}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "100 * zfs_pool_capacity_ratio{cluster=\"globalhawk\",pool=\"pool\"}", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "percent", "min": 0, "max": 100}}},
+    {"id": 9, "title": "Disk / ZFS health", "type": "stat", "gridPos": {"h": 5, "w": 4, "x": 4, "y": 12}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "min(smartctl_device_smart_status{cluster=\"globalhawk\"})", "legendFormat": "SMART", "refId": "A"}, {"expr": "max(zfs_pool_health{cluster=\"globalhawk\",pool=\"pool\"})", "legendFormat": "ZFS code", "refId": "B"}]},
+    {"id": 10, "title": "Restic age", "type": "stat", "gridPos": {"h": 5, "w": 4, "x": 8, "y": 12}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "time() - restic_backup_last_success_timestamp_seconds{cluster=\"globalhawk\",backup=\"media\"}", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "s"}}},
+    {"id": 11, "title": "Plex / AdGuard reachability", "type": "stat", "gridPos": {"h": 5, "w": 4, "x": 12, "y": 12}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "service_up", "legendFormat": "{{service}}", "refId": "A"}]},
+    {"id": 12, "title": "Prometheus targets", "type": "stat", "gridPos": {"h": 5, "w": 4, "x": 16, "y": 12}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "100 * sum(up) / count(up)", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "percent", "min": 0, "max": 100}}},
+    {"id": 13, "title": "Loki rejected lines", "type": "stat", "gridPos": {"h": 5, "w": 4, "x": 20, "y": 12}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum(rate(loki_discarded_samples_total[5m]))", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "lines/sec"}}}
+  ],
+  "refresh": "30s",
+  "schemaVersion": 41,
+  "tags": ["globalhawk", "overview"],
+  "templating": {"list": []},
+  "time": {"from": "now-6h", "to": "now"},
+  "timezone": "browser",
+  "title": "Globalhawk Overview",
+  "uid": "globalhawk-overview",
+  "version": 1
+}

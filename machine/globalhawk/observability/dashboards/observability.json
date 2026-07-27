@@ -1,0 +1,27 @@
+{
+  "annotations": {"list": []},
+  "editable": false,
+  "graphTooltip": 1,
+  "panels": [
+    {"id": 1, "title": "Prometheus samples ingested", "type": "timeseries", "gridPos": {"h": 8, "w": 8, "x": 0, "y": 0}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "rate(prometheus_tsdb_head_samples_appended_total[5m])", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "ops"}}},
+    {"id": 2, "title": "Prometheus targets", "type": "timeseries", "gridPos": {"h": 8, "w": 8, "x": 8, "y": 0}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum(up)", "legendFormat": "up", "refId": "A"}, {"expr": "count(up) - sum(up)", "legendFormat": "down", "refId": "B"}]},
+    {"id": 3, "title": "Prometheus TSDB storage", "type": "timeseries", "gridPos": {"h": 8, "w": 8, "x": 16, "y": 0}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "prometheus_tsdb_storage_blocks_bytes", "legendFormat": "blocks", "refId": "A"}, {"expr": "prometheus_tsdb_wal_storage_size_bytes", "legendFormat": "WAL", "refId": "B"}], "fieldConfig": {"defaults": {"unit": "bytes"}}},
+    {"id": 4, "title": "Alertmanager cluster health", "type": "stat", "gridPos": {"h": 7, "w": 8, "x": 0, "y": 8}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "min(alertmanager_cluster_health_score)", "refId": "A"}]},
+    {"id": 5, "title": "Alertmanager notifications", "type": "timeseries", "gridPos": {"h": 7, "w": 8, "x": 8, "y": 8}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum by (integration) (rate(alertmanager_notifications_total[5m]))", "legendFormat": "{{integration}}", "refId": "A"}]},
+    {"id": 6, "title": "Grafana process health", "type": "timeseries", "gridPos": {"h": 7, "w": 8, "x": 16, "y": 8}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "process_resident_memory_bytes{job=~\".*grafana.*\"}", "legendFormat": "resident memory", "refId": "A"}, {"expr": "rate(process_cpu_seconds_total{job=~\".*grafana.*\"}[5m])", "legendFormat": "CPU seconds/s", "refId": "B"}]},
+    {"id": 7, "title": "Loki ingestion", "type": "timeseries", "gridPos": {"h": 8, "w": 8, "x": 0, "y": 15}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum(rate(loki_distributor_bytes_received_total[5m]))", "legendFormat": "bytes", "refId": "A"}, {"expr": "sum(rate(loki_distributor_lines_received_total[5m]))", "legendFormat": "lines", "refId": "B"}]},
+    {"id": 8, "title": "Loki rejected lines", "type": "timeseries", "gridPos": {"h": 8, "w": 8, "x": 8, "y": 15}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum by (reason) (rate(loki_discarded_samples_total[5m]))", "legendFormat": "{{reason}}", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "lines/sec"}}},
+    {"id": 9, "title": "Loki query rate and latency", "type": "timeseries", "gridPos": {"h": 8, "w": 8, "x": 16, "y": 15}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum(rate(loki_request_duration_seconds_count{route=~\".*query.*\"}[5m]))", "legendFormat": "queries/s", "refId": "A"}, {"expr": "sum(rate(loki_request_duration_seconds_sum{route=~\".*query.*\"}[5m])) / clamp_min(sum(rate(loki_request_duration_seconds_count{route=~\".*query.*\"}[5m])), 0.001)", "legendFormat": "mean seconds", "refId": "B"}]},
+    {"id": 10, "title": "Alloy component health", "type": "table", "gridPos": {"h": 8, "w": 12, "x": 0, "y": 23}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "alloy_component_controller_running_components", "format": "table", "instant": true, "refId": "A"}, {"expr": "up{service=\"globalhawk-alloy\"}", "format": "table", "instant": true, "refId": "B"}]},
+    {"id": 11, "title": "Scrape duration by target", "type": "timeseries", "gridPos": {"h": 8, "w": 12, "x": 12, "y": 23}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "topk(10, scrape_duration_seconds)", "legendFormat": "{{job}} {{instance}}", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "s"}}}
+  ],
+  "refresh": "30s",
+  "schemaVersion": 41,
+  "tags": ["globalhawk", "observability"],
+  "templating": {"list": []},
+  "time": {"from": "now-6h", "to": "now"},
+  "timezone": "browser",
+  "title": "Observability Stack",
+  "uid": "globalhawk-telemetry",
+  "version": 1
+}

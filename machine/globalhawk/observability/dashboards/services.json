@@ -1,0 +1,24 @@
+{
+  "annotations": {"list": []},
+  "editable": false,
+  "graphTooltip": 1,
+  "panels": [
+    {"id": 1, "title": "Service reachability", "type": "stat", "gridPos": {"h": 6, "w": 8, "x": 0, "y": 0}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "service_up", "legendFormat": "{{service}}", "refId": "A"}]},
+    {"id": 2, "title": "Exporter API collection duration", "type": "timeseries", "gridPos": {"h": 6, "w": 16, "x": 8, "y": 0}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "service_api_request_duration_seconds", "legendFormat": "{{service}}", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "s"}}},
+    {"id": 3, "title": "Plex active sessions", "type": "timeseries", "gridPos": {"h": 8, "w": 8, "x": 0, "y": 6}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "plex_active_sessions", "legendFormat": "active", "refId": "A"}, {"expr": "plex_transcoding_sessions", "legendFormat": "transcoding", "refId": "B"}]},
+    {"id": 4, "title": "Plex library items", "type": "stat", "gridPos": {"h": 8, "w": 8, "x": 8, "y": 6}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "plex_library_items", "refId": "A"}]},
+    {"id": 5, "title": "AdGuard query rate", "type": "timeseries", "gridPos": {"h": 8, "w": 8, "x": 16, "y": 6}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "rate(adguard_queries_total[5m])", "legendFormat": "queries", "refId": "A"}, {"expr": "rate(adguard_blocked_queries_total[5m])", "legendFormat": "blocked", "refId": "B"}], "fieldConfig": {"defaults": {"unit": "qps"}}},
+    {"id": 6, "title": "AdGuard block percentage", "type": "timeseries", "gridPos": {"h": 8, "w": 8, "x": 0, "y": 14}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "100 * rate(adguard_blocked_queries_total[5m]) / clamp_min(rate(adguard_queries_total[5m]), 1)", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "percent", "min": 0, "max": 100}}},
+    {"id": 7, "title": "AdGuard average query latency", "type": "timeseries", "gridPos": {"h": 8, "w": 8, "x": 8, "y": 14}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "adguard_query_duration_seconds", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "s"}}},
+    {"id": 8, "title": "AdGuard protection and filter", "type": "stat", "gridPos": {"h": 8, "w": 8, "x": 16, "y": 14}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "adguard_protection_enabled", "legendFormat": "protection", "refId": "A"}, {"expr": "adguard_filter_enabled", "legendFormat": "filter", "refId": "B"}]}
+  ],
+  "refresh": "30s",
+  "schemaVersion": 41,
+  "tags": ["globalhawk", "services"],
+  "templating": {"list": []},
+  "time": {"from": "now-24h", "to": "now"},
+  "timezone": "browser",
+  "title": "Plex and AdGuard",
+  "uid": "globalhawk-services",
+  "version": 1
+}

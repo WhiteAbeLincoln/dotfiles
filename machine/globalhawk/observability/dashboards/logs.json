@@ -1,0 +1,27 @@
+{
+  "annotations": {"list": []},
+  "editable": false,
+  "graphTooltip": 1,
+  "panels": [
+    {"id": 1, "title": "Kubernetes pod logs", "type": "logs", "gridPos": {"h": 12, "w": 24, "x": 0, "y": 0}, "datasource": {"type": "loki", "uid": "loki"}, "targets": [{"expr": "{cluster=\"globalhawk\",namespace=~\"$namespace\",workload=~\"$workload\",container=~\"$container\"}", "refId": "A"}]},
+    {"id": 2, "title": "NixOS host journal", "type": "logs", "gridPos": {"h": 12, "w": 24, "x": 0, "y": 12}, "datasource": {"type": "loki", "uid": "loki"}, "targets": [{"expr": "{source=\"nixos\",unit=~\"$unit\",priority=~\"$priority\"}", "refId": "A"}]},
+    {"id": 3, "title": "Kubernetes events", "type": "logs", "gridPos": {"h": 10, "w": 24, "x": 0, "y": 24}, "datasource": {"type": "loki", "uid": "loki"}, "targets": [{"expr": "{source=\"kubernetes-events\"}", "refId": "A"}]}
+  ],
+  "refresh": "30s",
+  "schemaVersion": 41,
+  "tags": ["globalhawk", "logs"],
+  "templating": {
+    "list": [
+      {"name": "namespace", "label": "Namespace", "type": "query", "datasource": {"type": "loki", "uid": "loki"}, "query": {"type": 1, "label": "namespace", "stream": "{cluster=\"globalhawk\"}"}, "current": {"text": "All", "value": ".*"}, "includeAll": true, "allValue": ".*", "refresh": 2},
+      {"name": "workload", "label": "Workload", "type": "query", "datasource": {"type": "loki", "uid": "loki"}, "query": {"type": 1, "label": "workload", "stream": "{cluster=\"globalhawk\",namespace=~\"$namespace\"}"}, "current": {"text": "All", "value": ".*"}, "includeAll": true, "allValue": ".*", "refresh": 2},
+      {"name": "container", "label": "Container", "type": "query", "datasource": {"type": "loki", "uid": "loki"}, "query": {"type": 1, "label": "container", "stream": "{cluster=\"globalhawk\",namespace=~\"$namespace\",workload=~\"$workload\"}"}, "current": {"text": "All", "value": ".*"}, "includeAll": true, "allValue": ".*", "refresh": 2},
+      {"name": "unit", "label": "Unit", "type": "query", "datasource": {"type": "loki", "uid": "loki"}, "query": {"type": 1, "label": "unit", "stream": "{source=\"nixos\"}"}, "current": {"text": "All", "value": ".*"}, "includeAll": true, "allValue": ".*", "refresh": 2},
+      {"name": "priority", "label": "Priority", "type": "query", "datasource": {"type": "loki", "uid": "loki"}, "query": {"type": 1, "label": "priority", "stream": "{source=\"nixos\"}"}, "current": {"text": "All", "value": ".*"}, "includeAll": true, "allValue": ".*", "refresh": 2}
+    ]
+  },
+  "time": {"from": "now-6h", "to": "now"},
+  "timezone": "browser",
+  "title": "Logs and Events",
+  "uid": "globalhawk-logs",
+  "version": 1
+}
