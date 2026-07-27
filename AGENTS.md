@@ -38,6 +38,41 @@ nix flake check          # evaluate all outputs
 nix fmt                  # format all .nix with alejandra (the flake formatter)
 ```
 
+### Testing configuration changes
+
+This repository has no CI or habitual test runner, so do not add standalone
+tests merely because they are possible. A check that nobody reliably runs is a
+maintenance obligation, not dependable protection.
+
+Use the smallest validation layer that exercises meaningful behaviour:
+
+1. Treat a full configuration build as the required baseline. For globalhawk,
+   use `nixos-rebuild build --flake .#globalhawk`. This evaluates the complete
+   host and builds referenced nixidy manifests, charts, and packages. A later
+   `switch` necessarily builds the configuration, so this validation cannot be
+   silently skipped.
+2. Add Nix module assertions only for genuine safety invariants or invalid
+   option combinations that the type system cannot express. Good candidates
+   include missing runtime-secret declarations, unsafe network exposure, and
+   internally inconsistent retention/storage settings.
+3. For Kubernetes workloads, prefer native runtime contracts—startup,
+   readiness, and liveness probes plus monitoring of target health—over scripts
+   that inspect rendered YAML structure.
+4. Put a short, one-time live acceptance checklist in an implementation plan
+   when deployment behaviour must be verified. Run it against the real host or
+   cluster after activation; do not automatically turn it into a permanent Bash
+   harness.
+5. Reserve flake checks for reusable module logic with observable behaviour,
+   such as module composition or validation rules. Do not add a flake check that
+   merely restates the expected shape of one host's rendered configuration.
+
+Do not introduce NixOS VM tests, disposable Kubernetes clusters, YAML-shape
+Bash scripts, fake `kubectl` tests, or similar infrastructure unless their
+specific risk reduction clearly justifies their execution and maintenance
+cost. These are especially poor fits when they model globalhawk's k3s, ZFS, or
+hardware environment less faithfully than a normal system build plus a live
+acceptance check.
+
 ## Architecture
 
 Configs are assembled by composition, layered from general to specific. A host imports roles, roles import programs, and module plumbing supplies options and overlays underneath.
