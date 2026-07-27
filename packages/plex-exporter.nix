@@ -6,7 +6,7 @@
   symlinkJoin,
   cacert,
 }: let
-  version = "1.0.1";
+  version = "1.0.2";
   source = symlinkJoin {
     name = "plex-exporter-source";
     paths = [
@@ -412,8 +412,8 @@
     inherit version;
     src = source;
     vendorHash = null;
+    subPackages = ["."];
     doCheck = true;
-    preBuild = "go test ./...";
     ldflags = ["-s" "-w"];
     meta = {
       description = "Privacy-preserving aggregate Plex metrics exporter";
@@ -425,9 +425,9 @@ in
   dockerTools.buildLayeredImage {
     name = "localhost/plex-exporter";
     tag = version;
-    contents = [cacert];
+    contents = [exporter cacert];
     config = {
-      Entrypoint = ["${lib.getExe exporter}"];
+      Entrypoint = ["/bin/plex-exporter"];
       User = "65532:65532";
       ExposedPorts."9100/tcp" = {};
     };
