@@ -128,6 +128,29 @@ in {
         }
       ];
     };
+    # Prometheus Operator currently defaults ServiceMonitor discovery to the
+    # legacy Endpoints API. Publish both forms so the host targets work now and
+    # are already ready for a future cluster-wide move to EndpointSlice discovery.
+    mkEndpoints = name: port: {
+      apiVersion = "v1";
+      kind = "Endpoints";
+      metadata = {
+        inherit name labels;
+        namespace = "monitoring";
+      };
+      subsets = [
+        {
+          addresses = [{ip = hostGatewayIp;}];
+          ports = [
+            {
+              name = "metrics";
+              inherit port;
+              protocol = "TCP";
+            }
+          ];
+        }
+      ];
+    };
     mkServiceMonitor = name: interval: {
       apiVersion = "monitoring.coreos.com/v1";
       kind = "ServiceMonitor";
@@ -178,6 +201,7 @@ in {
           endpoint:
             map mkManifest [
               (mkService endpoint.name endpoint.port)
+              (mkEndpoints endpoint.name endpoint.port)
               (mkEndpointSlice endpoint.name endpoint.port)
               (mkServiceMonitor endpoint.name endpoint.interval)
             ]

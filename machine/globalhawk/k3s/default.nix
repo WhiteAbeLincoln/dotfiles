@@ -90,6 +90,62 @@ in {
   # sops replaces kubeseal — secrets are managed via machine/globalhawk/sops.nix.
   environment.systemPackages = [pkgs.kubectl pkgs.kubernetes-helm pkgs.sops pkgs.k9s];
 
+  # k3s applies the combined manifest through Wrangler objectset pruning.
+  # EndpointSlices inherit their Service's objectset hash label, so a manifest
+  # re-apply can mistake controller-owned slices for removed manifest objects
+  # and prune them. Kubernetes does not recreate a deleted slice until the
+  # corresponding Service or Pod changes, leaving Traefik and ClusterIP routing
+  # without backends after some k3s restarts.
+  #
+  # Re-enqueue only selector-backed Services that are missing a controller-owned
+  # slice. Repeat briefly because the Addon controller and EndpointSlice
+  # controller start asynchronously with k3s. This preserves objectset pruning
+  # for actual manifest resources instead of marking Services as non-prunable.
+  systemd.services.k3s-endpointslice-reconcile = {
+    description = "Restore EndpointSlices pruned during k3s manifest reconciliation";
+    after = ["k3s.service"];
+    requires = ["k3s.service"];
+    wantedBy = ["multi-user.target"];
+    path = [pkgs.kubectl pkgs.coreutils pkgs.jq];
+    serviceConfig.Type = "oneshot";
+    script = ''
+      export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+
+      for _ in $(seq 1 30); do
+        if kubectl get --raw=/readyz >/dev/null 2>&1; then
+          while IFS=$'\t' read -r namespace name; do
+            kubectl annotate service \
+              --namespace "$namespace" \
+              "$name" \
+              endpointslice.kubernetes.io/reconcile-at="$(date +%s%N)" \
+              --overwrite
+          done < <(
+            kubectl get services --all-namespaces -o json |
+              jq --raw-output \
+                --slurpfile slices <(kubectl get endpointslices --all-namespaces -o json) \
+                '
+                  .items[]
+                  | select((.spec.selector // {} | length) > 0)
+                  | . as $service
+                  | select(
+                      any(
+                        $slices[0].items[];
+                        .metadata.namespace == $service.metadata.namespace
+                        and .metadata.labels["kubernetes.io/service-name"] == $service.metadata.name
+                        and .metadata.labels["endpointslice.kubernetes.io/managed-by"] == "endpointslice-controller.k8s.io"
+                      )
+                      | not
+                    )
+                  | [.metadata.namespace, .metadata.name]
+                  | @tsv
+                '
+          )
+        fi
+        sleep 2
+      done
+    '';
+  };
+
   # Convenience: give the trusted operator (meta.user) a ready-to-use admin
   # kubeconfig at ~/.kube/config so kubectl/k9s work with no sudo and no
   # KUBECONFIG juggling. A root oneshot copies k3s's admin config into the
