@@ -336,6 +336,28 @@ alerts. Thresholds require observed normal behavior.
 - The stack cannot report a total host or k3s outage because all components are
   local. This is accepted for the first version.
 
+## Deferred follow-up: automatic Plex authentication refresh
+
+The first rollout uses an operator-supplied Plex token. Replace it in a
+follow-up with Plex device authentication and automatically refreshed
+seven-day JWTs:
+
+- Use the existing token only to bootstrap a registered exporter device.
+- Generate a stable device identifier and Ed25519 keypair, and persist the
+  device credentials and refresh state on a small, access-restricted
+  `local-path` PVC.
+- Keep the image root filesystem read-only and retain
+  `automountServiceAccountToken = false`; only the state mount is writable.
+- Refresh before expiry and continue serving the last valid token while a
+  retry remains possible.
+- Expose aggregate readiness, expiry, last-refresh, and refresh-failure metrics
+  and alert before authentication becomes unusable.
+- Never log tokens, device private keys, household activity, or Plex response
+  bodies.
+
+Loss or revocation of the registered device may require a new one-time
+bootstrap token. Ordinary token expiry must not require operator action.
+
 ## Rollout
 
 1. **Monitoring foundation**
