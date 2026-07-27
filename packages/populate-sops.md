@@ -13,10 +13,12 @@ Schemas declare `version = 1` followed by `[[fields]]` tables. Supported modes:
   `generator = "token_urlsafe"` and `bytes`.
 - `derived`: derive a value from another field. Currently supports
   `derivation = "authelia_argon2"` and requires `source`.
-- `fixed`: add an empty key when absent, then open sops for the operator to fill
-  it. An empty fixed value makes the command fail.
+- `fixed`: securely prompt for an operator-provided value. The field name and
+  description are printed before an `Enter value:` prompt, which retries until
+  given a non-empty value.
 
-Every field may have `tags`; fixed fields may also have a `description`.
+Every field may have `tags` and a `description`. Output groups each selected
+field's name, description, and generated, derived, retained, or input action.
 
 ```toml
 version = 1
@@ -45,5 +47,6 @@ tags = ["example", "operator"]
 Use repeatable `--field GLOB` and `--tag TAG` filters to populate a subset.
 Selecting either side of a generated/derived pair automatically selects the
 other side. `--force` rotates selected generated values and recomputes their
-derived values. `--no-edit` is useful when selected fixed fields are already
-populated; it still fails if one is missing or empty.
+derived values. Every selected fixed field is prompted on each run, including
+fields that are already populated; use `--field` or `--tag` to select the
+intended population scope.

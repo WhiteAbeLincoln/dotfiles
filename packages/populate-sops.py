@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import fnmatch
+import getpass
 import json
 import os
 import secrets
@@ -39,11 +40,11 @@ class SecretStore(Protocol):
 
     def set(self, name: str, value: str) -> None: ...
 
-    def edit(self) -> None: ...
-
 
 class SopsStore:
-    def __init__(self, path: Path, run: Callable[..., subprocess.CompletedProcess[str]]):
+    def __init__(
+        self, path: Path, run: Callable[..., subprocess.CompletedProcess[str]]
+    ):
         self.path = path
         self.run = run
 
@@ -83,9 +84,6 @@ class SopsStore:
             text=True,
             check=True,
         )
-
-    def edit(self) -> None:
-        self.run(["sops", str(self.path)], text=True, check=True)
 
 
 def parse_schema(path: Path) -> list[Field]:
@@ -130,12 +128,16 @@ def parse_schema(path: Path) -> list[Field]:
         )
         if mode == "generated":
             if field.generator != "token_urlsafe":
-                raise PopulateError(f"{name}: unsupported generator {field.generator!r}")
+                raise PopulateError(
+                    f"{name}: unsupported generator {field.generator!r}"
+                )
             if not isinstance(field.byte_count, int) or field.byte_count < 16:
                 raise PopulateError(f"{name}: bytes must be an integer of at least 16")
         elif mode == "derived":
             if field.derivation != "authelia_argon2":
-                raise PopulateError(f"{name}: unsupported derivation {field.derivation!r}")
+                raise PopulateError(
+                    f"{name}: unsupported derivation {field.derivation!r}"
+                )
             if not isinstance(field.source, str) or not field.source:
                 raise PopulateError(f"{name}: derived fields require a source")
 
@@ -198,14 +200,20 @@ def authelia_argon2(value: str) -> str:
     return digest.decode()
 
 
+def print_field_header(field: Field) -> None:
+    print(field.name)
+    if field.description:
+        print(field.description)
+
+
 def populate(
     fields: Sequence[Field],
     store: SecretStore,
     *,
     force: bool,
-    edit: bool,
     generate: Callable[[int], str] = secrets.token_urlsafe,
     derive: Callable[[str], str],
+    prompt: Callable[[str], str] = getpass.getpass,
 ) -> list[str]:
     changed: list[str] = []
     selected_names = {field.name for field in fields}
@@ -213,58 +221,56 @@ def populate(
     for field in fields:
         if field.mode != "generated":
             continue
+        print_field_header(field)
         exists = store.has(field.name)
         if exists and not force:
-            print(f"Keeping existing {field.name}")
+            print("Keeping existing value")
+            print()
             continue
         assert field.byte_count is not None
+        assert field.generator is not None
         store.set(field.name, generate(field.byte_count))
         changed.append(field.name)
-        print(f"Generated {field.name}")
+        print(f"Generated {field.byte_count} bytes by {field.generator}")
+        print()
 
     for field in fields:
         if field.mode != "derived":
             continue
+        print_field_header(field)
         assert field.source is not None
+        assert field.derivation is not None
         source_changed = field.source in changed
         exists = store.has(field.name)
         if exists and not force and not source_changed:
-            print(f"Keeping existing {field.name}")
+            print("Keeping existing value")
+            print()
             continue
         if field.source not in selected_names and not store.has(field.source):
             raise PopulateError(f"{field.name}: source {field.source!r} is absent")
         source_value = store.get(field.source)
         store.set(field.name, derive(source_value))
         changed.append(field.name)
-        print(f"Derived {field.name} from {field.source}")
+        print(f"Derived from {field.source} by {field.derivation}")
+        print()
 
     fixed_fields = [field for field in fields if field.mode == "fixed"]
     for field in fixed_fields:
-        if not store.has(field.name):
-            store.set(field.name, "")
-            changed.append(field.name)
-            print(f"Added operator field {field.name}")
-
-    if fixed_fields and edit:
-        print("\nOpening sops for operator-managed values:")
-        for field in fixed_fields:
-            detail = f" — {field.description}" if field.description else ""
-            print(f"  {field.name}{detail}")
+        print_field_header(field)
+        value = prompt("Enter value: ")
+        while not value:
+            print("Value cannot be empty.")
+            value = prompt("Enter value: ")
+        store.set(field.name, value)
+        changed.append(field.name)
         print()
-        store.edit()
-
-    empty_fixed = [field.name for field in fixed_fields if not store.get(field.name)]
-    if empty_fixed:
-        raise PopulateError(
-            "operator-managed fields are empty: " + ", ".join(empty_fixed)
-        )
     return changed
 
 
 def make_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="populate-sops",
-        description="Populate a sops file from a TOML field schema."
+        description="Populate a sops file from a TOML field schema.",
     )
     parser.add_argument("schema", type=Path)
     parser.add_argument("secrets_file", type=Path)
@@ -286,11 +292,6 @@ def make_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="regenerate selected generated and derived fields",
     )
-    parser.add_argument(
-        "--no-edit",
-        action="store_true",
-        help="do not open sops for selected fixed fields",
-    )
     return parser
 
 
@@ -304,7 +305,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             selected,
             store,
             force=args.force,
-            edit=not args.no_edit,
             derive=authelia_argon2,
         )
     except (PopulateError, subprocess.CalledProcessError) as error:

@@ -1,6 +1,8 @@
 import importlib.util
+import io
 import sys
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 
 
@@ -17,7 +19,6 @@ Field = populate_sops.Field
 class MemoryStore:
     def __init__(self, values=None):
         self.values = dict(values or {})
-        self.edits = 0
 
     def has(self, name):
         return name in self.values
@@ -27,9 +28,6 @@ class MemoryStore:
 
     def set(self, name, value):
         self.values[name] = value
-
-    def edit(self):
-        self.edits += 1
 
 
 def generated(name, *tags):
@@ -77,6 +75,54 @@ class SelectionTests(unittest.TestCase):
 
 
 class PopulationTests(unittest.TestCase):
+    def test_population_prints_readable_field_blocks(self):
+        store = MemoryStore()
+        fields = [
+            Field(
+                name="client",
+                mode="generated",
+                tags=frozenset(),
+                description="OIDC client credential",
+                generator="token_urlsafe",
+                byte_count=32,
+            ),
+            Field(
+                name="client_hash",
+                mode="derived",
+                tags=frozenset(),
+                description="Authelia client credential digest",
+                source="client",
+                derivation="authelia_argon2",
+            ),
+        ]
+
+        output = io.StringIO()
+        with redirect_stdout(output):
+            populate_sops.populate(
+                fields,
+                store,
+                force=False,
+                generate=lambda _: "random",
+                derive=lambda value: f"hash:{value}",
+            )
+
+        self.assertEqual(
+            output.getvalue(),
+            "\n".join(
+                [
+                    "client",
+                    "OIDC client credential",
+                    "Generated 32 bytes by token_urlsafe",
+                    "",
+                    "client_hash",
+                    "Authelia client credential digest",
+                    "Derived from client by authelia_argon2",
+                    "",
+                    "",
+                ]
+            ),
+        )
+
     def test_authelia_derivation_produces_a_verifiable_argon2id_hash(self):
         from argon2 import PasswordHasher
 
@@ -92,7 +138,6 @@ class PopulationTests(unittest.TestCase):
             fields,
             store,
             force=False,
-            edit=False,
             generate=lambda _: "random",
             derive=lambda value: f"hash:{value}",
         )
@@ -110,7 +155,6 @@ class PopulationTests(unittest.TestCase):
             fields,
             store,
             force=False,
-            edit=False,
             generate=lambda _: "new",
             derive=lambda value: f"hash:{value}",
         )
@@ -127,7 +171,6 @@ class PopulationTests(unittest.TestCase):
             fields,
             store,
             force=True,
-            edit=False,
             generate=lambda _: "new",
             derive=lambda value: f"hash:{value}",
         )
@@ -135,8 +178,8 @@ class PopulationTests(unittest.TestCase):
         self.assertEqual(store.values["client"], "new")
         self.assertEqual(store.values["client_hash"], "hash:new")
 
-    def test_empty_fixed_value_fails_after_editor(self):
-        store = MemoryStore()
+    def test_fixed_field_prompt_replaces_existing_value_and_retries_empty_input(self):
+        store = MemoryStore({"api_key": "old-secret"})
         fields = [
             Field(
                 name="api_key",
@@ -145,19 +188,36 @@ class PopulationTests(unittest.TestCase):
                 description="operator key",
             )
         ]
+        responses = iter(["", "new-secret"])
+        prompts = []
 
-        with self.assertRaisesRegex(
-            populate_sops.PopulateError, "operator-managed fields are empty"
-        ):
+        def prompt(label):
+            prompts.append(label)
+            return next(responses)
+
+        output = io.StringIO()
+        with redirect_stdout(output):
             populate_sops.populate(
                 fields,
                 store,
                 force=False,
-                edit=True,
                 derive=lambda value: value,
+                prompt=prompt,
             )
 
-        self.assertEqual(store.edits, 1)
+        self.assertEqual(
+            prompts,
+            [
+                "Enter value: ",
+                "Enter value: ",
+            ],
+        )
+        self.assertEqual(store.values["api_key"], "new-secret")
+        self.assertTrue(
+            output.getvalue().startswith("api_key\noperator key\n")
+        )
+        self.assertIn("Value cannot be empty.", output.getvalue())
+        self.assertNotIn("new-secret", output.getvalue())
 
 
 if __name__ == "__main__":
