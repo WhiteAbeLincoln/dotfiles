@@ -38,11 +38,17 @@ in {
 
   environment.etc."alloy/host-logs.alloy".text = ''
     loki.source.journal "host_journal" {
-      forward_to = [loki.relabel.host_journal.receiver]
+      forward_to   = [loki.process.host_journal.receiver]
+      relabel_rules = loki.relabel.host_journal.rules
+      labels = {
+        cluster = "globalhawk",
+        node    = "globalhawk",
+        source  = "nixos",
+      }
     }
 
     loki.relabel "host_journal" {
-      forward_to = [loki.process.host_journal.receiver]
+      forward_to = []
 
       rule {
         source_labels = ["__journal__systemd_unit"]
@@ -70,7 +76,7 @@ in {
       forward_to = [loki.write.monitoring.receiver]
 
       stage.match {
-        selector = "{unit!~\"(k3s|plex|adguardhome|smartd|zfs-(import.*|mount.*|zed|scrub.*|trim.*|media-posixacl)|restic-backups-media|restic-media-failure|nixos-upgrade|nix-gc|nix-optimise|network-addresses-enp1s0|wpa_supplicant)[.]service\", priority!~\"warning|err|crit|alert|emerg\"}"
+        selector = "{unit!~\"(k3s|plex|adguardhome|smartd|zfs-(import.*|mount.*|zed|scrub.*|trim.*|media-posixacl)|restic-backups-media|restic-media-failure|nixos-upgrade|nix-gc|nix-optimise|network-addresses-enp1s0|wpa_supplicant)[.]service\", priority!~\"warning|error|crit|alert|emerg\"}"
         action   = "drop"
       }
     }
