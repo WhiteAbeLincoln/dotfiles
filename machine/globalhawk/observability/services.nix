@@ -4,8 +4,8 @@
   ...
 }: let
   hostGatewayIp = config.services.k3s.clusterNetwork.hostGatewayIp;
-  plexExporterImage = pkgs.callPackage ../../../packages/plex-exporter.nix {};
-  adguardExporterImage = pkgs.callPackage ../../../packages/adguard-exporter.nix {};
+  plexExporterImage = pkgs.callPackage ../../../packages/plex-exporter {};
+  adguardExporterImage = pkgs.callPackage ../../../packages/adguard-exporter {};
 in {
   # Local, content-addressed archives are imported into containerd before k3s
   # starts. The workload never depends on a mutable registry tag.
