@@ -10,7 +10,21 @@
   ];
   programs.fish = {
     enable = true;
-    package = pkgs.unstable.fish;
+    # fish 4.8 stopped shipping share/fish/tools/ and instead embeds
+    # create_manpage_completions.py in the binary (`status get-file`), but
+    # home-manager's release-26.05 generateCompletions still expects the
+    # on-disk script (fixed only on HM master). Re-materialise it at the old
+    # path until the fix reaches a 0.2605 release, then drop this wrapper.
+    package = pkgs.symlinkJoin {
+      name = "${pkgs.unstable.fish.name}-manpage-tools";
+      paths = [pkgs.unstable.fish];
+      postBuild = ''
+        mkdir -p $out/share/fish/tools
+        ${pkgs.unstable.fish}/bin/fish --no-config \
+          -c 'status get-file tools/create_manpage_completions.py' \
+          > $out/share/fish/tools/create_manpage_completions.py
+      '';
+    };
     shellAliases =
       if pkgs.stdenv.isLinux
       then {

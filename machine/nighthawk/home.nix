@@ -24,6 +24,8 @@ in {
     # package since pkgs.colima only provides the daemon manager.
     pkgs.unstable.colima
     pkgs.unstable.docker-client
+    pkgs.unstable.ollama
+    pkgs.unstable.lmstudio
     pkgs.difftastic
     inputs.git-different.packages.${pkgs.system}.default
     # cat replacement
