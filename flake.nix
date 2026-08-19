@@ -116,15 +116,6 @@
           lib = hmLib;
         };
 
-        # Same overlay as modules/common/overlays.nix, applied at pkgs-
-        # construction time for the standalone home-manager config (which
-        # doesn't accept nixpkgs.overlays as a module option).
-        unstableOverlay = _final: prev: {
-          unstable = import nixpkgs-unstable {
-            inherit (prev.stdenv.hostPlatform) system;
-            config.allowUnfree = true;
-          };
-        };
       in {
         nixosConfigurations.globalhawk = nixpkgs.lib.nixosSystem {
           specialArgs = sysArgs;
@@ -174,25 +165,6 @@
                 ];
                 meta.user = "abe";
               };
-            }
-          ];
-        };
-
-        homeConfigurations."awhite@4ZTHR73" = home-manager.lib.homeManagerConfiguration {
-          pkgs = import nixpkgs {
-            system = "x86_64-linux";
-            config.allowUnfree = true;
-            overlays = [unstableOverlay];
-          };
-          extraSpecialArgs = hmArgs;
-          modules = [
-            ./modules/common-hm
-            ./modules/hm
-            ./modules/windows
-            ./machine/campbell/home.nix
-            {
-              meta.user = "awhite";
-              meta.isWSL = true;
             }
           ];
         };

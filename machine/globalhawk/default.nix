@@ -6,11 +6,9 @@
   pkgs,
   ...
 }: let
-  lib = pkgs.lib;
   user = config.meta.user;
   lan = config.homelab.network;
   mediaRoot = config.homelab.media.root;
-  secrets = (import ../../secrets/common.nix) // (import ../../secrets/globalhawk.nix);
   mkMediaFs = uuid: fsType: {
     device = "/dev/disk/by-uuid/" + uuid;
     fsType = fsType;
@@ -27,9 +25,6 @@ in {
     ./options.nix
     # Include the results of the hardware scan.
     ./hardware-configuration.nix
-    # TODO: homebridge has been added to nixos
-    # remove custom module
-    # ../../program/homebridge
     ./disks.nix
     ./mail.nix
     ./backup.nix
@@ -259,12 +254,6 @@ in {
   programs.nix-ld.enable = true;
 
   services.flatpak.enable = true;
-
-  # services.homebridge = {
-  #   enable = true;
-  #   cfgDir = "/data/Media/docker-services/homebridge";
-  #   # user = "${toString config.users.users._media.uid}:${toString config.users.groups._media.gid}";
-  # };
 
   # Enable the OpenSSH daemon.
   services.openssh.enable = true;
