@@ -142,6 +142,32 @@
           ];
         };
 
+        nixosConfigurations.valkyrie = nixpkgs.lib.nixosSystem {
+          specialArgs = sysArgs;
+          modules = [
+            determinate.nixosModules.default
+            ./modules/common
+            home-manager.nixosModules.home-manager
+            ./machine/valkyrie
+            {
+              nixpkgs.hostPlatform = "x86_64-linux";
+              meta.user = "abe";
+              system.configurationRevision = nixpkgs.lib.mkIf (self ? rev) self.rev;
+              home-manager.useGlobalPkgs = true;
+              home-manager.useUserPackages = true;
+              home-manager.extraSpecialArgs = hmArgs;
+              home-manager.users.abe = {
+               imports = [
+                 ./modules/common-hm
+                 ./modules/hm
+                 ./machine/valkyrie/home.nix
+               ];
+               meta.user = "abe";
+              };
+            }
+          ];
+        };
+
         darwinConfigurations.nighthawk = darwin.lib.darwinSystem {
           specialArgs = sysArgs;
           modules = [

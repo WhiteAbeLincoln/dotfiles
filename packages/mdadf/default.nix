@@ -32,7 +32,8 @@ in
     src = sources.${stdenv.hostPlatform.system} or (throw "mdadf: unsupported platform ${stdenv.hostPlatform.system}");
 
     # The release tarball is just the bare `mdadf` binary, no top-level dir.
-    sourceRoot = ".";
+    # Isolate it from read-only metadata that some builders place in $NIX_BUILD_TOP.
+    unpackCmd = "mkdir source; tar -xzf $curSrc -C source";
 
     nativeBuildInputs = lib.optionals stdenv.hostPlatform.isLinux [autoPatchelfHook];
 
