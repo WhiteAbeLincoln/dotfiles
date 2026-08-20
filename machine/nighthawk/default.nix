@@ -8,7 +8,6 @@
 in {
   imports = [
     ../../role/darwin.nix
-    ../../program/direnv
   ];
 
   networking.localHostName = "nighthawk";
@@ -30,6 +29,4 @@ in {
 
   homebrew.enable = true;
   homebrew.brews = [];
-
-  programs.fish.enable = true;
 }

@@ -5,11 +5,6 @@
   ...
 }: {
   imports = [
-    ../../program/git
-    ../../program/vim
-    ../../program/fish
-    ../../program/starship
-    ../../program/direnv
     ../../program/ai-agents
   ];
 

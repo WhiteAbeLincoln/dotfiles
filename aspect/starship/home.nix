@@ -1,6 +1,6 @@
-{...}: {
+{lib, ...}: {
   programs.starship = {
-    enable = true;
+    enable = lib.mkDefault true;
     settings = {
       format = "$all";
       right_format = "$time";

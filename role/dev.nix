@@ -5,12 +5,7 @@
 }:
 with lib; {
   imports = [
-    ../program/git
-    ../program/vim
-    ../program/fish
-    ../program/direnv
     ../program/tmux
-    ../program/starship
   ];
 
   home.packages = [

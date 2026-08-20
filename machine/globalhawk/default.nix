@@ -95,12 +95,10 @@ in {
     createHome = false;
     uid = 994;
   };
-  programs.fish.enable = true;
   users.users.${user} = {
     isNormalUser = true;
     extraGroups = ["networkmanager" "wheel" "_media"]; # Enable ‘sudo’ for the user.
     packages = with pkgs; [firefox vscode.fhs];
-    shell = pkgs.fish;
   };
   # home-manager.useGlobalPkgs = true;
   # home-manager.users.${user} = import ./home.nix;

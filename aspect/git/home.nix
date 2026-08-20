@@ -1,4 +1,8 @@
-{pkgs, ...}: {
+{
+  pkgs,
+  lib,
+  ...
+}: {
   imports = [
     ./module.nix
   ];
@@ -7,7 +11,7 @@
     let
       secrets = import ../../secrets/common.nix;
     in {
-      enable = true;
+      enable = lib.mkDefault true;
       settings.user.name = "Abraham White";
       settings.alias = {
         aliases = ''! git config --get-regexp ^alias\. | sed -e s/^alias\.// -e s/\ /\ =\ /'';
@@ -129,7 +133,7 @@
     }
   );
   programs.delta = {
-    enable = true;
+    enable = lib.mkDefault true;
     enableGitIntegration = true;
     options = {
       number = true;

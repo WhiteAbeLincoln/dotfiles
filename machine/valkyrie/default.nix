@@ -48,10 +48,7 @@
   users.users.${config.meta.user} = {
     isNormalUser = true;
     extraGroups = ["wheel"]; # Enable ‘sudo’ for the user.
-    shell = pkgs.fish;
   };
   services.openssh.settings.PermitRootLogin = "yes";
   services.openssh.enable = true;
-
-  programs.fish.enable = true;
 }

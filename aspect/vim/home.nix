@@ -5,7 +5,7 @@
 }:
 with lib; {
   programs.neovim = {
-    enable = true;
+    enable = lib.mkDefault true;
     # Ruby/Python3 providers default to false as of stateVersion 26.05; none of
     # the plugins below need them, so adopt the new default explicitly.
     withRuby = false;

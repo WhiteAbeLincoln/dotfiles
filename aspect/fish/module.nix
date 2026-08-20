@@ -4,7 +4,7 @@
 # hard-coded tmux path detected SSH via `ps -p %self` (which inspects fish's
 # own command line, never the sshd parent), so it never actually fired — "none"
 # preserves that real-world behaviour while the "tmux" path is now correct.
-# globalhawk uses zellij's native fish integration instead (see program/zellij).
+# globalhawk uses zellij's native fish integration instead (see aspect/zellij).
 {lib, ...}:
 with lib; {
   options.programs.fish.sshMultiplexer = mkOption {

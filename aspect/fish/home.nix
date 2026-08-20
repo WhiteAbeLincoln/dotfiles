@@ -9,7 +9,7 @@
     ./module.nix
   ];
   programs.fish = {
-    enable = true;
+    enable = lib.mkDefault true;
     # fish 4.8 stopped shipping share/fish/tools/ and instead embeds
     # create_manpage_completions.py in the binary (`status get-file`), but
     # home-manager's release-26.05 generateCompletions still expects the

@@ -6,10 +6,6 @@
   secrets = import ../../secrets/common.nix;
 in {
   imports = [
-    ../../program/git
-    ../../program/vim
-    ../../program/fish
-    ../../program/starship
     ../../program/ai-agents
     ../../program/userscripts
   ];
@@ -28,21 +24,9 @@ in {
     pkgs.unstable.lmstudio
     pkgs.difftastic
     inputs.git-different.packages.${pkgs.system}.default
-    # cat replacement
-    pkgs.bat
-    # find alternative (not command line compatible)
-    pkgs.fd
     pkgs.tmux
     pkgs.zellij
     pkgs.imagemagick
-    pkgs.ripgrep
-    # ls replacement https://github.com/eza-community/eza
-    pkgs.eza
-    # a system monitor, alternative to top https://github.com/ClementTsang/bottom
-    pkgs.bottom
-    # a modern alternative to curl https://github.com/ducaale/xh
-    pkgs.xh
-    pkgs.lazygit
     # Work stuff
     pkgs.glab
   ];
@@ -67,19 +51,6 @@ in {
   };
 
   programs.nix-index.enable = true;
-  programs.fish.shellAliases = {
-    # docker = "podman";
-    cat = "bat --paging=never";
-    ll = "eza --classify --long --all --header --git --hyperlink";
-    # start with depth 2 by default, luckily eza allows overriding
-    # the level flag by providing it again, so I can tack on another
-    # when using the alias to go deeper.
-    # in many directories it runs into max filedescriptor limits
-    # if we run without a depth limit so 2 is a reasonable default.
-    # I can always override with a big depth if it matters.
-    tree = "eza --classify --long --git --hyperlink --tree --level=2";
-    ls = "eza --classify --hyperlink";
-  };
 
   programs.rbw = {
     enable = true;
