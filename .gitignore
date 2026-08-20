@@ -13,3 +13,5 @@ result
 # python bytecode cache (misc/ tooling + its tests)
 __pycache__/
 *.pyc
+# Isolated agent worktrees are local execution state, never repository content.
+.worktrees/
