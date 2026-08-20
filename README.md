@@ -102,8 +102,11 @@ not part of automated verification.
 `misc/find_dead_nix.py` reports every git-tracked `.nix` file that is **not**
 reachable from the active flake outputs, so cruft can be removed without
 guessing. It walks the import graph using Nix's own parser
-(`nix-instantiate --parse`), seeded from `flake.nix`, and follows every
-`import`/`imports = [ ./… ]` path reference transitively.
+(`nix-instantiate --parse`), seeded from `flake.nix`. The detector follows every
+literal repository `.nix` path in a reachable file, including paths stored in
+inventory options. A referenced directory with no root `default.nix` is treated
+conservatively as a dynamic Nix root; this keeps nixidy chart definitions
+loaded through `nixidy.chartsDir` reachable.
 
 ```sh
 uv run misc/find_dead_nix.py            # list dead files (exit 1 if any, 0 if none)
@@ -123,9 +126,11 @@ a live consumer.
 
 Notes:
 
-- **What counts as "active"** is whatever `flake.nix` imports. To change the
-  set (e.g. retire or add a host), edit `flake.nix` and re-run — the seed is
-  derived from it, not hardcoded.
+- **What counts as "active"** is whatever `flake.nix` reaches. Active hosts and
+  their literal aspect/module paths are selected in
+  `modules/flake/inventory.nix`; edit that inventory to retire or add a host,
+  then re-run. The detector's initial seed remains `flake.nix`, not a hardcoded
+  host list.
 - The walk is **conservative**: a path that only appears inside a string
   literal is still treated as a reference, so the tool errs toward keeping a
   file, never toward wrongly deleting one.
@@ -140,6 +145,7 @@ Notes:
 
   ```sh
   nix eval --raw .#darwinConfigurations.nighthawk.config.system.build.toplevel.drvPath
+  nix eval --raw .#nixosConfigurations.valkyrie.config.system.build.toplevel.drvPath
   nix eval --raw .#nixosConfigurations.globalhawk.config.system.build.toplevel.drvPath
   ```
 

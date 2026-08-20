@@ -11,7 +11,7 @@
       # macOS-only UseKeychain directive.
       settings."*" = {
         IgnoreUnknown = lib.mkDefault "AddKeysToAgent,UseKeychain";
-        AddKeysToAgent = lib.mkDefault "yes";
+        AddKeysToAgent = lib.mkOverride 900 "yes";
         UseKeychain = lib.mkDefault "yes";
       };
     };

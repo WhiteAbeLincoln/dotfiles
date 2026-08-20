@@ -2,17 +2,18 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-This is a personal Nix dotfiles repository: a `flake-parts` flake that builds NixOS, nix-darwin, and standalone home-manager configurations from a shared, layered set of modules. There is no application code to compile or test — the unit of work is a Nix evaluation that either succeeds or fails.
+This is a personal Nix dotfiles repository: a `flake-parts` flake that builds NixOS and nix-darwin configurations from explicitly selected, cross-environment aspects. The shared constructors also support standalone Home Manager inventory entries, although none are currently active. There is no application code to compile or test — the unit of work is a Nix evaluation that either succeeds or fails.
 
 ## Hosts (flake outputs)
 
-Each host is one entry point in `flake.nix`:
+Each active host is declared in `modules/flake/inventory.nix`, which selects its
+literal aspect and machine-module paths:
 
-| Output | Platform | Entry point |
+| Output | Platform | Deployment module |
 |---|---|---|
 | `nixosConfigurations.globalhawk` | x86_64-linux (NixOS) | `machine/globalhawk/` |
+| `nixosConfigurations.valkyrie` | x86_64-linux (NixOS) | `machine/valkyrie/` |
 | `darwinConfigurations.nighthawk` | aarch64-darwin (nix-darwin) | `machine/nighthawk/` |
-| `homeConfigurations."awhite@4ZTHR73"` | x86_64-linux WSL (standalone HM) | `machine/campbell/home.nix` |
 
 ## Commands
 
@@ -23,19 +24,27 @@ Run from the repo root so `--flake .` resolves.
 nix run .#darwin-rebuild -- switch
 # NixOS (globalhawk)
 sudo nixos-rebuild switch --flake .#globalhawk
-# Standalone home-manager (WSL / campbell)
-home-manager switch --flake .#"awhite@4ZTHR73"
 ```
 
-Swap `switch` for `build` to validate without activating. `./installer.sh switch|build` also works (it auto-detects the host), but the commands above are preferred.
+Swap `switch` for `build` to validate without activating. `./installer.sh
+switch|build` also works (it auto-detects the host), but the commands above are
+preferred for activation.
 
 When validating a change, prefer `build` over `switch` — it catches evaluation errors without mutating the live system. Activating (`switch`) is a hard-to-reverse, outward-facing action; do not run it unless asked.
+
+Build every active configuration without activation with:
+
+```sh
+nix build --no-link .#darwinConfigurations.nighthawk.system
+nix build --no-link .#nixosConfigurations.valkyrie.config.system.build.toplevel
+nix build --no-link .#nixosConfigurations.globalhawk.config.system.build.toplevel
+```
 
 Validation and formatting:
 
 ```sh
 nix flake check          # evaluate all outputs
-nix fmt                  # format all .nix with alejandra (the flake formatter)
+nix fmt -- .             # format all .nix with alejandra (the flake formatter)
 ```
 
 ### Testing configuration changes
@@ -75,30 +84,65 @@ acceptance check.
 
 ## Architecture
 
-Configs are assembled by composition, layered from general to specific. A host imports roles, roles import programs, and module plumbing supplies options and overlays underneath.
+Configs are assembled from the central machine inventory. The inventory selects
+shared and host-specific aspects, and the constructors project each resolved
+aspect into its NixOS, nix-darwin, and Home Manager module classes.
 
-- **`machine/<host>/`** — per-host entry points. `default.nix` is the system (NixOS/darwin) layer; `home.nix` is the home-manager layer. These mostly just import roles and set host facts (hostname, `meta.user`, `stateVersion`).
-- **`role/`** — reusable bundles imported by machines: `darwin.nix`, `nixos.nix` (system roles), `general.nix`, `dev.nix`, `devgui.nix` (HM roles). A role wires together a coherent set of programs + packages.
-- **`program/<name>/`** — one home-manager module per tool (git, fish, vim, ai-agents, …). Convention: `default.nix` holds the concrete config (`programs.foo.enable = true` plus settings); when a program defines **custom options**, those live in a sibling `module.nix` that `default.nix` imports (see `program/git`, `program/ai-agents`). Static config payloads sit in a `files/` subdir.
-- **`modules/`** — the module-system plumbing, split by evaluation layer:
-  - `common/` — system layer shared by NixOS + darwin. `meta.nix` defines `meta.user` / `meta.isWSL`; `overlays.nix` adds the `pkgs.unstable` overlay and the `mdadf` package.
-  - `common-hm/` — home-manager analogue of `meta.nix`.
-  - `hm/` — home-manager modules (`defaults.nix`, `docker-rootless`, `ai-agents`).
-  - `darwin/`, `windows/` — platform-specific system / WSL modules.
-- **`lib/`** — `lib.mine`, a custom `lib` extension (types, darwin helpers, option builders). It is the **one** thing passed via `specialArgs` rather than a module option, because the module system can't rebind `lib` before evaluation. HM contexts get `lib.mine` plus `home-manager.lib` merged in.
+- **`aspect/`** — explicitly selected, opinionated concerns. A leaf aspect may
+  contribute `nixos`, `darwin`, and/or `homeManager` projections; directory
+  aspects keep their outer projection in `default.nix` and concern-specific
+  implementation or option modules alongside it. Composition-only profiles
+  such as `common-cli.nix` and `development.nix` combine leaves through literal
+  imports. Adding a file alone never activates it.
+- **`machine/<host>/`** — hardware and genuinely host-specific deployment
+  configuration. These modules do not own hostname, primary user, platform, or
+  state versions; `modules/flake/inventory.nix` owns those facts.
+- **`modules/`** — reusable infrastructure and composition plumbing:
+  - `flake/` declares the inventory and aspect schemas, selects literal aspect
+    and machine-module paths, resolves projections, constructs all outputs, and
+    owns constructor checks.
+  - `common/` supplies target-system metadata and overlays shared by NixOS and
+    nix-darwin.
+  - `common-hm/` supplies Home Manager metadata and defaults for embedded,
+    standalone, and special-user Home Manager evaluations.
+  - `nixos/` contains reusable option-bearing NixOS infrastructure, including
+    the AI-agent sandbox and k3s workload/secret modules.
+  - `darwin/` contains reusable nix-darwin infrastructure for system defaults.
 - **`packages/`** — custom package definitions and per-platform package overlays. `packages/xmonad` is a git submodule (`abes-xmonad`).
 - **`themes/`** — theming (gruvbox).
-- **`secrets/`** — host secrets (emails, keys) imported by configs (e.g. `program/git`, `role/general` read `secrets/common.nix`).
+- **`secrets/`** — host secrets (emails, keys) imported by configs (e.g.
+  `aspect/git/home.nix` and host-specific machine modules).
 
 ### Key conventions established by the flake-parts refactor
 
-- **No `specialArgs` threading for host facts.** Old `myUserName` / `isWSL` flags are now the `meta.user` / `meta.isWSL` module options (`modules/common/meta.nix`). `isDarwin` / `isNixOS` come from `pkgs.stdenv.hostPlatform`. Only `inputs` and the extended `lib` go through `specialArgs`.
-- **Unstable packages** are `pkgs.unstable.<name>`, supplied by the overlay in `modules/common/overlays.nix`. Standalone HM can't set `nixpkgs.overlays` as a module option, so `flake.nix` applies the same overlay inline at the `pkgs`-construction site for the WSL config — keep those two in sync.
+- **Inventory facts are authoritative.** `modules/flake/inventory.nix` owns each
+  host's platform, hostname, primary user, and state versions. Constructors
+  translate them into normal target options such as `meta.user` and
+  `networking.hostName`; machine and aspect modules read those options or
+  `pkgs.stdenv.hostPlatform`.
+- **Only `inputs` passes through general `specialArgs`.** Host facts are ordinary
+  module options, and each target uses its module system's native `lib`. Scoped
+  APIs such as a workload's `extraSpecialArgs.nixosConfig` remain separate.
+- **Unstable packages** are `pkgs.unstable.<name>`. The overlay list is defined
+  once in `modules/common/overlay-list.nix`; system constructors install it via
+  `modules/common/overlays.nix`, and the standalone Home Manager constructor
+  applies the same list while constructing `pkgs`.
 - The design intent behind these patterns is documented in `docs/superpowers/specs/`. Read the relevant spec before reworking the flake entry point or the ai-agents module.
 
 ### The `programs.ai-agents` module
 
-`modules/hm/ai-agents/module.nix` is a custom wrapper that configures coding harnesses (claude-code, codex, pi) around a shared `~/.agents/` tree. The source of truth lives in `program/ai-agents/agents/`: a single `AGENTS.md` plus context docs. `@ctx/<rel>` references in `AGENTS.md` are rewritten to the absolute deployed path under `~/.agents/context/`, and the result is fed to each enabled agent. Skills (`programs.ai-agents.skills`) are realised once in the store and symlinked into both `~/.agents/skills/` (read by codex/pi) and `~/.claude/skills/` (read by claude). It defers to upstream `programs.claude-code` / `programs.codex` where they exist; pi is hand-rolled.
+`aspect/ai-agents/module.nix` defines the Home Manager options used by the
+AI-agent aspect to configure coding harnesses (claude-code, codex, pi) around a
+shared `~/.agents/` tree. The source of truth lives in
+`aspect/ai-agents/agents/`: a single `AGENTS.md` plus context docs. `@ctx/<rel>`
+references in `AGENTS.md` are rewritten to the absolute deployed path under
+`~/.agents/context/`, and the result is fed to each enabled agent. Skills
+(`programs.ai-agents.skills`) are realised once in the store and symlinked into
+both `~/.agents/skills/` (read by codex/pi) and `~/.claude/skills/` (read by
+claude). It defers to upstream `programs.claude-code` / `programs.codex` where
+they exist; pi is hand-rolled. The Globalhawk sandbox imports the raw
+`aspect/ai-agents/home.nix` projection explicitly for its operator and special
+user rather than inheriting primary-user aspects automatically.
 
 ## Secrets (git-crypt)
 

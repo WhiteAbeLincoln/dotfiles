@@ -36,7 +36,7 @@ in {
       ];
 
       _module.args = {
-        k8sLib = import ./lib.nix { inherit lib; };
+        k8sLib = import ./lib.nix {inherit lib;};
         common = {
           acmeEmail = secrets.acme_email;
           ingressSuffix = config.homelab.ingressSuffix;
