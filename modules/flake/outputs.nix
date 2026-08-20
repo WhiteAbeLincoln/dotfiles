@@ -5,7 +5,7 @@
   self,
   ...
 }: let
-  constructors = import ./lib.nix {inherit inputs lib self;};
+  constructors = import ../aspect/lib.nix {inherit inputs lib self;};
   hosts = lib.mapAttrs (_: host:
     host
     // {aspects = config.dotfiles.sharedAspects ++ host.aspects;})

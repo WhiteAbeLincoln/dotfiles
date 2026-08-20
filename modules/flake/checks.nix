@@ -4,7 +4,7 @@
   self,
   ...
 }: let
-  constructors = import ./lib.nix {inherit inputs lib self;};
+  constructors = import ../aspect/lib.nix {inherit inputs lib self;};
   testHome = constructors.mkConfiguration "aspect-test" {
     class = "homeManager";
     system = "x86_64-linux";

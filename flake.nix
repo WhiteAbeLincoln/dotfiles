@@ -43,6 +43,9 @@
 
   outputs = inputs:
     inputs.flake-parts.lib.mkFlake {inherit inputs;} {
-      imports = [./modules/flake];
+      imports = [
+        ./modules/aspect
+        ./modules/flake
+      ];
     };
 }
