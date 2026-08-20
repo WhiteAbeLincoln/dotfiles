@@ -143,8 +143,8 @@ Notes:
   the former.
 - **Before deleting**, confirm the removal is inert: capture each active
   config's `toplevel.drvPath`, delete, and check it is unchanged, then
-  `nix flake check`. A changed drvPath or a failing check means a removed file
-  was actually live.
+  `nix flake check --no-build`. A changed drvPath or a failing check means a
+  removed file was actually live.
 
   ```sh
   nix eval --raw .#darwinConfigurations.nighthawk.config.system.build.toplevel.drvPath
