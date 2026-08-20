@@ -11,7 +11,6 @@ in {
     ../../program/direnv
   ];
 
-  networking.hostName = "nighthawk";
   networking.localHostName = "nighthawk";
   networking.computerName = "Abraham's MacBook Pro";
 
@@ -33,6 +32,4 @@ in {
   homebrew.brews = [];
 
   programs.fish.enable = true;
-
-  system.stateVersion = 5;
 }

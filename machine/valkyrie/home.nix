@@ -19,6 +19,4 @@
   home.packages = [
     pkgs.unstable.zed-editor
   ];
-
-  home.stateVersion = "26.05";
 }

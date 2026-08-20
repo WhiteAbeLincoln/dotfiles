@@ -89,6 +89,4 @@ in {
       pinentry = pkgs.pinentry_mac;
     };
   };
-
-  home.stateVersion = "24.05";
 }

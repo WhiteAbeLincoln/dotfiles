@@ -12,6 +12,4 @@
   # home.sessionVariables = {
   #   EDITOR = "vim";
   # };
-
-  home.stateVersion = "23.11";
 }

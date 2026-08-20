@@ -25,8 +25,6 @@
     ];
   };
 
-  # TODO: inherit from the flake instead
-  networking.hostName = "valkyrie";
   networking.networkmanager.enable = true;
   services.desktopManager.plasma6.enable = true;
   services.displayManager = {
@@ -56,6 +54,4 @@
   services.openssh.enable = true;
 
   programs.fish.enable = true;
-
-  system.stateVersion = "26.05";
 }
