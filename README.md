@@ -103,8 +103,9 @@ not part of automated verification.
 reachable from the active flake outputs, so cruft can be removed without
 guessing. It walks the import graph using Nix's own parser
 (`nix-instantiate --parse`), seeded from `flake.nix`. The detector follows every
-literal repository `.nix` path in a reachable file, including paths stored in
-inventory options. A referenced directory with no root `default.nix` is treated
+literal repository `.nix` path in a reachable file, including each machine
+aspect root selected by inventory and the repository aspects imported by that
+root. A referenced directory with no root `default.nix` is treated
 conservatively as a dynamic Nix root; this keeps nixidy chart definitions
 loaded through `nixidy.chartsDir` reachable.
 
@@ -126,11 +127,13 @@ a live consumer.
 
 Notes:
 
-- **What counts as "active"** is whatever `flake.nix` reaches. Active hosts and
-  their literal aspect/module paths are selected in
-  `modules/flake/inventory.nix`; edit that inventory to retire or add a host,
-  then re-run. The detector's initial seed remains `flake.nix`, not a hardcoded
-  host list.
+- **What counts as "active"** is whatever `flake.nix` reaches. The inventory in
+  `modules/flake/inventory.nix` selects a literal machine aspect root for each
+  active host; each `machine/<host>/default.nix` then literally imports that
+  host's selected repository aspects and native machine projections. Edit the
+  inventory to retire or add a host, and edit its machine root to change aspect
+  composition, then re-run. The detector's initial seed remains `flake.nix`,
+  not a hardcoded host list.
 - The walk is **conservative**: a path that only appears inside a string
   literal is still treated as a reference, so the tool errs toward keeping a
   file, never toward wrongly deleting one.

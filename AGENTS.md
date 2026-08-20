@@ -2,14 +2,21 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-This is a personal Nix dotfiles repository: a `flake-parts` flake that builds NixOS and nix-darwin configurations from explicitly selected, cross-environment aspects. The shared constructors also support standalone Home Manager inventory entries, although none are currently active. There is no application code to compile or test — the unit of work is a Nix evaluation that either succeeds or fails.
+This is a personal Nix dotfiles repository: a `flake-parts` flake that uses the
+portable construction library in `modules/aspect` to build NixOS, nix-darwin,
+and standalone Home Manager configurations from explicitly selected,
+cross-environment aspects. This repository's inventory, outputs, and
+maintainer checks remain local in `modules/flake`. There are currently no
+standalone Home Manager inventory entries. There is no application code to
+compile or test — the unit of work is a Nix evaluation that either succeeds or
+fails.
 
 ## Hosts (flake outputs)
 
-Each active host is declared in `modules/flake/inventory.nix`, which selects its
-literal aspect and machine-module paths:
+Each active host is declared in `modules/flake/inventory.nix`, which records
+its host facts and selects a literal machine aspect composition root:
 
-| Output | Platform | Deployment module |
+| Output | Platform | Machine aspect root |
 |---|---|---|
 | `nixosConfigurations.globalhawk` | x86_64-linux (NixOS) | `machine/globalhawk/` |
 | `nixosConfigurations.valkyrie` | x86_64-linux (NixOS) | `machine/valkyrie/` |
@@ -26,25 +33,26 @@ nix run .#darwin-rebuild -- switch
 sudo nixos-rebuild switch --flake .#globalhawk
 ```
 
-Swap `switch` for `build` to validate without activating. `./installer.sh
-switch|build` also works (it auto-detects the host), but the commands above are
-preferred for activation.
+The commands above are for the human applying a configuration. `./installer.sh
+switch|build` also auto-detects the host, but agents must not activate or fully
+build a host unless explicitly asked. A later `switch` performs the required
+build as part of applying the configuration.
 
-When validating a change, prefer `build` over `switch` — it catches evaluation errors without mutating the live system. Activating (`switch`) is a hard-to-reverse, outward-facing action; do not run it unless asked.
-
-Build every active configuration without activation with:
+Validate configuration wiring without realizing full system closures:
 
 ```sh
-nix build --no-link .#darwinConfigurations.nighthawk.system
-nix build --no-link .#nixosConfigurations.valkyrie.config.system.build.toplevel
-nix build --no-link .#nixosConfigurations.globalhawk.config.system.build.toplevel
+nix flake check --no-build
+nix eval --raw .#darwinConfigurations.nighthawk.config.system.build.toplevel.drvPath
+nix eval --raw .#nixosConfigurations.valkyrie.config.system.build.toplevel.drvPath
+nix eval --raw .#nixosConfigurations.globalhawk.config.system.build.toplevel.drvPath
 ```
 
 Validation and formatting:
 
 ```sh
-nix flake check          # evaluate all outputs
-nix fmt -- .             # format all .nix with alejandra (the flake formatter)
+nix flake check --no-build # evaluate outputs without realizing checks
+nix fmt -- --check .       # check all .nix with alejandra
+nix fmt -- .               # apply formatting
 ```
 
 ### Testing configuration changes
@@ -55,78 +63,97 @@ maintenance obligation, not dependable protection.
 
 Use the smallest validation layer that exercises meaningful behaviour:
 
-1. Treat a full configuration build as the required baseline. For globalhawk,
-   use `nixos-rebuild build --flake .#globalhawk`. This evaluates the complete
-   host and builds referenced nixidy manifests, charts, and packages. A later
-   `switch` necessarily builds the configuration, so this validation cannot be
-   silently skipped.
-2. Add Nix module assertions only for genuine safety invariants or invalid
+1. Treat complete evaluation of each affected host as the baseline. Run
+   `nix flake check --no-build`, then evaluate the host's top-level `drvPath`.
+   This forces the module graph and derivation construction without downloading
+   or realizing the full system closure. Do not run a full host build merely to
+   validate a change; leave realization to the human applying it with `switch`
+   unless they explicitly request a build.
+2. Build a focused check derivation only when it is small and directly exercises
+   observable behaviour in reusable module logic. Do not use a full host build
+   as a substitute for a focused evaluation or check.
+3. Add Nix module assertions only for genuine safety invariants or invalid
    option combinations that the type system cannot express. Good candidates
    include missing runtime-secret declarations, unsafe network exposure, and
    internally inconsistent retention/storage settings.
-3. For Kubernetes workloads, prefer native runtime contracts—startup,
+4. For Kubernetes workloads, prefer native runtime contracts—startup,
    readiness, and liveness probes plus monitoring of target health—over scripts
    that inspect rendered YAML structure.
-4. Put a short, one-time live acceptance checklist in an implementation plan
+5. Put a short, one-time live acceptance checklist in an implementation plan
    when deployment behaviour must be verified. Run it against the real host or
    cluster after activation; do not automatically turn it into a permanent Bash
    harness.
-5. Reserve flake checks for reusable module logic with observable behaviour,
-   such as module composition or validation rules. Do not add a flake check that
-   merely restates the expected shape of one host's rendered configuration.
+6. Reserve additional permanent flake checks for reusable module logic with
+   observable behaviour, such as module composition or validation rules. Do not
+   add a flake check that merely restates the expected shape of one host's
+   rendered configuration.
 
 Do not introduce NixOS VM tests, disposable Kubernetes clusters, YAML-shape
 Bash scripts, fake `kubectl` tests, or similar infrastructure unless their
 specific risk reduction clearly justifies their execution and maintenance
 cost. These are especially poor fits when they model globalhawk's k3s, ZFS, or
-hardware environment less faithfully than a normal system build plus a live
-acceptance check.
+hardware environment less faithfully than complete system evaluation plus the
+human's live acceptance check.
 
 ## Architecture
 
-Configs are assembled from the central machine inventory. The inventory selects
-shared and host-specific aspects, and the constructors project each resolved
-aspect into its NixOS, nix-darwin, and Home Manager module classes.
+The portable `modules/aspect` flake-parts module constructs configurations from
+the central inventory. The repository-local inventory selects shared aspects
+and one literal machine composition root per host. The library resolves those
+aspects and projects them into the host's NixOS, nix-darwin, and Home Manager
+module classes.
 
-- **`aspect/`** — explicitly selected, opinionated concerns. A leaf aspect may
+- **`modules/aspect/`** — the portable flake-parts construction library. It
+  declares the inventory and aspect schemas, resolves projections, constructs
+  every deployment class, supplies normalized host context, and generates
+  mergeable configuration outputs. It does not depend on this repository's
+  machines, packages, or policy.
+- **`modules/flake/`** — repository-local configuration: the machine inventory,
+  local packages and outputs, and maintainer checks for the portable library.
+  Consumers importing `modules/aspect` do not inherit these checks.
+- **`aspect/`** — explicitly selected repository policy and reusable behavior.
+  A leaf aspect may
   contribute `nixos`, `darwin`, and/or `homeManager` projections; directory
   aspects keep their outer projection in `default.nix` and concern-specific
   implementation or option modules alongside it. Composition-only profiles
   such as `common-cli.nix` and `development.nix` combine leaves through literal
   imports. Adding a file alone never activates it.
-- **`machine/<host>/`** — hardware and genuinely host-specific deployment
-  configuration. These modules do not own hostname, primary user, platform, or
-  state versions; `modules/flake/inventory.nix` owns those facts.
-- **`modules/`** — reusable infrastructure and composition plumbing:
-  - `flake/` declares the inventory and aspect schemas, selects literal aspect
-    and machine-module paths, resolves projections, constructs all outputs, and
-    owns constructor checks.
-  - `common/` supplies target-system metadata and overlays shared by NixOS and
-    nix-darwin.
-  - `common-hm/` supplies Home Manager metadata and defaults for embedded,
-    standalone, and special-user Home Manager evaluations.
-  - `nixos/` contains reusable option-bearing NixOS infrastructure, including
-    the AI-agent sandbox and k3s workload/secret modules.
-  - `darwin/` contains reusable nix-darwin infrastructure for system defaults.
+- **`machine/<host>/default.nix`** — the host's aspect composition root. It
+  literally imports selected repository aspects and projects hardware and
+  genuinely host-specific deployment configuration into native target modules.
+  Native NixOS, nix-darwin, and Home Manager state versions live here because
+  they are machine history, not inventory facts or reusable policy.
+- **`modules/nixos/`** — reusable option-bearing NixOS infrastructure,
+  including the AI-agent sandbox and k3s workload/secret modules. It is reached
+  through selected aspects or machine projections rather than constructor
+  wiring.
 - **`packages/`** — custom package definitions and per-platform package overlays. `packages/xmonad` is a git submodule (`abes-xmonad`).
 - **`themes/`** — theming (gruvbox).
 - **`secrets/`** — host secrets (emails, keys) imported by configs (e.g.
   `aspect/git/home.nix` and host-specific machine modules).
 
-### Key conventions established by the flake-parts refactor
+The former `modules/common`, `modules/common-hm`, and `modules/darwin`
+directories no longer exist. Their repository policy moved into explicitly
+selected aspects, while portable construction moved into `modules/aspect`.
 
-- **Inventory facts are authoritative.** `modules/flake/inventory.nix` owns each
-  host's platform, hostname, primary user, and state versions. Constructors
-  translate them into normal target options such as `meta.user` and
-  `networking.hostName`; machine and aspect modules read those options or
-  `pkgs.stdenv.hostPlatform`.
+### Key portable-aspect conventions
+
+- **Inventory facts are normalized host context.**
+  `modules/flake/inventory.nix` owns each host's class, platform, hostname, and
+  user. Target modules read the read-only `config.dotfiles.host` record; aspect
+  selections and state versions are deliberately not host facts. The library's
+  bundled default aspect maps this context to native target identity options.
+- **State stays native.** Each machine composition root sets its NixOS,
+  nix-darwin, and Home Manager state versions directly in the corresponding
+  projection. Do not move them into inventory or a reusable aspect.
+- **Package policy is an aspect projection.** The explicitly selected
+  `aspect/nixpkgs` policy contributes `nixpkgs.overlays` and `nixpkgs.config`.
+  Constructors apply the resolved projection to NixOS, nix-darwin, and
+  standalone Home Manager package sets, so `pkgs.unstable.<name>` and local
+  overlays behave consistently across deployment classes.
 - **Only `inputs` passes through general `specialArgs`.** Host facts are ordinary
   module options, and each target uses its module system's native `lib`. Scoped
   APIs such as a workload's `extraSpecialArgs.nixosConfig` remain separate.
-- **Unstable packages** are `pkgs.unstable.<name>`. The overlay list is defined
-  once in `modules/common/overlay-list.nix`; system constructors install it via
-  `modules/common/overlays.nix`, and the standalone Home Manager constructor
-  applies the same list while constructing `pkgs`.
 - The design intent behind these patterns is documented in `docs/superpowers/specs/`. Read the relevant spec before reworking the flake entry point or the ai-agents module.
 
 ### The `programs.ai-agents` module
