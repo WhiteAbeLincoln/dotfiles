@@ -1,6 +1,6 @@
 # Aspect-oriented flake-parts configuration
 
-**Status:** design approved, awaiting written-spec review
+**Status:** approved
 **Date:** 2026-08-19
 
 ## Goal
@@ -119,7 +119,7 @@ dotfiles = {
       home = "26.05";
     };
     aspects = [
-      ../../aspect/development.nix
+      ../../aspect/ai-agents
       ../../aspect/plasma-desktop.nix
     ];
     modules = [../../machine/valkyrie];
@@ -315,6 +315,7 @@ flake.nix                    Inputs and the flake-parts entry point
 aspect/                      Explicitly selectable, opinionated concerns
   common-cli.nix
   development.nix
+  shell-utilities.nix
   fish/
   git/
   ai-agents/
