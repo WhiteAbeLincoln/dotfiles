@@ -4,9 +4,13 @@
   self,
 }: let
   overlays = import ../common/overlay-list.nix {inherit inputs;};
+  # `lib.mine` extension. Has to go through specialArgs because the
+  # module system can't rebind `lib` before evaluation starts.
   mkLib = inputs.nixpkgs.lib.extend (final: _prev: {
     mine = import ../../lib {lib = final;};
   });
+  # HM contexts also need home-manager.lib merged in (for lib.hm.dag
+  # and the `lib ? hm` probe direnv uses to detect HM).
   hmLib = inputs.nixpkgs.lib.extend (final: _prev:
     {mine = import ../../lib {lib = final;};}
     // inputs.home-manager.lib);
