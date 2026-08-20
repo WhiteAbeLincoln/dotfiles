@@ -93,7 +93,6 @@ dotfiles = {
   };
 
   sharedAspects = [../../aspect/shared.nix];
-  extraSystems = ["x86_64-darwin"];
 
   hosts.nighthawk = {
     class = "darwin";
@@ -121,6 +120,10 @@ Host fields are:
 `sharedAspects` and each host's `aspects` remain lists. This avoids an
 artificial top-level restriction and permits normal module composition without
 requiring wrapper files, while allowing composition roots as the usual style.
+
+The flake-parts `systems` value is the unique set of platforms declared by
+inventory hosts. There is no `extraSystems` escape hatch; a platform without a
+deployment does not belong in this host-oriented inventory API.
 
 Provider values are raw flake input values and default to the conventional
 input names. Consumers may override them when their inputs use different
