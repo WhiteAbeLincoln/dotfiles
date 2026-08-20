@@ -36,12 +36,12 @@
         description = "Aspect modules selected specifically for this host.";
       };
       modules = mkOption {
-        type = types.listOf types.deferredModule;
+        type = types.listOf types.raw;
         default = [];
         description = "Native system modules added to this host.";
       };
       homeModules = mkOption {
-        type = types.listOf types.deferredModule;
+        type = types.listOf types.raw;
         default = [];
         description = "Native Home Manager modules added for the primary user.";
       };
