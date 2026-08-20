@@ -38,10 +38,12 @@ def parse_output(file: Path) -> str:
 def nix_targets(file: Path, root: Path) -> set[Path]:
     """`.nix` files referenced by `file`, resolved under `root`.
 
-    A reference to a directory resolves to its `default.nix`. References to
-    non-.nix data files, or to paths outside `root`, are ignored. Path nodes
-    print unquoted in the parsed AST, so absolute paths under `root` are
-    genuine references rather than string mentions.
+    A reference to a directory resolves to its `default.nix`. A referenced
+    directory without a root `default.nix` is a dynamic Nix root whose `.nix`
+    descendants are followed. References to non-.nix data files, or to paths
+    outside `root`, are ignored. Path nodes print unquoted in the parsed AST,
+    so absolute paths under `root` are genuine references rather than string
+    mentions.
     """
     out = parse_output(file)
     token = re.compile(re.escape(str(root)) + r"[^\s()\[\]{};,\"]*")
@@ -49,8 +51,16 @@ def nix_targets(file: Path, root: Path) -> set[Path]:
     for match in token.findall(out):
         p = Path(match)
         if p.is_dir():
-            p = p / "default.nix"
-        if p.suffix == ".nix" and p.is_file():
+            default_module = p / "default.nix"
+            if default_module.is_file():
+                targets.add(default_module.resolve())
+            else:
+                targets.update(
+                    child.resolve()
+                    for child in p.rglob("*.nix")
+                    if child.is_file()
+                )
+        elif p.suffix == ".nix" and p.is_file():
             targets.add(p.resolve())
     return targets
 

@@ -48,6 +48,34 @@ def test_nix_targets_ignores_data_files_and_resolves_dirs(tmp_path):
     assert targets == {(root / "sub" / "default.nix").resolve()}
 
 
+def test_nix_targets_follows_dynamic_nix_directory_without_root_default(tmp_path):
+    root = tmp_path
+    _write(root / "root.nix", "{ nixidy.chartsDir = ./charts; }")
+    _write(root / "charts" / "alloy" / "default.nix", "{ chart = \"alloy\"; }")
+    _write(root / "charts" / "loki" / "default.nix", "{ chart = \"loki\"; }")
+    (root / "charts" / "README.md").write_text("not nix")
+
+    targets = fdn.nix_targets(root / "root.nix", root)
+
+    assert targets == {
+        (root / "charts" / "alloy" / "default.nix").resolve(),
+        (root / "charts" / "loki" / "default.nix").resolve(),
+    }
+
+
+def test_nix_targets_follows_nix_path_stored_in_arbitrary_option(tmp_path):
+    root = tmp_path
+    _write(
+        root / "root.nix",
+        "{ dotfiles.hosts.test.aspects = [ ./aspect/fish.nix ]; }",
+    )
+    _write(root / "aspect" / "fish.nix", "{ homeManager = {}; }")
+
+    targets = fdn.nix_targets(root / "root.nix", root)
+
+    assert targets == {(root / "aspect" / "fish.nix").resolve()}
+
+
 def _git_init_and_add(root: Path) -> None:
     """Initialise a bare git repo and stage all files so `git grep` works."""
     subprocess.run(["git", "init", "-q"], cwd=root, check=True)
