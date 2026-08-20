@@ -1,6 +1,3 @@
 {...}: {
-  imports = [
-    ./overlays.nix
-    ./meta.nix
-  ];
+  imports = [./meta.nix];
 }

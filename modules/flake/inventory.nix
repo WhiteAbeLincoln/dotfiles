@@ -1,6 +1,6 @@
 {inputs, ...}: {
   dotfiles = {
-    sharedAspects = [../../aspect/common-cli.nix];
+    sharedAspects = [../../aspect/shared.nix];
     extraSystems = ["x86_64-darwin"];
     hosts = {
       globalhawk = {
@@ -51,7 +51,8 @@
           home = "24.05";
         };
         aspects = [
-          ../../aspect/darwin-desktop.nix
+          ../../aspect/darwin-system.nix
+          ../../aspect/darwin-desktop
           ../../aspect/shell-utilities.nix
           ../../aspect/development.nix
           ../../aspect/userscripts

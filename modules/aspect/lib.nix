@@ -3,7 +3,6 @@
   lib,
   self,
 }: let
-  overlays = import ../common/overlay-list.nix {inherit inputs;};
   sysArgs = {inherit inputs;};
   hmArgs = {inherit inputs;};
 
@@ -29,6 +28,11 @@
     else if host.class == "homeManager" && host.stateVersion.system != null
     then throw "dotfiles.hosts.${name}: Home Manager hosts must not set a system stateVersion"
     else host;
+
+  packageModule = resolved: {
+    nixpkgs.overlays = resolved.nixpkgs.overlays;
+    nixpkgs.config = resolved.nixpkgs.config;
+  };
 
   homeModule = host: resolved: {
     home-manager.useGlobalPkgs = true;
@@ -59,6 +63,7 @@
           ../common
           inputs.home-manager.nixosModules.home-manager
           resolved.nixos
+          (packageModule resolved)
         ]
         ++ host.modules ++ [(systemFacts host) (homeModule host resolved)];
     };
@@ -69,9 +74,9 @@
       modules =
         [
           ../common
-          ../darwin
           inputs.home-manager.darwinModules.home-manager
           resolved.darwin
+          (packageModule resolved)
         ]
         ++ host.modules ++ [(systemFacts host) (homeModule host resolved)];
     };
@@ -80,8 +85,8 @@
     inputs.home-manager.lib.homeManagerConfiguration {
       pkgs = import inputs.nixpkgs {
         system = host.system;
-        inherit overlays;
-        config.allowUnfree = true;
+        overlays = resolved.nixpkgs.overlays;
+        config = resolved.nixpkgs.config;
       };
       extraSpecialArgs = hmArgs;
       modules =
