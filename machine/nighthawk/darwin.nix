@@ -4,7 +4,7 @@
   config,
   ...
 }: let
-  user = config.meta.user;
+  user = config.dotfiles.host.user;
 in {
   networking.localHostName = "nighthawk";
   networking.computerName = "Abraham's MacBook Pro";

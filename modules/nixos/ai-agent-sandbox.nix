@@ -26,12 +26,12 @@ in {
 
     operator = mkOption {
       type = types.str;
-      default = config.meta.user;
-      defaultText = lib.literalExpression "config.meta.user";
+      default = config.dotfiles.host.user;
+      defaultText = lib.literalExpression "config.dotfiles.host.user";
       description = ''
         Trusted user (already an admin) who gets the sudo wrappers that run the
         harnesses as {option}`services.aiAgentSandbox.user`, plus the suffixed
-        escape-hatch commands. Defaults to the machine's {option}`meta.user`.
+        escape-hatch commands. Defaults to the machine's {option}`dotfiles.host.user`.
       '';
     };
 
@@ -154,12 +154,15 @@ in {
       ];
 
       # Sandbox user's home: the full local ai-agents setup from the shared
-      # module(s). runAs/binSuffix stay at their defaults => normal setup. Needs the
-      # same base HM modules the flake gives the operator.
+      # module(s). runAs/binSuffix stay at their defaults => normal setup. Its
+      # identity and base Home Manager defaults are explicit because this is a
+      # secondary user, not the inventory host's primary user.
       home-manager.users.${cfg.user} = {
-        imports = [../common-hm] ++ cfg.sharedModules;
-        meta.user = cfg.user;
+        imports = cfg.sharedModules;
+        home.username = cfg.user;
+        home.homeDirectory = lib.mkDefault "/home/${cfg.user}";
         home.stateVersion = mkDefault config.system.stateVersion;
+        programs.home-manager.enable = mkDefault true;
       };
 
       # Operator's home: the SAME shared module(s) + the wrapper / escape-hatch

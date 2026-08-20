@@ -146,7 +146,7 @@ in {
     '';
   };
 
-  # Convenience: give the trusted operator (meta.user) a ready-to-use admin
+  # Convenience: give the trusted operator (dotfiles.host.user) a ready-to-use admin
   # kubeconfig at ~/.kube/config so kubectl/k9s work with no sudo and no
   # KUBECONFIG juggling. A root oneshot copies k3s's admin config into the
   # operator's home once k3s has written it.
@@ -156,7 +156,7 @@ in {
   # `users` group — making /etc/rancher/k3s/k3s.yaml group/world-readable would
   # hand the agent cluster-admin. An 0600 file in the operator's home is not.
   systemd.services.operator-kubeconfig = let
-    user = config.meta.user;
+    user = config.dotfiles.host.user;
     home = config.users.users.${user}.home;
   in {
     description = "Install the k3s admin kubeconfig for ${user}";

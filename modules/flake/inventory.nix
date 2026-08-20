@@ -6,19 +6,19 @@
       globalhawk = {
         class = "nixos";
         system = "x86_64-linux";
-        primaryUser = "abe";
+        user = "abe";
         aspects = [../../machine/globalhawk];
       };
       valkyrie = {
         class = "nixos";
         system = "x86_64-linux";
-        primaryUser = "abe";
+        user = "abe";
         aspects = [../../machine/valkyrie];
       };
       nighthawk = {
         class = "darwin";
         system = "aarch64-darwin";
-        primaryUser = "abe";
+        user = "abe";
         aspects = [../../machine/nighthawk];
       };
     };

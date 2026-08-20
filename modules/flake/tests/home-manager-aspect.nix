@@ -21,6 +21,7 @@
         then "enabled"
         else "overridden";
       home.file.".aspect-nixpkgs-test".text = builtins.readFile pkgs.aspectConstructorMarker;
+      home.file.".aspect-host-context".text = builtins.toJSON config.dotfiles.host;
     };
   };
 }

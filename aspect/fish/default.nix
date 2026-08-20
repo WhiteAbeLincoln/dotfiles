@@ -5,7 +5,7 @@
     ...
   }: {
     programs.fish.enable = lib.mkDefault true;
-    users.users.${config.meta.user} = lib.mkIf config.programs.fish.enable {
+    users.users.${config.dotfiles.host.user} = lib.mkIf config.programs.fish.enable {
       shell = lib.mkDefault pkgs.fish;
     };
   };
@@ -14,7 +14,7 @@ in {
     imports = [systemModule];
     # NixOS gives normal users a competing mkDefault shell via
     # users.defaultUserShell, so disable that fallback for the selected user.
-    users.users.${config.meta.user}.useDefaultShell = lib.mkIf config.programs.fish.enable false;
+    users.users.${config.dotfiles.host.user}.useDefaultShell = lib.mkIf config.programs.fish.enable false;
   };
   darwin = systemModule;
   homeManager = ./home.nix;

@@ -5,7 +5,11 @@
   self,
   ...
 }: let
-  constructors = import ../aspect/lib.nix {inherit inputs lib self;};
+  constructors = import ../aspect/constructors.nix {
+    inherit inputs lib self;
+    inherit (config.dotfiles) providers;
+    defaultAspectsEnabled = config.dotfiles.defaultAspects.enable;
+  };
   hosts = lib.mapAttrs (_: host:
     host
     // {aspects = config.dotfiles.sharedAspects ++ host.aspects;})
@@ -23,7 +27,7 @@ in {
     homeConfigurations = lib.mapAttrs' (
       name: host:
         lib.nameValuePair
-        "${host.primaryUser}@${host.hostName}"
+        "${host.user}@${host.hostName}"
         (constructors.mkConfiguration name host)
     ) (byClass "homeManager");
   };

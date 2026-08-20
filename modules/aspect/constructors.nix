@@ -1,26 +1,43 @@
 {
+  defaultAspectsEnabled,
   inputs,
   lib,
+  providers,
   self,
 }: let
   sysArgs = {inherit inputs;};
   hmArgs = {inherit inputs;};
 
+  hostFacts = host: {inherit (host) class system hostName user;};
+  hostContext = host: {
+    imports = [./target/host-context.nix];
+    dotfiles.host = hostFacts host;
+  };
+
   resolveAspects = aspects:
     (lib.evalModules {
-      modules = [./aspect-options.nix] ++ aspects;
-      specialArgs = {inherit inputs;};
+      modules =
+        [./aspect-options.nix]
+        ++ lib.optional defaultAspectsEnabled ./default-aspects/host-facts.nix
+        ++ aspects;
+      specialArgs = {inherit inputs self;};
     }).config;
 
   checkHost = name: host:
     if host.hostName == ""
     then throw "dotfiles.hosts.${name}: hostName must not be empty"
-    else if host.primaryUser == ""
-    then throw "dotfiles.hosts.${name}: primaryUser must not be empty"
+    else if host.user == ""
+    then throw "dotfiles.hosts.${name}: user must not be empty"
     else if host.class == "darwin" && !lib.hasSuffix "-darwin" host.system
     then throw "dotfiles.hosts.${name}: darwin requires a Darwin system"
     else if host.class == "nixos" && !lib.hasSuffix "-linux" host.system
     then throw "dotfiles.hosts.${name}: nixos requires a Linux system"
+    else if providers.nixpkgs == null
+    then throw "dotfiles.hosts.${name}: nixpkgs provider is required"
+    else if providers.homeManager == null
+    then throw "dotfiles.hosts.${name}: homeManager provider is required"
+    else if host.class == "darwin" && providers.darwin == null
+    then throw "dotfiles.hosts.${name}: darwin provider is required for class darwin"
     else host;
 
   packageModule = resolved: {
@@ -32,62 +49,46 @@
     home-manager.useGlobalPkgs = true;
     home-manager.useUserPackages = true;
     home-manager.extraSpecialArgs = hmArgs;
-    home-manager.users.${host.primaryUser} = {
-      imports = [../common-hm resolved.homeManager];
-      meta.user = host.primaryUser;
-      meta.hostName = host.hostName;
+    home-manager.users.${host.user} = {
+      imports = [(hostContext host) resolved.homeManager];
     };
   };
 
-  systemFacts = host: {
-    nixpkgs.hostPlatform = host.system;
-    networking.hostName = host.hostName;
-    meta.user = host.primaryUser;
-    meta.hostName = host.hostName;
-    system.configurationRevision = lib.mkIf (self ? rev) self.rev;
-  };
-
   mkNixos = host: resolved:
-    inputs.nixpkgs.lib.nixosSystem {
+    providers.nixpkgs.lib.nixosSystem {
       specialArgs = sysArgs;
       modules = [
-        ../common
-        inputs.home-manager.nixosModules.home-manager
+        providers.homeManager.nixosModules.home-manager
+        (hostContext host)
         resolved.nixos
         (packageModule resolved)
-        (systemFacts host)
         (homeModule host resolved)
       ];
     };
 
   mkDarwin = host: resolved:
-    inputs.darwin.lib.darwinSystem {
+    providers.darwin.lib.darwinSystem {
       specialArgs = sysArgs;
       modules = [
-        ../common
-        inputs.home-manager.darwinModules.home-manager
+        providers.homeManager.darwinModules.home-manager
+        (hostContext host)
         resolved.darwin
         (packageModule resolved)
-        (systemFacts host)
         (homeModule host resolved)
       ];
     };
 
   mkHomeManager = host: resolved:
-    inputs.home-manager.lib.homeManagerConfiguration {
-      pkgs = import inputs.nixpkgs {
+    providers.homeManager.lib.homeManagerConfiguration {
+      pkgs = import providers.nixpkgs {
         system = host.system;
         overlays = resolved.nixpkgs.overlays;
         config = resolved.nixpkgs.config;
       };
       extraSpecialArgs = hmArgs;
       modules = [
-        ../common-hm
+        (hostContext host)
         resolved.homeManager
-        {
-          meta.user = host.primaryUser;
-          meta.hostName = host.hostName;
-        }
       ];
     };
 

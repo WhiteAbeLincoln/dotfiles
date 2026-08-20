@@ -6,7 +6,7 @@
   pkgs,
   ...
 }: let
-  user = config.meta.user;
+  user = config.dotfiles.host.user;
   lan = config.homelab.network;
   mediaRoot = config.homelab.media.root;
   mkMediaFs = uuid: fsType: {
@@ -411,5 +411,5 @@ in {
   # (/run/current-system/configuration.nix). This is useful in case you
   # accidentally delete configuration.nix.
   # system.copySystemConfiguration = true;
+  # vim:ft=nix foldmethod=marker foldlevel=0
 }
-# vim:ft=nix foldmethod=marker foldlevel=0

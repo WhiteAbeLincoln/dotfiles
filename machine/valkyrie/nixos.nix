@@ -39,7 +39,7 @@
     };
   };
   services.samba-wsdd.enable = true;
-  users.users.${config.meta.user} = {
+  users.users.${config.dotfiles.host.user} = {
     isNormalUser = true;
     extraGroups = ["wheel"]; # Enable ‘sudo’ for the user.
   };
