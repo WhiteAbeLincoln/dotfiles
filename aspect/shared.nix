@@ -1,7 +1,7 @@
 {...}: {
   imports = [
     ./nixpkgs
-    ./home-manager.nix
+    ./home-manager
     ./common-cli.nix
   ];
 }

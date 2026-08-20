@@ -155,14 +155,13 @@ in {
 
       # Sandbox user's home: the full local ai-agents setup from the shared
       # module(s). runAs/binSuffix stay at their defaults => normal setup. Its
-      # identity and base Home Manager defaults are explicit because this is a
-      # secondary user, not the inventory host's primary user.
+      # Identity and state are explicit because this is a secondary user, not
+      # the inventory host's primary user.
       home-manager.users.${cfg.user} = {
         imports = cfg.sharedModules;
         home.username = cfg.user;
         home.homeDirectory = lib.mkDefault "/home/${cfg.user}";
         home.stateVersion = mkDefault config.system.stateVersion;
-        programs.home-manager.enable = mkDefault true;
       };
 
       # Operator's home: the SAME shared module(s) + the wrapper / escape-hatch

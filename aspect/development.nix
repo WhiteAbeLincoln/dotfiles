@@ -5,7 +5,7 @@
       pkgs.nil
       pkgs.diff2html-cli
       pkgs.difftastic
-      inputs.git-different.packages.${pkgs.system}.default
+      inputs.git-different.packages.${pkgs.stdenv.hostPlatform.system}.default
       pkgs.imagemagick
     ];
   };
