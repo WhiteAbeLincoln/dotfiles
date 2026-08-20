@@ -10,6 +10,8 @@ in {
     pkgs.unstable.docker-client
     pkgs.unstable.ollama
     pkgs.unstable.lmstudio
+    pkgs.tmux
+    pkgs.zellij
     # Work stuff
     pkgs.glab
   ];

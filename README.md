@@ -134,7 +134,7 @@ Notes:
 - The walk is **conservative**: a path that only appears inside a string
   literal is still treated as a reference, so the tool errs toward keeping a
   file, never toward wrongly deleting one.
-- It only sees literal path imports. Computed imports
+- It only sees literal path expressions and references. Computed paths
   (`import (./. + "/${x}")`) and non-`.nix` data files pulled in via
   `builtins.path`/`readDir` are out of scope — this repo currently has none of
   the former.
