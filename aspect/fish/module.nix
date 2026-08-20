@@ -1,5 +1,5 @@
 # Adds a knob for whether fish attaches to a terminal multiplexer on SSH login
-# (see the `loginShellInit` in ./default.nix). Kept as an option so a host can
+# (see the `loginShellInit` in ./home.nix). Kept as an option so a host can
 # opt in without forking the shared fish config. Defaults to "none": the old
 # hard-coded tmux path detected SSH via `ps -p %self` (which inspects fish's
 # own command line, never the sshd parent), so it never actually fired — "none"
