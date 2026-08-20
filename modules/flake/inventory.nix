@@ -17,8 +17,12 @@
           system = "23.11"; # Did you read the comment?
           home = "23.11";
         };
+        aspects = [
+          ../../aspect/shell-utilities.nix
+          ../../aspect/tmux
+          ../../aspect/zellij
+        ];
         modules = [../../machine/globalhawk];
-        homeModules = [../../machine/globalhawk/home.nix];
       };
       valkyrie = {
         class = "nixos";
@@ -28,6 +32,7 @@
           system = "26.05";
           home = "26.05";
         };
+        aspects = [../../aspect/ai-agents];
         modules = [
           inputs.determinate.nixosModules.default
           ../../machine/valkyrie
@@ -42,6 +47,11 @@
           system = 5;
           home = "24.05";
         };
+        aspects = [
+          ../../aspect/shell-utilities.nix
+          ../../aspect/development.nix
+          ../../aspect/userscripts
+        ];
         modules = [
           inputs.determinate.darwinModules.default
           ../../machine/nighthawk

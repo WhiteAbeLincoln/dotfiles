@@ -52,8 +52,8 @@ in {
 
     sharedModules = mkOption {
       type = types.listOf types.deferredModule;
-      default = [../../program/ai-agents];
-      defaultText = lib.literalExpression "[ ../../program/ai-agents ]";
+      default = [../../aspect/ai-agents/home.nix];
+      defaultText = lib.literalExpression "[ ../../aspect/ai-agents/home.nix ]";
       description = ''
         Home-manager module(s) carrying the opinionated ai-agents config. Imported
         verbatim into BOTH the operator and sandbox homes, so there is a single

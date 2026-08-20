@@ -1,9 +1,14 @@
-{pkgs, ...}: {
+{
+  pkgs,
+  lib,
+  ...
+}: {
   imports = [
+    ./module.nix
     ./skills/jira.nix
   ];
   programs.ai-agents = {
-    enable = true;
+    enable = lib.mkDefault true;
 
     # Directory holding AGENTS.md plus the context docs it references via @ctx/.
     contextDir = ./agents;

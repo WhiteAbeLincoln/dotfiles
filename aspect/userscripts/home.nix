@@ -1,8 +1,8 @@
-{...}: {
+{lib, ...}: {
   imports = [./module.nix];
 
   programs.userscripts = {
-    enable = true;
+    enable = lib.mkDefault true;
 
     # Userscripts written to every enabled target. The attribute name is the
     # destination filename verbatim — include the `.user.js` suffix. Each entry sets

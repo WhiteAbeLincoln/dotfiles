@@ -1,0 +1,3 @@
+{...}: {
+  homeManager = ./home.nix;
+}

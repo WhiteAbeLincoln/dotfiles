@@ -1,7 +1,7 @@
 # ENVIRONMENTS: home-manager
-{...}: {
+{lib, ...}: {
   programs.zellij = {
-    enable = true;
+    enable = lib.mkDefault true;
     # globalhawk is headless and only ever reached over SSH, so every
     # interactive shell is a remote one. Let zellij's own fish integration
     # auto-start a session on login instead of gating on SSH detection

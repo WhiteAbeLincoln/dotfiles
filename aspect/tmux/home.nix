@@ -1,10 +1,14 @@
-{pkgs, ...}: {
+{
+  pkgs,
+  lib,
+  ...
+}: {
   imports = [
     ./module.nix
   ];
   programs.tmux-custom =
     {
-      enable = true;
+      enable = lib.mkDefault true;
     }
     // ((import ./settings.nix) pkgs);
 }

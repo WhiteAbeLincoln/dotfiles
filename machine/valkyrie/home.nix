@@ -1,13 +1,4 @@
-{
-  config,
-  pkgs,
-  lib,
-  ...
-}: {
-  imports = [
-    ../../program/ai-agents
-  ];
-
+{pkgs, ...}: {
   # home.sessionVariables = {
   #   EDITOR = "vim";
   # };
