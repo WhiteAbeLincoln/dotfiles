@@ -7,6 +7,10 @@
       type = lib.types.str;
       description = "Primary user of this host.";
     };
+    hostName = lib.mkOption {
+      type = lib.types.str;
+      description = "Inventory hostname of this configuration.";
+    };
     isWSL = lib.mkOption {
       type = lib.types.bool;
       default = false;

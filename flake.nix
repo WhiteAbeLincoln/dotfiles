@@ -52,6 +52,11 @@
     ...
   }:
     flake-parts.lib.mkFlake {inherit inputs;} {
+      imports = [
+        ./modules/flake/schema.nix
+        ./modules/flake/checks.nix
+      ];
+
       systems = ["x86_64-linux" "aarch64-darwin" "x86_64-darwin"];
 
       perSystem = {
@@ -115,7 +120,6 @@
           inherit inputs;
           lib = hmLib;
         };
-
       in {
         nixosConfigurations.globalhawk = nixpkgs.lib.nixosSystem {
           specialArgs = sysArgs;
@@ -157,12 +161,12 @@
               home-manager.useUserPackages = true;
               home-manager.extraSpecialArgs = hmArgs;
               home-manager.users.abe = {
-               imports = [
-                 ./modules/common-hm
-                 ./modules/hm
-                 ./machine/valkyrie/home.nix
-               ];
-               meta.user = "abe";
+                imports = [
+                  ./modules/common-hm
+                  ./modules/hm
+                  ./machine/valkyrie/home.nix
+                ];
+                meta.user = "abe";
               };
             }
           ];
