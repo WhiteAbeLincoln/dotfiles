@@ -1,37 +1,4 @@
-{
-  config,
-  inputs,
-  lib,
-  self,
-  ...
-}: let
-  constructors = import ../aspect/constructors.nix {
-    inherit inputs lib self;
-    inherit (config.dotfiles) providers;
-    defaultAspectsEnabled = config.dotfiles.defaultAspects.enable;
-  };
-  hosts = lib.mapAttrs (_: host:
-    host
-    // {aspects = config.dotfiles.sharedAspects ++ host.aspects;})
-  config.dotfiles.hosts;
-  byClass = class: lib.filterAttrs (_: host: host.class == class) hosts;
-in {
-  systems = lib.unique (
-    config.dotfiles.extraSystems
-    ++ map (host: host.system) (lib.attrValues hosts)
-  );
-
-  flake = {
-    nixosConfigurations = lib.mapAttrs constructors.mkConfiguration (byClass "nixos");
-    darwinConfigurations = lib.mapAttrs constructors.mkConfiguration (byClass "darwin");
-    homeConfigurations = lib.mapAttrs' (
-      name: host:
-        lib.nameValuePair
-        "${host.user}@${host.hostName}"
-        (constructors.mkConfiguration name host)
-    ) (byClass "homeManager");
-  };
-
+{inputs, ...}: {
   perSystem = {
     pkgs,
     system,

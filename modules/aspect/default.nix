@@ -1,3 +1,6 @@
 {...}: {
-  imports = [./schema.nix];
+  imports = [
+    ./schema.nix
+    ./outputs.nix
+  ];
 }

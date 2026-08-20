@@ -1,7 +1,6 @@
 {...}: {
   dotfiles = {
     sharedAspects = [../../aspect/shared.nix];
-    extraSystems = ["x86_64-darwin"];
     hosts = {
       globalhawk = {
         class = "nixos";

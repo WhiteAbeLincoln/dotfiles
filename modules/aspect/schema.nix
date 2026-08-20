@@ -64,10 +64,5 @@ in {
       default = {};
       description = "Inventory of deployment targets keyed by host name.";
     };
-    extraSystems = mkOption {
-      type = types.listOf types.str;
-      default = [];
-      description = "Additional platforms needed only for per-system flake outputs.";
-    };
   };
 }
