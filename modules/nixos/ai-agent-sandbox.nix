@@ -155,9 +155,9 @@ in {
 
       # Sandbox user's home: the full local ai-agents setup from the shared
       # module(s). runAs/binSuffix stay at their defaults => normal setup. Needs the
-      # same base HM modules the flake gives the operator (meta option + hm modules).
+      # same base HM modules the flake gives the operator.
       home-manager.users.${cfg.user} = {
-        imports = [../common-hm ../hm] ++ cfg.sharedModules;
+        imports = [../common-hm] ++ cfg.sharedModules;
         meta.user = cfg.user;
         home.stateVersion = mkDefault config.system.stateVersion;
       };

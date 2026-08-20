@@ -6,10 +6,6 @@
 }: let
   user = config.meta.user;
 in {
-  imports = [
-    ../../role/darwin.nix
-  ];
-
   networking.localHostName = "nighthawk";
   networking.computerName = "Abraham's MacBook Pro";
 

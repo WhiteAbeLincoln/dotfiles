@@ -26,12 +26,6 @@
   };
 
   networking.networkmanager.enable = true;
-  services.desktopManager.plasma6.enable = true;
-  services.displayManager = {
-    sddm.enable = true;
-    sddm.wayland.enable = true;
-    defaultSession = "plasma"; # Plasma Wayland
-  };
   services.avahi = {
     enable = true;
     ipv4 = true;

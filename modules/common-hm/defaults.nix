@@ -1,5 +1,5 @@
 # HM defaults that used to live in make-cfg.nix's baseHmModule.
-# home.stateVersion still belongs to each machine/*/home.nix because it varies.
+# The inventory owns home.stateVersion because it varies by host.
 {
   config,
   lib,

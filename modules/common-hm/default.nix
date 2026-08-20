@@ -1,7 +1,10 @@
-# HM-layer analogue of modules/common/meta.nix. The unstable overlay
-# lives at the flake.nix pkgs-construction site because standalone HM
-# doesn't support nixpkgs.overlays as a module option.
+# HM-layer analogue of modules/common/meta.nix. The unstable overlay is shared
+# through modules/common/overlay-list.nix and applied by the standalone HM
+# constructor in modules/flake/lib.nix because standalone HM doesn't support
+# nixpkgs.overlays as a module option.
 {lib, ...}: {
+  imports = [./defaults.nix];
+
   options.meta = {
     user = lib.mkOption {
       type = lib.types.str;

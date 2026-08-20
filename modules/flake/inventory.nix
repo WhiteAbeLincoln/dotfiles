@@ -32,7 +32,10 @@
           system = "26.05";
           home = "26.05";
         };
-        aspects = [../../aspect/ai-agents];
+        aspects = [
+          ../../aspect/ai-agents
+          ../../aspect/plasma-desktop.nix
+        ];
         modules = [
           inputs.determinate.nixosModules.default
           ../../machine/valkyrie
@@ -48,6 +51,7 @@
           home = "24.05";
         };
         aspects = [
+          ../../aspect/darwin-desktop.nix
           ../../aspect/shell-utilities.nix
           ../../aspect/development.nix
           ../../aspect/userscripts

@@ -4,24 +4,8 @@
   self,
 }: let
   overlays = import ../common/overlay-list.nix {inherit inputs;};
-  # `lib.mine` extension. Has to go through specialArgs because the
-  # module system can't rebind `lib` before evaluation starts.
-  mkLib = inputs.nixpkgs.lib.extend (final: _prev: {
-    mine = import ../../lib {lib = final;};
-  });
-  # HM contexts also need home-manager.lib merged in for Home Manager-specific
-  # library helpers such as lib.hm.dag.
-  hmLib = inputs.nixpkgs.lib.extend (final: _prev:
-    {mine = import ../../lib {lib = final;};}
-    // inputs.home-manager.lib);
-  sysArgs = {
-    inherit inputs;
-    lib = mkLib;
-  };
-  hmArgs = {
-    inherit inputs;
-    lib = hmLib;
-  };
+  sysArgs = {inherit inputs;};
+  hmArgs = {inherit inputs;};
 
   resolveAspects = aspects:
     (lib.evalModules {
@@ -51,7 +35,7 @@
     home-manager.useUserPackages = true;
     home-manager.extraSpecialArgs = hmArgs;
     home-manager.users.${host.primaryUser} = {
-      imports = [../common-hm ../hm resolved.homeManager] ++ host.homeModules;
+      imports = [../common-hm resolved.homeManager] ++ host.homeModules;
       meta.user = host.primaryUser;
       meta.hostName = host.hostName;
       home.stateVersion = host.stateVersion.home;
@@ -101,7 +85,7 @@
       };
       extraSpecialArgs = hmArgs;
       modules =
-        [../common-hm ../hm resolved.homeManager]
+        [../common-hm resolved.homeManager]
         ++ host.homeModules
         ++ [
           {
