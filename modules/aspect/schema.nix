@@ -19,31 +19,10 @@
         type = types.str;
         description = "Primary user receiving the Home Manager configuration.";
       };
-      stateVersion = {
-        system = mkOption {
-          type = types.nullOr (types.either types.str types.int);
-          default = null;
-          description = "Class-appropriate system state version, or null for Home Manager hosts.";
-        };
-        home = mkOption {
-          type = types.str;
-          description = "Home Manager state version for the primary user.";
-        };
-      };
       aspects = mkOption {
         type = types.listOf types.deferredModule;
         default = [];
         description = "Aspect modules selected specifically for this host.";
-      };
-      modules = mkOption {
-        type = types.listOf types.raw;
-        default = [];
-        description = "Native system modules added to this host.";
-      };
-      homeModules = mkOption {
-        type = types.listOf types.raw;
-        default = [];
-        description = "Native Home Manager modules added for the primary user.";
       };
     };
   });

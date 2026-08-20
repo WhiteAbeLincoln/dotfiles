@@ -15,6 +15,7 @@
       lib.mkEnableOption "the aspect constructor fixture";
     config = {
       programs.aspect-constructor.enable = lib.mkDefault true;
+      home.stateVersion = "26.05";
       home.file.".aspect-constructor-test".text =
         if config.programs.aspect-constructor.enable
         then "enabled"

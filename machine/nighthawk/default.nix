@@ -1,28 +1,22 @@
-{
-  pkgs,
-  lib,
-  config,
-  ...
-}: let
-  user = config.meta.user;
-in {
-  networking.localHostName = "nighthawk";
-  networking.computerName = "Abraham's MacBook Pro";
-
-  environment.systemPackages = [
-    pkgs.git-crypt
-    pkgs.vim
-    # pkgs.bitwarden-cli
-    pkgs.moonlight-qt
+{inputs, ...}: {
+  imports = [
+    ../../aspect/darwin-system.nix
+    ../../aspect/darwin-desktop
+    ../../aspect/shell-utilities.nix
+    ../../aspect/development.nix
+    ../../aspect/userscripts
   ];
-  environment.variables.EDITOR = "vim";
-  environment.systemPath = ["/opt/homebrew/bin"];
 
-  users.users.${user} = {
-    description = "Abraham White";
-    home = "/Users/${user}";
+  darwin = {
+    imports = [
+      inputs.determinate.darwinModules.default
+      ./darwin.nix
+    ];
+    system.stateVersion = 5;
   };
 
-  homebrew.enable = true;
-  homebrew.brews = [];
+  homeManager = {
+    imports = [./home.nix];
+    home.stateVersion = "24.05";
+  };
 }

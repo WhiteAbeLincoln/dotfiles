@@ -1,4 +1,4 @@
-{inputs, ...}: {
+{...}: {
   dotfiles = {
     sharedAspects = [../../aspect/shared.nix];
     extraSystems = ["x86_64-darwin"];
@@ -7,61 +7,19 @@
         class = "nixos";
         system = "x86_64-linux";
         primaryUser = "abe";
-        # This value determines the NixOS release from which the default
-        # settings for stateful data, like file locations and database versions
-        # on your system were taken. It's perfectly fine and recommended to leave
-        # this value at the release version of the first install of this system.
-        # Before changing this value read the documentation for this option
-        # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-        stateVersion = {
-          system = "23.11"; # Did you read the comment?
-          home = "23.11";
-        };
-        aspects = [
-          ../../aspect/shell-utilities.nix
-          ../../aspect/tmux
-          ../../aspect/zellij
-        ];
-        modules = [../../machine/globalhawk];
+        aspects = [../../machine/globalhawk];
       };
       valkyrie = {
         class = "nixos";
         system = "x86_64-linux";
         primaryUser = "abe";
-        stateVersion = {
-          system = "26.05";
-          home = "26.05";
-        };
-        aspects = [
-          ../../aspect/ai-agents
-          ../../aspect/plasma-desktop.nix
-        ];
-        modules = [
-          inputs.determinate.nixosModules.default
-          ../../machine/valkyrie
-        ];
-        homeModules = [../../machine/valkyrie/home.nix];
+        aspects = [../../machine/valkyrie];
       };
       nighthawk = {
         class = "darwin";
         system = "aarch64-darwin";
         primaryUser = "abe";
-        stateVersion = {
-          system = 5;
-          home = "24.05";
-        };
-        aspects = [
-          ../../aspect/darwin-system.nix
-          ../../aspect/darwin-desktop
-          ../../aspect/shell-utilities.nix
-          ../../aspect/development.nix
-          ../../aspect/userscripts
-        ];
-        modules = [
-          inputs.determinate.darwinModules.default
-          ../../machine/nighthawk
-        ];
-        homeModules = [../../machine/nighthawk/home.nix];
+        aspects = [../../machine/nighthawk];
       };
     };
   };
