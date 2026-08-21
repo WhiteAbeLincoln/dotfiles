@@ -1,7 +1,7 @@
 {inputs, ...}: {
   imports = [
-    ../../aspect/ai-agents
     ../../aspect/plasma-desktop.nix
+    ../../aspect/ai-agents
   ];
 
   nixos = {

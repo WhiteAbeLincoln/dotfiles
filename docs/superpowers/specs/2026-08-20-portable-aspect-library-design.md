@@ -167,8 +167,9 @@ The library prepends one bundled aspect by default. It maps the normalized host
 context to native target options:
 
 - NixOS sets `nixpkgs.hostPlatform` and `networking.hostName`.
-- Darwin sets `nixpkgs.hostPlatform`, `networking.hostName`, and
-  `system.primaryUser`.
+- Darwin sets `nixpkgs.hostPlatform`, `networking.hostName`,
+  `networking.localHostName`, `system.primaryUser`, and a default system-user
+  home directory derived from the inventory user.
 - Home Manager sets `home.username` and a default home directory derived from
   the target platform and user.
 - System projections set `system.configurationRevision` when the source flake
@@ -176,9 +177,9 @@ context to native target options:
 
 Inventory-derived identity mappings use normal module priority because the
 host record is authoritative. A consumer changes them by changing inventory or
-disabling the default aspects. The platform-derived Home Manager home directory
-uses `lib.mkDefault` so a machine can select a nonstandard directory without
-replacing the other fact mappings.
+disabling the default aspects. The platform-derived system-user and Home
+Manager home directories use `lib.mkDefault` so a machine can select a
+nonstandard directory without replacing the other fact mappings.
 
 The library uses `dotfiles.defaultAspects.enable`, defaulting to `true`, to
 control this behavior. When disabled, it still provides

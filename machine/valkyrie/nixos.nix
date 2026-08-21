@@ -13,36 +13,16 @@
   ];
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
-  boot.kernelPackages = pkgs.linuxPackages_latest;
+  boot.kernelPackages = pkgs.unstable.linuxPackages_latest;
 
-  nix.settings = {
-    # Prebuilt coding agents from numtide/llm-agents.nix (pkgs.llm-agents.*).
-    # The Determinate NixOS module writes these settings to nix.custom.conf,
-    # which its managed nix.conf includes.
-    extra-substituters = ["https://cache.numtide.com"];
-    extra-trusted-public-keys = [
-      "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
-    ];
-  };
+  programs.ghostty.enable = true;
+  programs.firefox.enable = true;
 
   networking.networkmanager.enable = true;
-  services.avahi = {
-    enable = true;
-    ipv4 = true;
-    ipv6 = true;
-    nssmdns4 = true;
-    publish = {
-      enable = true;
-      userServices = true;
-      workstation = true;
-      hinfo = true;
-    };
-  };
-  services.samba-wsdd.enable = true;
+  hardware.bluetooth.enable = true;
   users.users.${config.dotfiles.host.user} = {
     isNormalUser = true;
     extraGroups = ["wheel"]; # Enable ‘sudo’ for the user.
   };
-  services.openssh.settings.PermitRootLogin = "yes";
   services.openssh.enable = true;
 }

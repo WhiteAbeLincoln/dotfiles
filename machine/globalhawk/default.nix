@@ -1,8 +1,7 @@
 {...}: {
   imports = [
-    ../../aspect/shell-utilities.nix
-    ../../aspect/tmux
-    ../../aspect/zellij
+    ../../aspect/plasma-desktop.nix
+    ../../aspect/llm-agents-cache.nix
   ];
 
   nixos = {

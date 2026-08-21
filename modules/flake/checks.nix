@@ -52,6 +52,18 @@
       }
     ];
   };
+  testDarwin = constructors.mkConfiguration "aspect-darwin-test" {
+    class = "darwin";
+    system = "aarch64-darwin";
+    hostName = "aspect-darwin-test";
+    user = "tester";
+    aspects = [
+      {
+        darwin.system.stateVersion = 5;
+        homeManager.home.stateVersion = "26.05";
+      }
+    ];
+  };
   portableFlake = inputs.flake-parts.lib.mkFlake {inherit inputs;} {
     imports = [../aspect];
 
@@ -123,5 +135,8 @@ in {
       assert testHomeWithoutDefaults.config.home.username == "custom-user";
       assert testHomeWithoutDefaults.config.home.file.".aspect-no-defaults".text == "tester";
         pkgs.runCommand "home-manager-host-class" {} "touch $out";
+      checks.darwin-host-identity = assert testDarwin.config.networking.localHostName == "aspect-darwin-test";
+      assert testDarwin.config.users.users.tester.home == "/Users/tester";
+        pkgs.runCommand "darwin-host-identity" {} "touch $out";
     };
 }

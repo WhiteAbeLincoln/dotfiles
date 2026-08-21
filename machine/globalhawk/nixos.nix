@@ -39,13 +39,6 @@ in {
 
   nix.settings = {
     experimental-features = ["nix-command" "flakes"];
-    # Prebuilt coding agents from numtide/llm-agents.nix (pkgs.llm-agents.*).
-    # This host is plain NixOS (no Determinate), so the cache goes here rather
-    # than in the darwin `determinateNix.customSettings`.
-    extra-substituters = ["https://cache.numtide.com"];
-    extra-trusted-public-keys = [
-      "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
-    ];
   };
 
   # {{{ Boot & System
@@ -171,15 +164,10 @@ in {
     allowedUDPPorts = [53];
   };
 
-  # Set your time zone.
-  time.timeZone = "America/Denver";
-
   # Configure network proxy if necessary
   # networking.proxy.default = "http://user:password@proxy:port/";
   # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
 
-  # Select internationalisation properties.
-  i18n.defaultLocale = "en_US.UTF-8";
   # console = {
   #   font = "Lat2-Terminus16";
   #   keyMap = "us";
@@ -230,16 +218,9 @@ in {
   # List packages installed in system profile. To search, run:
   # $ nix search wget
   environment.systemPackages = with pkgs; [
-    vim
     wget
-    git
-    git-crypt
     tmux
-    calibre
     vlc
-    # xterm-ghostty terminfo, system-wide so SSH sessions resolve it for every
-    # user (abe, the sandbox agent, root) without a per-user `tic` copy.
-    ghostty.terminfo
   ];
 
   # {{{ Services
@@ -256,7 +237,6 @@ in {
   services.openssh.enable = true;
 
   # Enable the X11 windowing system.
-  services.desktopManager.plasma6.enable = true;
   services.xserver = {
     enable = true;
     # Enable touchpad support (enabled default in most desktopManager).
@@ -265,7 +245,6 @@ in {
     xkb.layout = "us";
     xkb.options = "caps:swapescape";
   };
-  services.displayManager.sddm.enable = true;
 
   # Remote Desktop
   services.xrdp.enable = true;
@@ -292,24 +271,10 @@ in {
     extraSetFlags = ["--accept-dns=false"];
   };
 
-  # make sure mdns/.local addresses are working
-  services.avahi = {
-    enable = true;
-    ipv4 = true;
-    ipv6 = true;
-    nssmdns4 = true;
-    # Only advertise/resolve mDNS on the LAN interface. Without this, avahi
-    # publishes across the docker bridges and dozens of k3s veths, so even
-    # globalhawk.local resolves to link-local/bridge junk instead of the LAN IP.
-    allowInterfaces = [lan.lanInterface];
-    publish = {
-      enable = true;
-      userServices = true;
-      workstation = true;
-      hinfo = true;
-    };
-    extraServiceFiles.ssh = "${pkgs.avahi}/etc/avahi/services/ssh.service";
-  };
+  # Only advertise/resolve mDNS on the LAN interface. Without this, avahi
+  # publishes across the docker bridges and dozens of k3s veths, so even
+  # globalhawk.local resolves to link-local/bridge junk instead of the LAN IP.
+  services.avahi.allowInterfaces = [lan.lanInterface];
 
   services.samba-wsdd.enable = true;
 
@@ -344,57 +309,6 @@ in {
         "read list" = "${user}, guest, nobody";
       };
     };
-  };
-
-  # The `torrent` docker network + its init unit are gone with the torrent stack's
-  # move to k3s. The docker `torrent` network may be orphaned on the host: remove
-  # it once with `docker network rm torrent`.
-
-  virtualisation.docker.enable = true;
-  users.extraGroups.docker.members = [user];
-  # podman is having issues resolving containers by name
-  virtualisation.oci-containers.backend = "docker";
-  virtualisation.oci-containers.containers = {
-    # The torrent stack (vpn/gluetun + qbittorrent + prowlarr/radarr/sonarr)
-    # migrated to k3s: the arr apps as Deployments and qbittorrent+gluetun as the
-    # shared-netns torrent-vpn pod (k8s/apps/{arr,torrent}.nix). Only immich
-    # remains on docker, pending its own migration.
-    # minecraft-tina = {
-    #   image = "itzg/minecraft-server";
-    #   ports = [ "25565:25565" ];
-    #   volumes = [
-    #     "/data/Media/docker-services/minecraft-tina/data:/data"
-    #   ];
-    #   environment = {
-    #     TZ = config.time.timeZone;
-    #     UID = (toString config.users.users._media.uid);
-    #     GID = (toString config.users.groups._media.gid);
-    #     EULA = "TRUE";
-    #     VERSION = "1.20.1";
-    #     TYPE = "NEOFORGE";
-    #     # WHITELIST_FILE: /extras/whitelist.json
-    #     # MODS_FILE: /extras/mods.txt
-    #     # OPS_FILE: /extras/ops.json
-    #     # REMOVE_OLD_MODS: "true"
-    #     ENABLE_RCON = "true";
-    #     # password isn't a secret since we don't publicly
-    #     # expose this server
-    #     RCON_PASSWORD = "mc2022!awhite";
-
-    #     MAX_TICK_TIME = "120000";
-    #     MEMORY = "";
-    #     JVM_XX_OPTS = "-XX:MaxRAMPercentage=75";
-
-    #    EXAMPLE_COMMAND_BLOCK = "true";
-    #    DIFFICULTY = "normal";
-    #    VIEW_DISTANCE = "18";
-    #    SIMULATION_DISTANCE = "7";
-    #    LOG_TIMESTAMP = "true";
-    #    SNOOPER_ENABLED = "false";
-    #    SPAWN_PROTECTION = "0";
-    #    ALLOW_FLIGHT = "TRUE";
-    #  };
-    #  };
   };
 
   # }}}

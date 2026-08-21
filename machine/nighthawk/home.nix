@@ -1,6 +1,4 @@
-{pkgs, ...}: let
-  secrets = import ../../secrets/common.nix;
-in {
+{pkgs, ...}: {
   home.packages = [
     # Lima-based Docker daemon for macOS — works with Tilt + kind where
     # podman 5's Docker API compat layer falls down (BuildKit gRPC, kind
@@ -11,7 +9,7 @@ in {
     pkgs.unstable.ollama
     pkgs.unstable.lmstudio
     pkgs.tmux
-    pkgs.zellij
+    pkgs.imagemagick
     # Work stuff
     pkgs.glab
   ];
@@ -23,15 +21,4 @@ in {
   #   };
   # };
   programs.ssh.enableDefaultConfig = false;
-
-  programs.nix-index.enable = true;
-
-  programs.rbw = {
-    enable = true;
-    package = pkgs.rbw;
-    settings = {
-      email = secrets.bw_email;
-      pinentry = pkgs.pinentry_mac;
-    };
-  };
 }

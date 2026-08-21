@@ -1,7 +1,5 @@
 {lib, ...}: {
   homeManager = {pkgs, ...}: {
-    home.packages = [pkgs.haskellPackages.ShellCheck];
-    programs.jq.enable = lib.mkDefault true;
     programs.keychain.enable = lib.mkDefault pkgs.stdenv.isLinux;
     programs.ssh = {
       enable = lib.mkDefault true;

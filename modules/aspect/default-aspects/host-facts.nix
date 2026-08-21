@@ -16,8 +16,10 @@
   }: {
     nixpkgs.hostPlatform = config.dotfiles.host.system;
     networking.hostName = config.dotfiles.host.hostName;
+    networking.localHostName = config.dotfiles.host.hostName;
     system.primaryUser = config.dotfiles.host.user;
     system.configurationRevision = lib.mkIf (self ? rev) self.rev;
+    users.users.${config.dotfiles.host.user}.home = lib.mkDefault "/Users/${config.dotfiles.host.user}";
   };
 
   homeManager = {

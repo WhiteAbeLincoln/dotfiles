@@ -482,3 +482,78 @@ including no false positives under `charts/`.
 - Activating any generated configuration.
 - Redesigning secrets or copying encrypted secret values into unencrypted files.
 - Centralizing all hosts onto one preconstructed Nixpkgs package set.
+
+## Appendix: transparent target-module imports
+
+**Status:** feasible, deferred; this appendix is not part of the approved
+implementation scope.
+
+A later extension could allow an aspect to be imported directly from a NixOS,
+nix-darwin, or Home Manager module and automatically apply the projection for
+that evaluator. This is technically possible through the Nix module system's
+built-in `_class` module argument. The constructors pinned by this repository
+evaluate their modules with `_class` set to `"nixos"`, `"darwin"`, and
+`"homeManager"`, respectively. Module arguments of this kind are available
+while resolving `imports`, so choosing a projection from `_class` does not
+require a configuration-dependent import.
+
+The existing aspect attribute set cannot provide this behavior by itself. If a
+native evaluator imports an unmodified aspect, it interprets `nixos`, `darwin`,
+and `homeManager` as native configuration options and reports that they do not
+exist. A future adapter such as `mkAspect` would instead return a module
+function that dispatches according to `_class`.
+
+The aspect evaluator should then use an explicit `class = "aspect"` rather than
+the current unclassified `lib.evalModules` call. In the aspect class, the
+adapter would expose the complete aspect definition. In a target class, it
+would resolve the aspect and its imported profiles through the aspect module
+system, then import `resolved.${_class}` into the target evaluator. Conceptually:
+
+```nix
+mkAspect ({lib, ...}: {
+  imports = [./another-aspect.nix];
+
+  nixos = {/* NixOS module */};
+  darwin = {/* nix-darwin module */};
+  homeManager = {/* Home Manager module */};
+})
+```
+
+A throwaway feasibility probe evaluated this form through the repository's
+pinned NixOS, nix-darwin, and Home Manager constructors and observed the three
+expected class names. A second probe compared a profile importing a leaf aspect
+through both routes:
+
+```text
+resolve aspect, then apply projection
+directly import transparent aspect
+```
+
+The resulting projection values were equal in all three target classes. The
+probe also found that merely forwarding the aspect's `imports` and selected
+projection as sibling native imports can change order-sensitive merges. A
+production adapter should preserve the nested aspect evaluation rather than
+perform that simpler rewrite.
+
+Transparency would be limited to the current evaluator. Importing an aspect
+from a NixOS module would select its NixOS projection, but would not inherently
+insert its Home Manager projection into Home Manager's separate nested module
+evaluation. The inventory constructor would still be needed to route the
+primary user's projection, unless the importing module explicitly adds the
+aspect to `home-manager.users.<user>` or `home-manager.sharedModules`. Such an
+automatic bridge would require a policy decision about which users inherit the
+aspect and should not be implied by projection dispatch alone.
+
+Aspect-level `nixpkgs` overlays and configuration also require explicit
+routing. NixOS and nix-darwin can apply them to their native package set, and a
+standalone Home Manager evaluation can construct a private package set from
+them. Home Manager embedded with `home-manager.useGlobalPkgs` cannot modify the
+already constructed system package set. The inventory constructor therefore
+remains the natural owner of complete cross-environment selection and package
+policy even if direct target-module imports are added.
+
+If revisited, the preferred direction is an opt-in adapter that gives aspects
+native-module behavior within one evaluator while retaining the inventory
+constructor as the authoritative cross-environment composition path. In this
+meaning, "transparent" means selecting the projection for the current module
+class; it does not mean automatically crossing into related module evaluations.
