@@ -15,7 +15,6 @@
   boot.loader.efi.canTouchEfiVariables = true;
   boot.kernelPackages = pkgs.unstable.linuxPackages_latest;
 
-  programs.ghostty.enable = true;
   programs.firefox.enable = true;
   programs.steam = {
     enable = true;

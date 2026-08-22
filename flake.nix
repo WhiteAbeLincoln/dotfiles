@@ -26,6 +26,7 @@
     # prebuilt against llm-agents' own pinned nixpkgs, so following ours would
     # rebuild from source and miss cache.numtide.com.
     llm-agents.url = "github:numtide/llm-agents.nix";
+    sidra.url = "github:wimpysworld/sidra";
     # nixidy: author k8s workloads as Nix modules, render to plain YAML for
     # delivery via services.k3s.manifests (no ArgoCD, no Helm). Tracks its own
     # nixpkgs deliberately — its CRD generators pin against it.
