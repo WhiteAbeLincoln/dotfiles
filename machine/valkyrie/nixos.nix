@@ -67,6 +67,7 @@
 
   networking.networkmanager.enable = true;
   hardware.bluetooth.enable = true;
+  nix.settings.extra-trusted-users = ["@wheel" config.dotfiles.host.user];
   users.users.${config.dotfiles.host.user} = {
     isNormalUser = true;
     extraGroups = [
