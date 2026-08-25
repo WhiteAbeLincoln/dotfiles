@@ -2,6 +2,24 @@
 
 This repository uses [nix](https://nixos.org) and [home-manager](https://github.com/nix-community/home-manager) to manage dotfiles.
 
+## Project templates
+
+Initialize a multi-crate Rust workspace with crane, rust-overlay, and nextest:
+
+```sh
+nix flake new -t "path:$HOME/dotfiles#project-rust-workspace" ./my-project
+```
+
+The same template is available from GitHub after it has been pushed:
+
+```sh
+nix flake new -t github:WhiteAbeLincoln/dotfiles#project-rust-workspace ./my-project
+```
+
+The generated project uses buildable `project` placeholders; rename them for
+the new project after initialization. Use `nix flake init` with the same
+template reference when initializing the current directory instead.
+
 ## Installing
 
 Clone this repository into `~/.config/nixpkgs` (on Linux) or `~/.nixpkgs` (on Darwin). Create a `home.nix` or `darwin-configuration.nix` file and import the correct module

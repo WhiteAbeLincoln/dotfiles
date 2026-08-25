@@ -1,0 +1,14 @@
+[package]
+name = "project-cli"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "project"
+path = "src/main.rs"
+
+[dependencies]
+project = { path = "../project" }
+
+[lints]
+workspace = true
