@@ -2,6 +2,7 @@
   imports = [
     ../../aspect/plasma-desktop.nix
     ../../aspect/ai-agents
+    ../../aspect/openlinkhub.nix
   ];
 
   nixos = {

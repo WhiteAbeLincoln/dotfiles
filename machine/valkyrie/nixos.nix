@@ -14,6 +14,10 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
   boot.kernelPackages = pkgs.unstable.linuxPackages_latest;
+  boot.kernelModules = ["it87"];
+  boot.extraModprobeConfig = ''
+    options it87 ignore_resource_conflict=1
+  '';
 
   programs.firefox.enable = true;
   programs.steam = {
