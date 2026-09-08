@@ -7,10 +7,7 @@
     ./module.nix
   ];
 
-  programs.git = (
-    let
-      secrets = import ../../secrets/common.nix;
-    in {
+  programs.git = {
       enable = lib.mkDefault true;
       settings.user.name = "Abraham White";
       settings.alias = {
@@ -86,11 +83,6 @@
         ".netrwhist"
         "tags"
         ".Python"
-        "[Bb]in"
-        "[Ii]nclude"
-        # "[Ll]ib"
-        "[Ll]ib64"
-        # "[Ll]ocal"
         "pyvenv.cfg"
         ".venv"
         "pip-selfcheck.json"
@@ -109,7 +101,7 @@
       ];
       includes = [
         {
-          condition = "hasconfig:remote.*.url:git@github.com:WhiteAbeLincoln/**";
+          condition = "hasconfig:remote.*.url:git@github.com:*/**";
           contents = {
             user.email = "7330103+WhiteAbeLincoln@users.noreply.github.com";
           };
@@ -119,19 +111,10 @@
           condition = "hasconfig:remote.*.url:git@gitlab.com:WhiteAbeLincoln/**";
           contents = {
             user.email = "1769746-WhiteAbeLincoln@users.noreply.gitlab.com";
-            core.sshCommand = "ssh -i ~/.ssh/id_ed25519-gl-personal";
-          };
-        }
-
-        {
-          condition = "hasconfig:remote.*.url:git@gitlab.com:cs-global/**";
-          contents = {
-            user.email = secrets.work_email;
           };
         }
       ];
-    }
-  );
+    };
   programs.delta = {
     enable = lib.mkDefault true;
     enableGitIntegration = true;

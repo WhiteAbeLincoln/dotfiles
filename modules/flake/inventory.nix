@@ -30,6 +30,12 @@
         user = "abe";
         aspects = [../../machine/nighthawk];
       };
+      HPWFYVR9VV = {
+        class = "darwin";
+        system = "aarch64-darwin";
+        user = "abe";
+        aspects = [../../machine/work-laptop];
+      };
     };
   };
 }

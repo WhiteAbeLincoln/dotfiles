@@ -12,6 +12,7 @@
     # https://github.com/DeterminateSystems/determinate?tab=readme-ov-file#nix-darwin
     nix.enable = pkgs.lib.mkForce false;
 
+    determinateNix.enable = true;
     determinateNix.customSettings = {
       extra-trusted-users = "@admin ${config.dotfiles.host.user}";
     };
