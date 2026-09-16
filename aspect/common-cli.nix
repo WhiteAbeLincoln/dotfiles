@@ -1,7 +1,14 @@
 {...}: {
-  imports = [./fish ./git ./vim ./direnv ./starship ./modern-cli.nix];
+  imports = [
+    ./fish
+    ./git
+    ./vim
+    ./direnv
+    ./starship
+    ./modern-cli.nix
+    ./nix-index.nix
+  ];
   homeManager = {pkgs, ...}: {
-    programs.nix-index.enable = true;
     home.packages = [
       pkgs.nil
     ];

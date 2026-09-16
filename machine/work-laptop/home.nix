@@ -7,6 +7,7 @@
     pkgs.unstable.terraform
     pkgs.unstable.fastly
     pkgs.unstable.gh
+    pkgs.unstable.awscli2
   ];
   programs.ghostty.enable = true;
 }

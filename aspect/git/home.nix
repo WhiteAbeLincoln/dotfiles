@@ -42,9 +42,6 @@
         log.date = "local";
         push.autoSetupRemote = true;
         difftool.difftastic.cmd = ''difft "$MERGED" "$LOCAL" "abcdef1" "100644" "$REMOTE" "abcdef2" "100644"'';
-        url = {
-          "git@gitlab.com:cs-global/".insteadOf = "https://gitlab.com/cs-global/";
-        };
       };
       ignoreFiles = [
         ./ignores/vscode.ignore
@@ -104,6 +101,13 @@
           condition = "hasconfig:remote.*.url:git@github.com:*/**";
           contents = {
             user.email = "7330103+WhiteAbeLincoln@users.noreply.github.com";
+          };
+        }
+
+        {
+          condition = "hasconfig:remote.*.url:git@github.com:fastly/**";
+          contents = {
+            user.email = "abe.white@fastly.com";
           };
         }
 
