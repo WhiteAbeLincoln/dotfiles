@@ -63,12 +63,6 @@
     });
   };
 
-  services.xserver.xkb = {
-    layout = "us";
-    options = "caps:swapescape";
-  };
-  console.useXkbConfig = true;
-
   networking.networkmanager.enable = true;
   hardware.bluetooth.enable = true;
   nix.settings.extra-trusted-users = ["@wheel" config.dotfiles.host.user];
