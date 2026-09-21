@@ -1,6 +1,5 @@
 {
   pkgs,
-  lib,
   config,
   ...
 }: let
@@ -11,6 +10,8 @@ in {
   environment.systemPackages = [
     pkgs.git
     pkgs.raycast
+    # use gnu coreutils instead of macos
+    pkgs.coreutils
   ];
   # environment.systemPath = ["/opt/homebrew/bin"];
 

@@ -10,4 +10,7 @@
     pkgs.unstable.awscli2
   ];
   programs.ghostty.enable = true;
+  # use fastly email for all repos not covered
+  # by aspect/git/home.nix includes
+  programs.git.settings.user.email = "abe.white@fastly.com";
 }
