@@ -35,6 +35,17 @@
               git fetch origin &&
               git reset --hard "origin/$1" ) || ( git switch - && git branch -D "$1" )
             }; f'';
+      # Delete local branches whose upstream was removed (e.g. auto-deleted
+      # after a PR merge). Branches that never had an upstream report an empty
+      # track status rather than [gone], so they are left alone. Uses -D since
+      # squash/rebase merges leave the branch looking unmerged to git.
+      prune-branches = ''        !f() {
+              git fetch --prune "$@" &&
+              git for-each-ref --format='%(if:equals=[gone])%(upstream:track)%(then)%(refname:short)%(end)' refs/heads |
+              while read -r branch; do
+                if [ -n "$branch" ]; then git branch -D "$branch"; fi
+              done
+            }; f'';
     };
     settings = {
       init.defaultBranch = "trunk";
