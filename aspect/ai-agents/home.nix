@@ -13,6 +13,8 @@
     # Directory holding AGENTS.md plus the context docs it references via @ctx/.
     contextDir = ./agents;
 
+    skills.work-issue = ./skills/work-issue;
+
     claude-code = {
       enable = true;
       package = pkgs.llm-agents.claude-code;
