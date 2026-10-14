@@ -6,6 +6,7 @@
   imports = [
     ./module.nix
     ./skills/jira.nix
+    ./skills/fastly.nix
   ];
   programs.ai-agents = {
     enable = lib.mkDefault true;
