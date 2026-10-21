@@ -33,24 +33,25 @@ nix run .#darwin-rebuild -- switch
 sudo nixos-rebuild switch --flake .#globalhawk
 ```
 
-The commands above are for the human applying a configuration. `./installer.sh
-switch|build` also auto-detects the host, but agents must not activate or fully
-build a host unless explicitly asked. A later `switch` performs the required
-build as part of applying the configuration.
+The commands above are for the operator applying a configuration. `./installer.sh
+switch|build` also auto-detects the host. Agents must not build or activate a
+host; the operator performs the full build and apply with `switch`.
 
-Validate configuration wiring without realizing full system closures:
+**Agent validation is limited to syntactic validity and the current machine.**
+Never evaluate another machine, even when changing shared aspects. Do not run
+`nix flake check` (including `--no-build`) or evaluate host top-level `drvPath`s:
+those perform broader configuration evaluation, not just syntax checks. Leave
+full evaluation, builds, and application to the operator.
+
+Check changed Nix files without evaluating configurations:
 
 ```sh
-nix flake check --no-build
-nix eval --raw .#darwinConfigurations.nighthawk.config.system.build.toplevel.drvPath
-nix eval --raw .#nixosConfigurations.valkyrie.config.system.build.toplevel.drvPath
-nix eval --raw .#nixosConfigurations.globalhawk.config.system.build.toplevel.drvPath
+nix-instantiate --parse path/to/changed-file.nix >/dev/null
 ```
 
-Validation and formatting:
+Formatting:
 
 ```sh
-nix flake check --no-build # evaluate outputs without realizing checks
 nix fmt -- --check .       # check all .nix with alejandra
 nix fmt -- .               # apply formatting
 ```
@@ -63,15 +64,13 @@ maintenance obligation, not dependable protection.
 
 Use the smallest validation layer that exercises meaningful behaviour:
 
-1. Treat complete evaluation of each affected host as the baseline. Run
-   `nix flake check --no-build`, then evaluate the host's top-level `drvPath`.
-   This forces the module graph and derivation construction without downloading
-   or realizing the full system closure. Do not run a full host build merely to
-   validate a change; leave realization to the human applying it with `switch`
-   unless they explicitly request a build.
-2. Build a focused check derivation only when it is small and directly exercises
-   observable behaviour in reusable module logic. Do not use a full host build
-   as a substitute for a focused evaluation or check.
+1. Agents check only syntactic validity of changed Nix files and formatting.
+   Any machine-specific validation must be limited to the current machine;
+   never evaluate other hosts. The operator owns full configuration evaluation,
+   builds, and application.
+2. Focused check derivations are for the operator to run when they are small
+   and directly exercise observable behaviour in reusable module logic. Agents
+   must not build checks or host configurations as part of validation.
 3. Add Nix module assertions only for genuine safety invariants or invalid
    option combinations that the type system cannot express. Good candidates
    include missing runtime-secret declarations, unsafe network exposure, and
@@ -80,9 +79,9 @@ Use the smallest validation layer that exercises meaningful behaviour:
    readiness, and liveness probes plus monitoring of target health—over scripts
    that inspect rendered YAML structure.
 5. Put a short, one-time live acceptance checklist in an implementation plan
-   when deployment behaviour must be verified. Run it against the real host or
-   cluster after activation; do not automatically turn it into a permanent Bash
-   harness.
+   when deployment behaviour must be verified. The operator runs it against
+   the real host or cluster after activation; do not automatically turn it into
+   a permanent Bash harness.
 6. Reserve additional permanent flake checks for reusable module logic with
    observable behaviour, such as module composition or validation rules. Do not
    add a flake check that merely restates the expected shape of one host's

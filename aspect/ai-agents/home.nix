@@ -29,7 +29,7 @@
     pi = {
       enable = true;
       package = pkgs.llm-agents.pi;
-      settings = {};
+      settings.packages = ["npm:pi-vim@0.14.2"];
     };
   };
 }
