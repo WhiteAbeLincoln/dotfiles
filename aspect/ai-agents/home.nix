@@ -29,6 +29,7 @@
     pi = {
       enable = true;
       package = pkgs.llm-agents.pi;
+      extensions.ask = ./pi/ask.ts;
       settings.packages = ["npm:pi-vim@0.14.2"];
     };
   };

@@ -239,6 +239,16 @@ in {
     pi = {
       enable = mkEnableOption "the pi-coding-agent coding harness";
       package = mkPackageOption pkgs "pi-coding-agent" {nullable = true;};
+      extensions = mkOption {
+        type = types.attrsOf types.path;
+        default = {};
+        example = literalExpression "{ ask = ./pi/ask.ts; }";
+        description = ''
+          TypeScript extensions linked into {file}`~/.pi/agent/extensions/<name>.ts`.
+          Pi discovers these automatically; run {command}`/reload` after activation
+          to load them in an existing session.
+        '';
+      };
       settings = mkOption {
         type = jsonFormat.type;
         default = {};
@@ -324,6 +334,9 @@ in {
             meta = (cfg.pi.package.meta or {}) // {mainProgram = "pi";};
           }))
         ];
+        home.file = mapAttrs' (name: source:
+          nameValuePair "${homeDir}/.pi/agent/extensions/${name}.ts" {inherit source;})
+        cfg.pi.extensions;
       }
       (mkIf hasContext {
         home.file."${homeDir}/.pi/agent/AGENTS.md".source = agentsFile;
