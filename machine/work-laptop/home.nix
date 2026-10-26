@@ -38,6 +38,9 @@ in {
     pkgs.unstable.terraform
     pkgs.unstable.gh
     pkgs.unstable.awscli2
+    # Colima manages the daemon; the Docker CLI is packaged separately.
+    pkgs.unstable.colima
+    pkgs.unstable.docker-client
   ];
   programs.ghostty.enable = true;
   # use fastly email for all repos not covered
