@@ -1,5 +1,7 @@
 {lib, ...}: {
-  nixos = {
+  nixos = {pkgs, ...}: {
+    environment.systemPackages = [pkgs.wl-clipboard];
+
     services.desktopManager.plasma6.enable = lib.mkDefault true;
     services.displayManager = {
       sddm.enable = lib.mkDefault true;
