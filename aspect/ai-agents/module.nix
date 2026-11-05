@@ -309,7 +309,22 @@ in {
 
     # pi-coding-agent: no upstream module. Reads ~/.agents/skills directly.
     (mkIf (localSetup && cfg.pi.enable) (mkMerge [
-      {home.packages = mkIf (cfg.pi.package != null) [(suffixPackage cfg.binSuffix "pi" cfg.pi.package)];}
+      {
+        # Pi's bundled runtime still shells out to npm to install extension packages.
+        # Keep Node.js scoped to Pi and its subprocesses rather than the user profile.
+        home.packages = mkIf (cfg.pi.package != null) [
+          (suffixPackage cfg.binSuffix "pi" (pkgs.symlinkJoin {
+            name = "pi-with-npm";
+            paths = [cfg.pi.package];
+            nativeBuildInputs = [pkgs.makeWrapper];
+            postBuild = ''
+              wrapProgram "$out/bin/pi" \
+                --prefix PATH : ${lib.makeBinPath [pkgs.nodejs]}
+            '';
+            meta = (cfg.pi.package.meta or {}) // {mainProgram = "pi";};
+          }))
+        ];
+      }
       (mkIf hasContext {
         home.file."${homeDir}/.pi/agent/AGENTS.md".source = agentsFile;
       })
