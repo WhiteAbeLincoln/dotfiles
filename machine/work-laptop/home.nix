@@ -16,6 +16,16 @@ in {
   programs.ai-agents.pi.settings = {
     defaultProvider = "amazon-bedrock";
     defaultModel = "us.openai.gpt-6.1-sol";
+    enabledModels = [
+      "amazon-bedrock/us.anthropic.claude-fable-5-1"
+      "amazon-bedrock/us.anthropic.claude-haiku-5-5"
+      "amazon-bedrock/us.anthropic.claude-opus-5-5"
+      "amazon-bedrock/us.anthropic.claude-sonnet-5-5"
+      "amazon-bedrock/us.openai.gpt-6.1-sol"
+      "amazon-bedrock/us.openai.gpt-6.1-terra"
+      "amazon-bedrock/us.openai.gpt-6-astra"
+      "amazon-bedrock/us.openai.gpt-6-luna"
+    ];
   };
 
   programs.ai-agents.pi.package = lib.mkForce (pkgs.symlinkJoin {
@@ -36,7 +46,6 @@ in {
     pkgs.unstable.nodejs_24
     pkgs.unstable.go
     pkgs.unstable.terraform
-    pkgs.unstable.gh
     pkgs.unstable.awscli2
     # Colima manages the daemon; the Docker CLI is packaged separately.
     pkgs.unstable.colima

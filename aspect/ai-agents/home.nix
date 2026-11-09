@@ -7,6 +7,7 @@
     ./module.nix
     ./skills/jira.nix
     ./skills/fastly.nix
+    ./skills/gh-stack.nix
   ];
   programs.ai-agents = {
     enable = lib.mkDefault true;
