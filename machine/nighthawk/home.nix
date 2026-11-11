@@ -14,6 +14,11 @@
     pkgs.glab
   ];
 
+  programs.ai-agents.pi.settings = {
+    defaultProvider = "openai";
+    defaultModel = "gpt-6.1-sol";
+  };
+
   # programs.texlive = {
   #   enable = true;
   #   extraPackages = tpkgs: {
