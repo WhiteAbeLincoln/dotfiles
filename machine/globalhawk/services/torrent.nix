@@ -19,6 +19,7 @@
   mediaRoot = config.homelab.media.root;
   mediaUid = config.users.users._media.uid;
   timezone = config.time.timeZone;
+  gluetunImage = "qmcgaw/gluetun@sha256:ad6b604e0cecc917a5cb6a8de55cd167ba415da8b7ec13456abb871a84be3c30";
 in {
   services.k3s.workloads.module = {k8sLib, ...}: let
     l = k8sLib;
@@ -37,7 +38,24 @@ in {
             metadata.labels = labels;
             spec = {
               securityContext.fsGroup = mediaUid;
+              # Keep a pristine resolver file for every Gluetun process start.
+              # Kubernetes retains the pod's resolver file across container
+              # restarts, after Gluetun has changed its nameserver to localhost.
+              initContainers.save-cluster-dns = {
+                image = gluetunImage;
+                command = ["/bin/sh" "-ec" "cp /etc/resolv.conf /vpn-startup/resolv.conf"];
+                volumeMounts = [
+                  {
+                    name = "vpn-startup";
+                    mountPath = "/vpn-startup";
+                  }
+                ];
+              };
               volumes = [
+                {
+                  name = "vpn-startup";
+                  emptyDir = {};
+                }
                 {
                   name = "tun";
                   hostPath = {
@@ -67,27 +85,49 @@ in {
                 # and qbit can resolve cluster DNS; FIREWALL_INPUT_PORTS allows
                 # inbound to the WebUI port.
                 gluetun = {
-                  image = "qmcgaw/gluetun@sha256:ad6b604e0cecc917a5cb6a8de55cd167ba415da8b7ec13456abb871a84be3c30";
+                  image = gluetunImage;
                   securityContext.capabilities.add = ["NET_ADMIN"];
                   # Container restarts retain the pod network namespace. Remove
                   # WireGuard policy rules left by an interrupted prior process
-                  # before gluetun configures table 51820 again.
-                  lifecycle.postStart.exec.command = [
+                  # before gluetun configures table 51820 again. Restore cluster
+                  # DNS before discovery so local queries never forward to the
+                  # resolver itself. An entrypoint wrapper orders both operations
+                  # before Gluetun; postStart would race its initialization.
+                  command = [
                     "/bin/sh"
-                    "-c"
-                    "(ip rule del table 51820; ip -6 rule del table 51820) || true"
+                    "-ec"
+                    ''
+                      cat /vpn-startup/resolv.conf > /etc/resolv.conf
+                      while ip rule del table 51820 2>/dev/null; do :; done
+                      while ip -6 rule del table 51820 2>/dev/null; do :; done
+                      exec /gluetun-entrypoint
+                    ''
                   ];
-                  # gluetun self-heals its tunnel; this restarts the container as a
-                  # backstop if the VPN stays down (the "silent drop" case) so the
-                  # netns's WireGuard interface is rebuilt.
-                  livenessProbe = {
+                  # Gluetun self-heals its tunnel. A prolonged VPN outage makes
+                  # the pod unready without repeatedly restarting its containers.
+                  readinessProbe = {
                     exec.command = ["/gluetun-entrypoint" "healthcheck"];
                     initialDelaySeconds = 30;
                     periodSeconds = 30;
                     timeoutSeconds = 10;
                     failureThreshold = 4;
                   };
+                  resources = {
+                    requests = {
+                      cpu = "100m";
+                      memory = "128Mi";
+                    };
+                    limits = {
+                      cpu = "500m";
+                      memory = "512Mi";
+                    };
+                  };
                   volumeMounts = [
+                    {
+                      name = "vpn-startup";
+                      mountPath = "/vpn-startup";
+                      readOnly = true;
+                    }
                     {
                       name = "tun";
                       mountPath = "/dev/net/tun";
@@ -137,73 +177,107 @@ in {
                 # WebUI\RootFolder=/vuetorrent config).
                 # No runAsUser: LinuxServer starts as root and drops to PUID/PGID
                 # via s6 (required for the VueTorrent docker mod to install).
-                qbittorrent = l.mkLsioContainer {
-                  name = "qbittorrent";
-                  image = "lscr.io/linuxserver/qbittorrent@sha256:b024436f8ca665d16d9a997d26fd27fdf867ee5566ba09f32764e7b2976d3e02";
-                  port = 9091;
-                  portName = "webui";
-                  inherit mediaUid timezone;
-                  configVolumeName = "qbt-config";
-                  extraEnv = [
-                    {
-                      name = "WEBUI_PORT";
-                      value = "9091";
-                    }
-                    {
-                      name = "TORRENTING_PORT";
-                      value = "6881";
-                    }
-                    {
-                      name = "DOCKER_MODS";
-                      value = "ghcr.io/gabe565/linuxserver-mod-vuetorrent";
-                    }
-                  ];
-                  extraMounts = [
-                    {
-                      name = "downloads";
-                      mountPath = "/data/torrents/downloads";
-                    }
-                  ];
-                  probes = {
-                    # Ready only when the WebUI answers, so the ingress doesn't 502
-                    # during restarts / the VueTorrent mod install.
-                    readinessProbe = {
-                      httpGet = {
-                        path = "/";
-                        port = 9091;
+                qbittorrent =
+                  (l.mkLsioContainer {
+                    name = "qbittorrent";
+                    image = "lscr.io/linuxserver/qbittorrent@sha256:b024436f8ca665d16d9a997d26fd27fdf867ee5566ba09f32764e7b2976d3e02";
+                    port = 9091;
+                    portName = "webui";
+                    inherit mediaUid timezone;
+                    configVolumeName = "qbt-config";
+                    extraEnv = [
+                      {
+                        name = "WEBUI_PORT";
+                        value = "9091";
+                      }
+                      {
+                        name = "TORRENTING_PORT";
+                        value = "6881";
+                      }
+                      {
+                        name = "DOCKER_MODS";
+                        value = "ghcr.io/gabe565/linuxserver-mod-vuetorrent";
+                      }
+                    ];
+                    extraMounts = [
+                      {
+                        name = "downloads";
+                        mountPath = "/data/torrents/downloads";
+                      }
+                    ];
+                    probes = {
+                      # Ready only when the WebUI answers, keeping ordinary clients
+                      # away during restarts / the VueTorrent mod install. The diagnostic
+                      # WebUI service publishes unready endpoints, so it can still
+                      # return transient errors while the application starts.
+                      readinessProbe = {
+                        httpGet = {
+                          path = "/";
+                          port = 9091;
+                        };
+                        initialDelaySeconds = 20;
+                        periodSeconds = 15;
+                        timeoutSeconds = 8;
+                        failureThreshold = 4;
                       };
-                      initialDelaySeconds = 20;
-                      periodSeconds = 15;
-                      timeoutSeconds = 8;
-                      failureThreshold = 4;
+                      # Restart qbit only when its own WebUI stops responding;
+                      # restarting it cannot repair an unavailable VPN subscription.
+                      startupProbe = {
+                        httpGet = {
+                          path = "/";
+                          port = 9091;
+                        };
+                        periodSeconds = 10;
+                        timeoutSeconds = 8;
+                        failureThreshold = 60;
+                      };
+                      livenessProbe = {
+                        httpGet = {
+                          path = "/";
+                          port = 9091;
+                        };
+                        periodSeconds = 30;
+                        timeoutSeconds = 12;
+                        failureThreshold = 6;
+                      };
                     };
-                    # Restart qbit if it can't reach the internet through the VPN for a
-                    # sustained window (after gluetun has had time to recover) — the
-                    # automated version of the old manual "restart vpn, then qbit".
-                    livenessProbe = {
-                      exec.command = [
-                        "sh"
-                        "-c"
-                        "wget -q -T 8 -O /dev/null http://connectivitycheck.gstatic.com/generate_204 || curl -fsS -m 8 -o /dev/null http://connectivitycheck.gstatic.com/generate_204"
-                      ];
-                      initialDelaySeconds = 90;
-                      periodSeconds = 30;
-                      timeoutSeconds = 12;
-                      failureThreshold = 6;
+                  })
+                  // {
+                    resources = {
+                      requests = {
+                        cpu = "100m";
+                        memory = "256Mi";
+                      };
+                      limits = {
+                        cpu = "1";
+                        memory = "1Gi";
+                      };
                     };
                   };
-                };
               };
             };
           };
         };
-        services = l.mkService {
-          name = "qbittorrent";
-          port = 9091;
-          portName = "webui";
-        };
+        services =
+          (l.mkService {
+            name = "qbittorrent";
+            port = 9091;
+            portName = "webui";
+          })
+          // {
+            # Keep the authenticated WebUI reachable for diagnosis while VPN
+            # readiness removes the pod from the normal qbittorrent service.
+            qbittorrent-webui.spec = {
+              selector = labels;
+              publishNotReadyAddresses = true;
+              ports.webui = {
+                port = 9091;
+                targetPort = 9091;
+              };
+            };
+          };
         ingresses = l.mkIngress {
-          name = "qbittorrent";
+          name = "qbittorrent-webui";
           port = 9091;
           host = "qbittorrent${ingressSuffix}";
           forwardAuth = true;
