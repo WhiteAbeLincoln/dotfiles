@@ -1,12 +1,6 @@
-{
-  writeShellApplication,
-  kubectl,
-  jq,
-  coreutils,
-}:
+{writeShellApplication}:
 writeShellApplication {
   name = "libation-reconcile";
-  runtimeInputs = [kubectl jq coreutils];
   text = ''
     usage() {
       echo "Usage: libation-reconcile"
@@ -24,19 +18,17 @@ writeShellApplication {
         exit 2
         ;;
     esac
+    if [ "$#" -ne 0 ]; then
+      usage >&2
+      exit 2
+    fi
 
-    job_name="libation-reconcile-manual-$(date -u +%Y%m%d%H%M%S)-$RANDOM"
-
-    kubectl create job \
-      --from=cronjob/libation-reconcile \
-      "$job_name" \
-      --namespace library \
-      --dry-run=client \
-      --output=json \
-      | jq 'del(.spec.template.spec.initContainers)' \
-      | kubectl apply --filename=-
-
-    echo "kubectl logs --namespace library --follow job/$job_name"
-    echo "kubectl wait --namespace library --for=condition=complete --timeout=48h job/$job_name"
+    if ! command -v systemctl >/dev/null; then
+      echo "Run this command on globalhawk, where the systemd job is installed." >&2
+      exit 1
+    fi
+    sudo systemctl start --no-block libation-reconcile.service
+    echo "journalctl --unit=libation-reconcile.service --follow"
+    echo "systemctl status libation-reconcile.service"
   '';
 }

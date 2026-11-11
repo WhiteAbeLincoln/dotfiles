@@ -6,6 +6,7 @@
     ./authelia.nix
     ./calibre-web-automated.nix
     ./immich.nix
+    ./libation.nix
     ./oidc-reconcilers.nix
     ./plex.nix
     ./torrent.nix
