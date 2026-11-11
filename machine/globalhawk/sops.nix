@@ -11,6 +11,18 @@
 }: {
   imports = [inputs.sops-nix.nixosModules.sops];
 
+  # Removing a sops template leaves its custom-path symlink behind. A dangling
+  # manifest aborts k3s's directory scan, blocking unrelated workload updates.
+  system.activationScripts.retire-audiobookshelf-secret = {
+    deps = ["setupSecrets"];
+    text = ''
+      retired=/var/lib/rancher/k3s/server/manifests/sops-abs-oidc.yaml
+      if [ -L "$retired" ] && [ ! -e "$retired" ]; then
+        rm -- "$retired"
+      fi
+    '';
+  };
+
   # Kubernetes Secrets are declared through the typed runtime-secret interface.
   # The module renders these into k3s's auto-deploy directory at activation.
   services.k3s.runtimeSecrets = {
@@ -75,13 +87,6 @@
         admin-api-key.sopsSecret = "immich_admin_api_key";
       };
     };
-    abs-oidc = {
-      namespace = "library";
-      stringData = {
-        client-secret.sopsSecret = "abs_oidc_client_secret";
-        admin-token.sopsSecret = "abs_admin_token";
-      };
-    };
     cwa-oidc = {
       namespace = "library";
       stringData.client-secret.sopsSecret = "cwa_oidc_client_secret";
@@ -142,7 +147,6 @@
       immich_admin_api_key = {};
       abs_oidc_client_secret = {};
       abs_oidc_client_secret_hash = {};
-      abs_admin_token = {};
       cwa_oidc_client_secret = {};
       cwa_oidc_client_secret_hash = {};
       grafana_admin_password = {};

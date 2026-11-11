@@ -34,12 +34,12 @@ in {
       "${mediaRoot}/audiobooks"
       "${mediaRoot}/documents"
       "${mediaRoot}/music"
-      # App state for the k3s ebook/audiobook workloads. SQLite databases and
+      # App state for native and k3s ebook/audiobook workloads. SQLite databases and
       # Libation's refreshable account material are captured as a filesystem
       # snapshot (crash-consistent-ish); a sqlite3 .backup pre-hook is a
       # possible later hardening (see design spec).
       "${mediaRoot}/apps/calibre-web-automated"
-      "${mediaRoot}/apps/audiobookshelf"
+      "/var/lib/${config.services.audiobookshelf.dataDir}"
       "${mediaRoot}/apps/libation"
     ];
 

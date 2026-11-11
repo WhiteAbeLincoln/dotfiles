@@ -1,19 +1,16 @@
 # One-shot OIDC reconcilers. Job names include the desired-config hash, so a
 # declarative OIDC change creates a new Job without continuously fighting UI
 # edits elsewhere. Secrets are mounted from sops-rendered Kubernetes Secrets.
-{
-  config,
-  lib,
-  ...
-}: let
+# Native Audiobookshelf uses its persistent UI settings after initial setup.
+{config, ...}: let
   ingressSuffix = config.homelab.ingressSuffix;
   mediaRoot = config.homelab.media.root;
   mediaUid = config.users.users._media.uid;
+  issuer = "https://auth${ingressSuffix}";
 in {
   services.k3s.workloads.module = {...}: let
     curlJqImage = "docker.io/dwdraju/alpine-curl-jq@sha256:eb00b3d4864c03814885a1c15ed1f5b2b569ca102ad4d02c27d582affb4fd6b1";
     sqliteImage = "docker.io/keinos/sqlite3@sha256:2d168434d3de0f65ebd742cf6340e06dfe550b419c3acd2e6d286687deccd69a";
-    issuer = "https://auth${ingressSuffix}";
 
     immichScript = ''
       set -eu
@@ -51,52 +48,6 @@ in {
       echo "Immich OIDC reconciled"
     '';
     immichHash = builtins.substring 0 12 (builtins.hashString "sha256" immichScript);
-
-    absScript = ''
-      set -eu
-      api=http://audiobookshelf.library.svc.cluster.local:13378
-      token=$(cat /secret/admin-token)
-      client_secret=$(cat /secret/client-secret)
-      issuer="${issuer}"
-
-      until discovery=$(curl -fsS "$issuer/.well-known/openid-configuration"); do
-        echo "waiting for Authelia discovery"
-        sleep 5
-      done
-
-      payload=$(echo "$discovery" | jq \
-        --arg issuer "$issuer" \
-        --arg client_secret "$client_secret" \
-        '{
-          authActiveAuthMethods: ["local", "openid"],
-          authOpenIDIssuerURL: $issuer,
-          authOpenIDAuthorizationURL: .authorization_endpoint,
-          authOpenIDTokenURL: .token_endpoint,
-          authOpenIDUserInfoURL: .userinfo_endpoint,
-          authOpenIDJwksURL: .jwks_uri,
-          authOpenIDLogoutURL: .end_session_endpoint,
-          authOpenIDClientID: "audiobookshelf",
-          authOpenIDClientSecret: $client_secret,
-          authOpenIDTokenSigningAlgorithm: "RS256",
-          authOpenIDButtonText: "Login with SSO",
-          authOpenIDAutoLaunch: false,
-          authOpenIDAutoRegister: true,
-          authOpenIDMatchExistingBy: "email",
-          authOpenIDMobileRedirectURIs: ["audiobookshelf://oauth"],
-          authOpenIDSubfolderForRedirectURLs: ""
-        }')
-
-      until curl -fsS -X PATCH \
-        -H "Authorization: Bearer $token" \
-        -H "Content-Type: application/json" \
-        --data-binary "$payload" \
-        "$api/api/auth-settings" >/dev/null; do
-        echo "waiting for Audiobookshelf"
-        sleep 5
-      done
-      echo "Audiobookshelf OIDC reconciled"
-    '';
-    absHash = builtins.substring 0 12 (builtins.hashString "sha256" absScript);
 
     # CWA has no settings API. Its own ConfigSQL schema is updated transactionally
     # in SQLite; the operator restarts the CWA pod after this Job completes so its
@@ -169,48 +120,6 @@ in {
                 {
                   name = "secret";
                   secret.secretName = "immich-oidc";
-                }
-              ];
-            };
-          };
-        };
-      };
-
-      abs-oidc-reconciler = {
-        namespace = "library";
-        createNamespace = false;
-        resources = {
-          configMaps.abs-oidc-script.data."reconcile.sh" = absScript;
-          jobs."abs-oidc-${absHash}".spec = {
-            backoffLimit = 6;
-            template.spec = {
-              restartPolicy = "OnFailure";
-              containers.reconcile = {
-                image = curlJqImage;
-                command = ["sh" "/script/reconcile.sh"];
-                volumeMounts = [
-                  {
-                    name = "script";
-                    mountPath = "/script";
-                  }
-                  {
-                    name = "secret";
-                    mountPath = "/secret";
-                    readOnly = true;
-                  }
-                ];
-              };
-              volumes = [
-                {
-                  name = "script";
-                  configMap = {
-                    name = "abs-oidc-script";
-                    defaultMode = scriptMode;
-                  };
-                }
-                {
-                  name = "secret";
-                  secret.secretName = "abs-oidc";
                 }
               ];
             };

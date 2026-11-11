@@ -41,14 +41,11 @@ in {
     "A+ ${mediaRoot}/torrents - - - - group:_media:rwx"
     "A+ ${mediaRoot}/tv - - - - group:_media:rwx"
     # (books keeps its own A+ line below.)
-    # App state for the k3s ebook/audiobook workloads (hostPath ignores fsGroup,
-    # so the dirs must pre-exist _media-owned for the pods to write).
+    # App state for the remaining k3s ebook/audiobook workloads.
+    # hostPath ignores fsGroup, so pod state must pre-exist _media-owned.
     "d ${mediaRoot}/apps/calibre-web-automated 0775 _media _media -"
     "d ${mediaRoot}/apps/calibre-web-automated/config 0775 _media _media -"
     "d ${mediaRoot}/apps/calibre-web-automated/ingest 0775 _media _media -"
-    "d ${mediaRoot}/apps/audiobookshelf 0775 _media _media -"
-    "d ${mediaRoot}/apps/audiobookshelf/config 0775 _media _media -"
-    "d ${mediaRoot}/apps/audiobookshelf/metadata 0775 _media _media -"
     "d ${mediaRoot}/apps/libation 0775 _media _media -"
     "d ${mediaRoot}/apps/libation/config 0770 _media _media -"
     "d ${mediaRoot}/apps/libation/db 0770 _media _media -"
