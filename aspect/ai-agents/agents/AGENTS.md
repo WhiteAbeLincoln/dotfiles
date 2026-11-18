@@ -30,12 +30,18 @@ See @ctx/testing.md
 
 ### Error Handling
 
-Never write `panic` (Go) or `unwrap` / `expect` / `panic!` (Rust) in production
-code unless I have explicitly directed you to. Return an error and let the
-caller decide. If a function's signature needs to widen to accommodate this
-(adding `error` to the return values, or threading `Result` through callers),
-do so. The same rule applies inside constructors that previously panicked on
-"this is a programmer error" failures — return the error.
+In Go production code, never write `panic` unless I have explicitly directed
+you to. Return an error and let the caller decide, widening function signatures
+if necessary. This also applies to constructors that panic on programmer errors.
+
+In Rust production code, use `Result` / `Option` for realistic runtime failures.
+`unwrap`, `expect`, and `panic!` are allowed when established invariants make
+failure impossible in practice, provided the reasoning and invariants are
+documented in a nearby comment or relevant API documentation. Do not introduce
+unnecessary error types, signature changes, or defensive branches for states
+that those invariants rule out. "This should never happen" alone is not a
+justification; explain why it cannot happen. See @ctx/lang/rust.md for details,
+including mutex poisoning.
 
 Test code (`t.Fatal*` in Go tests, `panic!` inside `#[test]` Rust tests) is
 exempt; that's the testing framework's intended failure path.

@@ -1,7 +1,37 @@
 # Rust Language Guidelines
 
 - Always use `cargo-nextest` over `cargo test` where the project has nextest configured.
-- Avoid using `unwrap()` and `expect()` in production code. Instead, use proper error handling with `Result` and `Option`.
+
+## Error Handling and Invariants
+
+Use `Result` / `Option` for failures that can realistically occur, such as
+invalid external input, I/O errors, or a channel whose receiver can shut down.
+
+`unwrap()`, `expect()`, and `panic!` are allowed in production when established
+invariants make the failure impossible in practice. Document the invariant and
+why it holds in a nearby comment or relevant API documentation; prefer `expect()`
+with a meaningful message when it helps diagnose an invariant violation. A
+message like "cannot fail" is not a substitute for the reasoning. The guarantee
+must cover all relevant paths and callers, not just today's happy path.
+
+Do not add defensive branches, invent error variants, or thread `Result` through
+callers solely to model states ruled out by those invariants. This applies to
+constructors as well as other production code. Conversely, a failure being rare
+or inconvenient to handle does not make it impossible.
+
+### Mutex poisoning
+
+A `std::sync::Mutex` is poisoned when a thread panics while holding its guard.
+If the protected operations have no realistic panic path, the usual approach is
+to propagate poisoning as a panic with `lock().expect(...)` or `lock().unwrap()`,
+not introduce a poison error into the application's error model. Document why
+the critical section cannot realistically panic, considering any callbacks or
+other code executed while the guard is held.
+
+If poisoning is realistically possible, decide explicitly whether to propagate
+the panic, return an error, or recover based on the application's requirements.
+Do not blindly use `PoisonError::into_inner()` to suppress poisoning: recovery
+requires establishing that the protected state is still valid or repairing it.
 
 ## Async Rust
 
@@ -153,7 +183,9 @@ tokio::select! {
 // GOOD: reserve is cancel-safe, send is synchronous
 tokio::select! {
     permit = sender.reserve() => {
-        permit.unwrap().send(value); // synchronous, cannot be cancelled
+        // This example assumes the receiver is kept alive for this entire operation.
+        // If it can shut down, handle the reserve error instead.
+        permit.expect("receiver remains alive").send(value); // synchronous, cannot be cancelled
     }
     _ = sleep(timeout) => { ... }
 }
