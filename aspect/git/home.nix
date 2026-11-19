@@ -12,6 +12,24 @@
     settings.user.name = "Abraham White";
     settings.alias = {
       aliases = ''! git config --get-regexp ^alias\. | sed -e s/^alias\.// -e s/\ /\ =\ /'';
+      # Use the remote's default branch without assuming main/master.
+      base = ''
+        !f() {
+          if [ "$#" -gt 1 ]; then
+            echo "usage: git base [commit-ish]" >&2
+            return 1
+          fi
+          if [ "$#" -eq 1 ]; then
+            target="$1"
+          else
+            target=$(git symbolic-ref --quiet refs/remotes/origin/HEAD) || {
+              echo "origin/HEAD is not set; run: git remote set-head origin -a" >&2
+              return 1
+            }
+          fi
+          git merge-base HEAD "$target"
+        }; f
+      '';
       branches = "branch -a";
       commits = "log";
       tags = "tag";
